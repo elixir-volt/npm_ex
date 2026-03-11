@@ -2,6 +2,9 @@
 
 ## 0.2.0
 
+- Global package cache at `~/.npm_ex/cache/` — download once, reuse across projects
+- `node_modules/` linking via symlinks (unix) or copies (Windows)
+- Hoisted flat layout
 - Switch from `:httpc` to Req for HTTP
 - Add `mix npm.get` task
 - Add credo, ex_slop, ex_dna, dialyzer
