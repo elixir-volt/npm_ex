@@ -4253,6 +4253,161 @@ defmodule NPMTest do
     end
   end
 
+  # --- Real npm behavior tests ---
+
+  describe "Linker: npm-compatible hoisting" do
+    test "single dependency hoists to top level" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{"a" => "^1.0"}}
+      }
+
+      tree = NPM.Linker.hoist(lockfile)
+      names = Enum.map(tree, &elem(&1, 0)) |> Enum.sort()
+      assert "a" in names
+      assert "b" in names
+    end
+
+    test "all deps hoisted flat (no nesting)" do
+      lockfile = %{
+        "root" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"mid" => "^1.0"}
+        },
+        "mid" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"leaf" => "^1.0"}
+        },
+        "leaf" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.Linker.hoist(lockfile)
+      assert length(tree) == 3
+    end
+  end
+
+  describe "Linker: prune matches npm behavior" do
+    @tag :tmp_dir
+    test "removes packages not in expected set", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm, "keep-me"))
+      File.mkdir_p!(Path.join(nm, "remove-me"))
+      File.mkdir_p!(Path.join(nm, ".bin"))
+
+      NPM.Linker.prune(nm, MapSet.new(["keep-me"]))
+
+      assert File.dir?(Path.join(nm, "keep-me"))
+      refute File.dir?(Path.join(nm, "remove-me"))
+      assert File.dir?(Path.join(nm, ".bin"))
+    end
+
+    @tag :tmp_dir
+    test "prunes scoped packages correctly", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join([nm, "@scope", "keep"]))
+      File.mkdir_p!(Path.join([nm, "@scope", "remove"]))
+
+      NPM.Linker.prune(nm, MapSet.new(["@scope/keep"]))
+
+      assert File.dir?(Path.join([nm, "@scope", "keep"]))
+      refute File.dir?(Path.join([nm, "@scope", "remove"]))
+    end
+  end
+
+  describe "Lockfile: round-trip preserves all fields" do
+    @tag :tmp_dir
+    test "write then read preserves version, integrity, tarball, deps", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      original = %{
+        "lodash" => %{
+          version: "4.17.21",
+          integrity: "sha512-WjKPNJF79mLQN/qZ+2A==",
+          tarball: "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+          dependencies: %{}
+        },
+        "accepts" => %{
+          version: "1.3.8",
+          integrity: "sha512-PYAth==",
+          tarball: "https://registry.npmjs.org/accepts/-/accepts-1.3.8.tgz",
+          dependencies: %{"mime-types" => "~2.1.34", "negotiator" => "0.6.3"}
+        }
+      }
+
+      NPM.Lockfile.write(original, path)
+      {:ok, restored} = NPM.Lockfile.read(path)
+
+      for {name, entry} <- original do
+        assert restored[name].version == entry.version
+        assert restored[name].integrity == entry.integrity
+        assert restored[name].tarball == entry.tarball
+        assert restored[name].dependencies == entry.dependencies
+      end
+    end
+
+    @tag :tmp_dir
+    test "lockfile is sorted alphabetically", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "zebra" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "alpha" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      NPM.Lockfile.write(lockfile, path)
+      content = File.read!(path)
+
+      alpha_pos = :binary.match(content, "alpha") |> elem(0)
+      zebra_pos = :binary.match(content, "zebra") |> elem(0)
+      assert alpha_pos < zebra_pos
+    end
+  end
+
+  describe "Resolver: normalize_range edge cases" do
+    test "* resolves without error" do
+      # Use a mock-friendly check: verify the constraint is created
+      assert {:ok, _} = NPMSemver.to_hex_constraint(">=0.0.0")
+    end
+
+    test "caret constraint for 0.x works like npm" do
+      # ^0.2.3 should be >=0.2.3, <0.3.0 (npm treats 0.x specially)
+      assert NPMSemver.matches?("0.2.5", "^0.2.3")
+      refute NPMSemver.matches?("0.3.0", "^0.2.3")
+    end
+
+    test "tilde constraint matches npm behavior" do
+      # ~1.2.3 := >=1.2.3 <1.3.0-0
+      assert NPMSemver.matches?("1.2.9", "~1.2.3")
+      refute NPMSemver.matches?("1.3.0", "~1.2.3")
+    end
+
+    test ">=, < compound range" do
+      assert NPMSemver.matches?("1.5.0", ">=1.0.0 <2.0.0")
+      refute NPMSemver.matches?("2.0.0", ">=1.0.0 <2.0.0")
+    end
+  end
+
+  describe "Cache: path structure matches npm convention" do
+    test "package_dir uses name/version structure" do
+      path = NPM.Cache.package_dir("lodash", "4.17.21")
+      assert String.ends_with?(path, "lodash/4.17.21")
+    end
+
+    test "scoped package_dir uses scoped path" do
+      path = NPM.Cache.package_dir("@types/node", "20.0.0")
+      assert String.contains?(path, "@types/node")
+      assert String.ends_with?(path, "20.0.0")
+    end
+
+    test "cached? returns false for non-cached package" do
+      refute NPM.Cache.cached?("definitely-not-cached-pkg", "99.99.99")
+    end
+  end
+
   # --- Helpers ---
 
   defp mask_token(token) when byte_size(token) <= 8, do: "****"

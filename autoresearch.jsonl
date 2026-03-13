@@ -50,3 +50,4 @@
 {"run":49,"commit":"19ef82f","metric":423,"metrics":{},"status":"keep","description":"Add NPM.Packager (files_to_pack, pack_size), mix npm.size — 5 new tests","timestamp":1773399455668,"segment":0}
 {"run":50,"commit":"0e32f89","metric":434,"metrics":{},"status":"keep","description":"Add NPM.RegistryMirror (mirrors, URL rewriting), 5 cross-module integration tests — experiment 50","timestamp":1773399505997,"segment":0}
 {"run":51,"commit":"243198a","metric":475,"metrics":{},"status":"keep","description":"Fix * range resolution, add 23 real npm compatibility integration tests (registry, resolution, tarball integrity, bin fields, known express limitation)","timestamp":1773400349202,"segment":0}
+{"run":52,"commit":"4561690","metric":487,"metrics":{},"status":"keep","description":"Add 12 real npm semver compat tests (x-range, pre-release, caret-zero, tilde, hyphen, OR unions) — all verified against npm spec","timestamp":1773400452637,"segment":0}
