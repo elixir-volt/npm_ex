@@ -127,6 +127,35 @@ defmodule NPMTest do
     end
   end
 
+  # --- PackageJSON.read_scripts ---
+
+  describe "PackageJSON.read_scripts" do
+    @tag :tmp_dir
+    test "returns empty map for missing file", %{tmp_dir: dir} do
+      assert {:ok, %{}} = NPM.PackageJSON.read_scripts(Path.join(dir, "package.json"))
+    end
+
+    @tag :tmp_dir
+    test "reads scripts from package.json", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      File.write!(path, ~s({
+        "scripts": {"build": "tsc", "test": "jest", "lint": "eslint ."}
+      }))
+
+      assert {:ok, scripts} = NPM.PackageJSON.read_scripts(path)
+      assert scripts == %{"build" => "tsc", "test" => "jest", "lint" => "eslint ."}
+    end
+
+    @tag :tmp_dir
+    test "returns empty map when no scripts key", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name": "my-app"}))
+
+      assert {:ok, %{}} = NPM.PackageJSON.read_scripts(path)
+    end
+  end
+
   # --- PackageJSON.read_all ---
 
   describe "PackageJSON.read_all" do

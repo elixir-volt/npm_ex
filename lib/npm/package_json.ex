@@ -43,6 +43,22 @@ defmodule NPM.PackageJSON do
     end
   end
 
+  @doc "Read scripts from `package.json`."
+  @spec read_scripts(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, term()}
+  def read_scripts(path \\ @default_path) do
+    case File.read(path) do
+      {:ok, content} ->
+        data = :json.decode(content)
+        {:ok, Map.get(data, "scripts", %{})}
+
+      {:error, :enoent} ->
+        {:ok, %{}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @doc """
   Add a dependency to `package.json`, creating the file if needed.
 

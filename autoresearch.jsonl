@@ -1,3 +1,4 @@
 {"type":"config","name":"npm_ex feature development","metricName":"test_count","metricUnit":"","bestDirection":"higher"}
 {"run":1,"commit":"8c72c0a","metric":64,"metrics":{},"status":"keep","description":"Baseline: 64 tests, all passing","timestamp":1773395884676,"segment":0}
 {"run":2,"commit":"7ef254f","metric":79,"metrics":{},"status":"keep","description":"Add devDependencies support, stale package pruning, mix npm.outdated task","timestamp":1773396078244,"segment":0}
+{"run":3,"commit":"5fdf8e1","metric":84,"metrics":{},"status":"keep","description":"Add bin linking (node_modules/.bin/) with string/map bin fields, scoped packages","timestamp":1773396168325,"segment":0}

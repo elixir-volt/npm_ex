@@ -70,6 +70,44 @@ defmodule NPM do
   end
 
   @doc """
+  Update all packages to the latest versions matching their ranges.
+
+  Clears the resolver cache and re-resolves from scratch.
+  """
+  @spec update :: :ok | {:error, term()}
+  def update do
+    case NPM.PackageJSON.read_all() do
+      {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} ->
+        do_install(Map.merge(deps, dev_deps), [])
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Update a specific package to the latest version matching its range.
+
+  Only re-resolves the named package; other locked versions are preserved.
+  """
+  @spec update(String.t()) :: :ok | {:error, term()}
+  def update(name) do
+    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.PackageJSON.read_all(),
+         {:ok, lockfile} <- NPM.Lockfile.read() do
+      all_deps = Map.merge(deps, dev_deps)
+
+      if Map.has_key?(all_deps, name) do
+        updated_lock = Map.delete(lockfile, name)
+        NPM.Lockfile.write(updated_lock)
+        do_install(all_deps, [])
+      else
+        Mix.shell().error("Package #{name} not found in package.json.")
+        {:error, {:not_found, name}}
+      end
+    end
+  end
+
+  @doc """
   Fetch locked dependencies without re-resolving.
 
   Reads `npm.lock` and populates the global cache and `node_modules/`
