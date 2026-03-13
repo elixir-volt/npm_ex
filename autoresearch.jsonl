@@ -89,3 +89,4 @@
 {"run":88,"commit":"be885b6","metric":711,"metrics":{},"status":"keep","description":"Add tarball edge cases, lockfile complex round-trip, npmrc parse edge cases (= in values, trailing whitespace) — 5 behavior tests","timestamp":1773403292144,"segment":0}
 {"run":89,"commit":"9498116","metric":715,"metrics":{},"status":"keep","description":"Add NPM.EnvCheck (node_version, check_engines, summary) for environment detection — 4 real behavior tests","timestamp":1773403340138,"segment":0}
 {"run":90,"commit":"8549e36","metric":717,"metrics":{},"status":"keep","description":"Add integration tests for multi-package flat resolution and lockfile round-trip with real packages","timestamp":1773403385277,"segment":0}
+{"run":91,"commit":"dd80b8e","metric":722,"metrics":{},"status":"keep","description":"Add resolver empty resolution, PackageJSON read_all structure, ScopeRegistry all_scopes tests — 5 behavior tests","timestamp":1773403435744,"segment":0}

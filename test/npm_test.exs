@@ -4741,6 +4741,60 @@ defmodule NPMTest do
     end
   end
 
+  describe "BinResolver: binary lookup" do
+    @tag :tmp_dir
+    test "list returns available commands", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      bin_dir = Path.join(nm, ".bin")
+      File.mkdir_p!(bin_dir)
+      File.write!(Path.join(bin_dir, "jest"), "#!/bin/sh")
+      File.write!(Path.join(bin_dir, "tsc"), "#!/bin/sh")
+
+      bins = NPM.BinResolver.list(nm)
+      names = Enum.map(bins, &elem(&1, 0))
+      assert "jest" in names
+      assert "tsc" in names
+    end
+
+    @tag :tmp_dir
+    test "find returns path for existing command", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      bin_dir = Path.join(nm, ".bin")
+      File.mkdir_p!(bin_dir)
+      File.write!(Path.join(bin_dir, "eslint"), "#!/bin/sh")
+
+      assert {:ok, path} = NPM.BinResolver.find("eslint", nm)
+      assert String.contains?(path, "eslint")
+    end
+
+    @tag :tmp_dir
+    test "find returns :error for missing command", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm)
+
+      assert :error = NPM.BinResolver.find("nonexistent", nm)
+    end
+
+    @tag :tmp_dir
+    test "available? checks command existence", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      bin_dir = Path.join(nm, ".bin")
+      File.mkdir_p!(bin_dir)
+      File.write!(Path.join(bin_dir, "prettier"), "#!/bin/sh")
+
+      assert NPM.BinResolver.available?("prettier", nm)
+      refute NPM.BinResolver.available?("missing", nm)
+    end
+
+    @tag :tmp_dir
+    test "list returns empty for missing .bin", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm)
+
+      assert NPM.BinResolver.list(nm) == []
+    end
+  end
+
   describe "Resolver: empty resolution" do
     test "empty deps returns empty map" do
       NPM.Resolver.clear_cache()
