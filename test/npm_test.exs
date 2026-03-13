@@ -4869,6 +4869,60 @@ defmodule NPMTest do
     end
   end
 
+  describe "PackageSpec: tag and latest patterns" do
+    test "bare name with @latest" do
+      spec = NPM.PackageSpec.parse("lodash@latest")
+      assert spec.name == "lodash"
+      assert spec.range == "latest"
+    end
+
+    test "bare name defaults to registry type" do
+      spec = NPM.PackageSpec.parse("express")
+      assert spec.type == :registry
+    end
+  end
+
+  describe "DepGraph: complete graph analysis" do
+    test "graph with diamond dependency" do
+      lockfile = %{
+        "app" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"a" => "^1", "b" => "^1"}
+        },
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"shared" => "^1"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"shared" => "^1"}},
+        "shared" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      adj = NPM.DepGraph.adjacency_list(lockfile)
+      fan_in = NPM.DepGraph.fan_in(adj)
+      assert fan_in["shared"] == 2
+
+      leaves = NPM.DepGraph.leaves(adj)
+      assert "shared" in leaves
+    end
+  end
+
+  describe "Resolver: get_original_deps for non-excluded package" do
+    test "returns empty map for unknown package" do
+      NPM.Resolver.clear_cache()
+      assert %{} = NPM.Resolver.get_original_deps("unknown-pkg")
+    end
+  end
+
+  describe "NodeModules: installed with scoped packages" do
+    @tag :tmp_dir
+    test "lists scoped packages with full name", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join([nm, "@scope", "pkg"]))
+
+      installed = NPM.NodeModules.installed(nm)
+      assert "@scope/pkg" in installed
+    end
+  end
+
   describe "PackageJSON: add_dep preserves JSON formatting" do
     @tag :tmp_dir
     test "add_dep creates valid JSON", %{tmp_dir: dir} do
