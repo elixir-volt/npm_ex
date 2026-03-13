@@ -2331,6 +2331,46 @@ defmodule NPMTest do
     end
   end
 
+  # --- NPM.Config ---
+
+  describe "Config.parse_npmrc" do
+    test "parses key=value pairs" do
+      content = "registry=https://registry.example.com\nalways-auth=true"
+      result = NPM.Config.parse_npmrc(content)
+      assert result["registry"] == "https://registry.example.com"
+      assert result["always-auth"] == "true"
+    end
+
+    test "ignores comments" do
+      content = "# this is a comment\nregistry=https://example.com\n# another comment"
+      result = NPM.Config.parse_npmrc(content)
+      assert map_size(result) == 1
+      assert result["registry"] == "https://example.com"
+    end
+
+    test "ignores blank lines" do
+      content = "\nregistry=https://example.com\n\n\n"
+      result = NPM.Config.parse_npmrc(content)
+      assert map_size(result) == 1
+    end
+
+    test "handles auth tokens with = in value" do
+      content = "//registry.npmjs.org/:_authToken=abc123def456=="
+      result = NPM.Config.parse_npmrc(content)
+      assert result["//registry.npmjs.org/:_authToken"] == "abc123def456=="
+    end
+
+    test "handles empty content" do
+      assert NPM.Config.parse_npmrc("") == %{}
+    end
+
+    test "handles whitespace around values" do
+      content = "  registry = https://example.com  "
+      result = NPM.Config.parse_npmrc(content)
+      assert result["registry"] == "https://example.com"
+    end
+  end
+
   # --- JSON pretty print indentation ---
 
   describe "JSON.encode_pretty indentation" do
