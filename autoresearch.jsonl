@@ -39,3 +39,4 @@
 {"run":38,"commit":"501613e","metric":308,"metrics":{},"status":"keep","description":"Add NPM.Alias (npm: prefix aliases), bundleDependencies support, mix npm.set task — 15 new tests","timestamp":1773398617667,"segment":0}
 {"run":39,"commit":"186aacc","metric":313,"metrics":{},"status":"keep","description":"Add mix npm.publish (dry-run + registry upload), mix npm.token, make encode_package public — 5 new tests","timestamp":1773398709227,"segment":0}
 {"run":40,"commit":"5c954c2","metric":335,"metrics":{},"status":"keep","description":"Add NPM.VersionUtil (parse, compare, bump, sort, prerelease?), mix npm.shrinkwrap — 22 new tests","timestamp":1773398774430,"segment":0}
+{"run":41,"commit":"e8d0e41","metric":343,"metrics":{},"status":"keep","description":"Add NPM.ScopeRegistry (per-scope registry URLs), mix npm.view (detailed package info) — 8 new tests","timestamp":1773398826907,"segment":0}

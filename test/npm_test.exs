@@ -2687,6 +2687,93 @@ defmodule NPMTest do
     end
   end
 
+  # --- Integrity ---
+
+  describe "Integrity.verify" do
+    test "verifies matching sha512" do
+      data = "hello world"
+      integrity = NPM.Integrity.compute_sha512(data)
+      assert :ok = NPM.Integrity.verify(data, integrity)
+    end
+
+    test "rejects mismatched data" do
+      integrity = NPM.Integrity.compute_sha512("hello")
+      assert {:error, :integrity_mismatch} = NPM.Integrity.verify("world", integrity)
+    end
+
+    test "accepts empty integrity" do
+      assert :ok = NPM.Integrity.verify("any data", "")
+    end
+
+    test "accepts nil integrity" do
+      assert :ok = NPM.Integrity.verify("any data", nil)
+    end
+
+    test "verifies sha256" do
+      data = "test data"
+      integrity = NPM.Integrity.compute_sha256(data)
+      assert :ok = NPM.Integrity.verify(data, integrity)
+    end
+  end
+
+  describe "Integrity.parse" do
+    test "parses sha512" do
+      assert {:ok, {"sha512", "abc123"}} = NPM.Integrity.parse("sha512-abc123")
+    end
+
+    test "parses sha256" do
+      assert {:ok, {"sha256", "xyz"}} = NPM.Integrity.parse("sha256-xyz")
+    end
+
+    test "rejects unknown algo" do
+      assert :error = NPM.Integrity.parse("md5-abc")
+    end
+
+    test "rejects nil" do
+      assert :error = NPM.Integrity.parse(nil)
+    end
+
+    test "rejects malformed" do
+      assert :error = NPM.Integrity.parse("nohyphen")
+    end
+  end
+
+  describe "Integrity.algorithm" do
+    test "extracts algorithm" do
+      assert "sha512" = NPM.Integrity.algorithm("sha512-abc123")
+    end
+
+    test "returns nil for invalid" do
+      assert nil == NPM.Integrity.algorithm("bad-string")
+    end
+  end
+
+  describe "Integrity.compute_sha256" do
+    test "produces sha256- prefix" do
+      result = NPM.Integrity.compute_sha256("test")
+      assert String.starts_with?(result, "sha256-")
+    end
+  end
+
+  describe "Integrity.compute_sha512" do
+    test "produces sha512- prefix" do
+      result = NPM.Integrity.compute_sha512("test")
+      assert String.starts_with?(result, "sha512-")
+    end
+
+    test "same data produces same hash" do
+      a = NPM.Integrity.compute_sha512("data")
+      b = NPM.Integrity.compute_sha512("data")
+      assert a == b
+    end
+
+    test "different data produces different hash" do
+      a = NPM.Integrity.compute_sha512("hello")
+      b = NPM.Integrity.compute_sha512("world")
+      assert a != b
+    end
+  end
+
   # --- ScopeRegistry ---
 
   describe "ScopeRegistry.scoped?" do
