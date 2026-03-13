@@ -2,6 +2,7 @@ defmodule NPMTest do
   use ExUnit.Case, async: true
 
   alias Mix.Tasks.Npm.Install, as: NpmInstall
+  alias Mix.Tasks.Npm.Licenses
 
   # --- PackageJSON ---
 
@@ -2684,6 +2685,153 @@ defmodule NPMTest do
       assert String.ends_with?(path, "cached-pkg/1.0.0")
 
       System.delete_env("NPM_EX_CACHE_DIR")
+    end
+  end
+
+  # --- DepTree ---
+
+  describe "DepTree.build" do
+    test "builds simple tree" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert length(tree) == 1
+      assert hd(tree).name == "a"
+      assert hd(tree).children |> hd() |> Map.get(:name) == "b"
+    end
+
+    test "handles circular deps" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"a" => "^1.0"}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert length(tree) == 1
+    end
+
+    test "handles missing dep" do
+      lockfile = %{
+        "a" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"missing" => "^1.0"}
+        }
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert hd(tree).children == []
+    end
+  end
+
+  describe "DepTree.flatten" do
+    test "flattens tree to unique names" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert NPM.DepTree.flatten(tree) == ["a", "b"]
+    end
+  end
+
+  describe "DepTree.paths_to" do
+    test "finds path to transitive dep" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"c" => "^1.0"}},
+        "c" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      paths = NPM.DepTree.paths_to(tree, "c")
+      assert [["a", "b", "c"]] = paths
+    end
+
+    test "returns empty for non-existent target" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert [] = NPM.DepTree.paths_to(tree, "z")
+    end
+  end
+
+  describe "DepTree.depth" do
+    test "root dep has depth 0" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert 0 = NPM.DepTree.depth(tree, "a")
+    end
+
+    test "transitive dep has correct depth" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert 1 = NPM.DepTree.depth(tree, "b")
+    end
+
+    test "returns nil for missing" do
+      tree = NPM.DepTree.build(%{}, %{})
+      assert nil == NPM.DepTree.depth(tree, "z")
+    end
+  end
+
+  describe "DepTree.count" do
+    test "counts unique packages" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert 2 = NPM.DepTree.count(tree)
+    end
+  end
+
+  # --- Licenses ---
+
+  describe "Licenses.collect_licenses" do
+    @tag :tmp_dir
+    test "reads license from package.json", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      pkg = Path.join(nm, "my-pkg")
+      File.mkdir_p!(pkg)
+      File.write!(Path.join(pkg, "package.json"), ~s({"license": "MIT"}))
+
+      licenses = Licenses.collect_licenses(nm)
+      assert [{"my-pkg", "MIT"}] = licenses
+    end
+
+    @tag :tmp_dir
+    test "handles missing license", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      pkg = Path.join(nm, "no-license")
+      File.mkdir_p!(pkg)
+      File.write!(Path.join(pkg, "package.json"), ~s({"name": "no-license"}))
+
+      licenses = Licenses.collect_licenses(nm)
+      assert [{"no-license", nil}] = licenses
+    end
+
+    @tag :tmp_dir
+    test "handles empty dir", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm)
+
+      assert [] = Licenses.collect_licenses(nm)
     end
   end
 
