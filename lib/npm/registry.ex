@@ -84,9 +84,13 @@ defmodule NPM.Registry do
       optional_dependencies: Map.get(info, "optionalDependencies", %{}),
       bin: parse_bin(info),
       engines: Map.get(info, "engines", %{}),
+      has_install_script: Map.get(info, "hasInstallScript", false),
+      deprecated: Map.get(info, "deprecated", nil),
       dist: %{
         tarball: Map.get(dist, "tarball", ""),
-        integrity: Map.get(dist, "integrity", "")
+        integrity: Map.get(dist, "integrity", ""),
+        file_count: Map.get(dist, "fileCount"),
+        unpacked_size: Map.get(dist, "unpackedSize")
       }
     }
   end

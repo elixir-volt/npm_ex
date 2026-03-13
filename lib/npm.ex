@@ -274,11 +274,28 @@ defmodule NPM do
         {:ok, packument} ->
           info = Map.fetch!(packument.versions, version_str)
           check_peers(name, info, resolved)
+          check_deprecated(name, version_str, info)
 
         _ ->
           :ok
       end
     end)
+  end
+
+  defp check_deprecated(name, version, info) do
+    case Map.get(info, :deprecated) do
+      nil ->
+        :ok
+
+      false ->
+        :ok
+
+      msg when is_binary(msg) ->
+        Mix.shell().info("npm WARN #{name}@#{version} is deprecated: #{msg}")
+
+      _ ->
+        :ok
+    end
   end
 
   defp check_peers(name, info, resolved) do

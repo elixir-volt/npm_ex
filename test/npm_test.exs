@@ -1363,6 +1363,74 @@ defmodule NPMTest do
     end
   end
 
+  # --- Multiple packages with bin linking ---
+
+  describe "multiple packages with bins" do
+    @tag :tmp_dir
+    test "bins from multiple packages in same .bin dir", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+
+      pkg_a = Path.join(nm_dir, "tool-a")
+      File.mkdir_p!(pkg_a)
+      File.write!(Path.join(pkg_a, "package.json"), ~s({"name":"tool-a","bin":"./a.js"}))
+      File.write!(Path.join(pkg_a, "a.js"), "#!/usr/bin/env node")
+
+      pkg_b = Path.join(nm_dir, "tool-b")
+      File.mkdir_p!(pkg_b)
+      File.write!(Path.join(pkg_b, "package.json"), ~s({"name":"tool-b","bin":"./b.js"}))
+      File.write!(Path.join(pkg_b, "b.js"), "#!/usr/bin/env node")
+
+      NPM.Linker.link_bins(nm_dir, [{"tool-a", "1.0.0"}, {"tool-b", "1.0.0"}])
+
+      assert File.exists?(Path.join([nm_dir, ".bin", "tool-a"]))
+      assert File.exists?(Path.join([nm_dir, ".bin", "tool-b"]))
+    end
+  end
+
+  # --- Lockfile with complex dependency chains ---
+
+  describe "Lockfile complex deps" do
+    @tag :tmp_dir
+    test "handles diamond dependency pattern", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "app" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"left" => "^1.0", "right" => "^1.0"}
+        },
+        "left" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"shared" => "^2.0"}
+        },
+        "right" => %{
+          version: "1.0.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"shared" => "^2.0"}
+        },
+        "shared" => %{
+          version: "2.1.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{}
+        }
+      }
+
+      NPM.Lockfile.write(lockfile, path)
+      {:ok, read_back} = NPM.Lockfile.read(path)
+
+      assert map_size(read_back) == 4
+      assert read_back["shared"].version == "2.1.0"
+      assert read_back["left"].dependencies["shared"] == "^2.0"
+      assert read_back["right"].dependencies["shared"] == "^2.0"
+    end
+  end
+
   # --- Tarball edge cases ---
 
   describe "Tarball.verify_integrity edge cases" do

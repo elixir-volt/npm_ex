@@ -10,3 +10,4 @@
 {"run":9,"commit":"d0eb672","metric":122,"metrics":{},"status":"keep","description":"Add mix npm.ci, npm.check, npm.list --depth, fix .bin pruning bug, overrides support, expanded list output","timestamp":1773396684151,"segment":0}
 {"run":10,"commit":"a91f426","metric":124,"metrics":{},"status":"keep","description":"Add custom registry URL, auth tokens, retry logic with backoff, 401/403 handling","timestamp":1773396734789,"segment":0}
 {"run":11,"commit":"ba0bb5e","metric":129,"metrics":{},"status":"keep","description":"Add mix npm.tree, npm.search, complex JSON/lockfile tests, scalability test","timestamp":1773396832214,"segment":0}
+{"run":12,"commit":"e4e0f21","metric":137,"metrics":{},"status":"keep","description":"Add --save-exact flag, SHA-256 integrity, lockfile diff output, more spec parsing tests","timestamp":1773396928375,"segment":0}
