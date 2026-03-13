@@ -247,18 +247,51 @@ defmodule NPM do
   end
 
   defp build_lockfile(resolved) do
-    for {name, version_str} <- resolved, into: %{} do
-      {:ok, packument} = NPM.Registry.get_packument(name)
-      info = Map.fetch!(packument.versions, version_str)
+    lockfile =
+      for {name, version_str} <- resolved, into: %{} do
+        {:ok, packument} = NPM.Registry.get_packument(name)
+        info = Map.fetch!(packument.versions, version_str)
 
-      {name,
-       %{
-         version: version_str,
-         integrity: info.dist.integrity,
-         tarball: info.dist.tarball,
-         dependencies: info.dependencies
-       }}
-    end
+        {name,
+         %{
+           version: version_str,
+           integrity: info.dist.integrity,
+           tarball: info.dist.tarball,
+           dependencies: info.dependencies
+         }}
+      end
+
+    warn_unmet_peers(resolved)
+    lockfile
+  end
+
+  defp warn_unmet_peers(resolved) do
+    Enum.each(resolved, fn {name, version_str} ->
+      case NPM.Registry.get_packument(name) do
+        {:ok, packument} ->
+          info = Map.fetch!(packument.versions, version_str)
+          check_peers(name, info, resolved)
+
+        _ ->
+          :ok
+      end
+    end)
+  end
+
+  defp check_peers(name, info, resolved) do
+    peers = Map.get(info, :peer_dependencies, %{})
+
+    Enum.each(peers, fn {peer_name, peer_range} ->
+      case Map.get(resolved, peer_name) do
+        nil ->
+          Mix.shell().info(
+            "npm WARN #{name} requires peer #{peer_name}@#{peer_range} — not installed"
+          )
+
+        _version ->
+          :ok
+      end
+    end)
   end
 
   defp resolve_latest(name) do

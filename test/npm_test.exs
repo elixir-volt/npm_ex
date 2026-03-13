@@ -716,6 +716,54 @@ defmodule NPMTest do
     end
   end
 
+  # --- Lockfile with dependencies lookup ---
+
+  describe "Lockfile dependency chain" do
+    @tag :tmp_dir
+    test "lockfile entries with dependencies can trace dependents", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "express" => %{
+          version: "4.21.2",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"accepts" => "~1.3.8", "body-parser" => "1.20.3"}
+        },
+        "accepts" => %{
+          version: "1.3.8",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"mime-types" => "~2.1.34"}
+        },
+        "body-parser" => %{
+          version: "1.20.3",
+          integrity: "",
+          tarball: "",
+          dependencies: %{}
+        },
+        "mime-types" => %{
+          version: "2.1.35",
+          integrity: "",
+          tarball: "",
+          dependencies: %{}
+        }
+      }
+
+      NPM.Lockfile.write(lockfile, path)
+      {:ok, read_back} = NPM.Lockfile.read(path)
+
+      dependents_of_accepts =
+        read_back
+        |> Enum.filter(fn {name, entry} ->
+          name != "accepts" and Map.has_key?(entry.dependencies, "accepts")
+        end)
+        |> Enum.map(&elem(&1, 0))
+
+      assert dependents_of_accepts == ["express"]
+    end
+  end
+
   # --- Linker.link_bins ---
 
   describe "Linker.link_bins" do
@@ -863,6 +911,126 @@ defmodule NPMTest do
       File.mkdir_p!(nm_dir)
 
       assert :ok = NPM.Linker.prune(nm_dir, MapSet.new(["something"]))
+    end
+  end
+
+  # --- Linker full flow with pruning ---
+
+  describe "Linker.link with pruning" do
+    @tag :tmp_dir
+    test "removes stale packages after re-install", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      nm_dir = Path.join(dir, "node_modules")
+
+      setup_cached_package(cache_dir, "a", "1.0.0", %{"package.json" => ~s({"name":"a"})})
+      setup_cached_package(cache_dir, "b", "1.0.0", %{"package.json" => ~s({"name":"b"})})
+
+      lockfile_v1 = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+      NPM.Linker.link(lockfile_v1, nm_dir, :copy)
+
+      assert File.exists?(Path.join([nm_dir, "a", "package.json"]))
+      assert File.exists?(Path.join([nm_dir, "b", "package.json"]))
+
+      lockfile_v2 = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      NPM.Linker.link(lockfile_v2, nm_dir, :copy)
+
+      assert File.exists?(Path.join([nm_dir, "a", "package.json"]))
+      refute File.exists?(Path.join(nm_dir, "b"))
+
+      System.delete_env("NPM_EX_CACHE_DIR")
+    end
+  end
+
+  # --- Linker.link with bin linking ---
+
+  describe "Linker.link creates .bin entries" do
+    @tag :tmp_dir
+    test "creates .bin symlinks during full link flow", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      nm_dir = Path.join(dir, "node_modules")
+
+      setup_cached_package(cache_dir, "my-cli", "1.0.0", %{
+        "package.json" => ~s({"name":"my-cli","bin":"./cli.js"}),
+        "cli.js" => "#!/usr/bin/env node\nconsole.log('hello')"
+      })
+
+      lockfile = %{
+        "my-cli" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+      NPM.Linker.link(lockfile, nm_dir, :copy)
+      System.delete_env("NPM_EX_CACHE_DIR")
+
+      assert File.exists?(Path.join([nm_dir, ".bin", "my-cli"]))
+    end
+  end
+
+  # --- JSON edge cases ---
+
+  describe "JSON.encode_pretty edge cases" do
+    test "handles lists" do
+      json = NPM.JSON.encode_pretty(%{"items" => [1, 2, 3]})
+      assert json =~ "items"
+      assert json =~ "1"
+    end
+
+    test "handles nested lists in maps" do
+      json = NPM.JSON.encode_pretty(%{"files" => ["a.js", "b.js"]})
+      assert json =~ ~s("a.js")
+      assert json =~ ~s("b.js")
+    end
+
+    test "handles boolean values" do
+      json = NPM.JSON.encode_pretty(%{"private" => true})
+      assert json =~ "true"
+    end
+
+    test "handles empty list" do
+      json = NPM.JSON.encode_pretty(%{"items" => []})
+      assert json =~ "[]"
+    end
+
+    test "handles integer values" do
+      json = NPM.JSON.encode_pretty(%{"count" => 42})
+      assert json =~ "42"
+    end
+  end
+
+  # --- Tarball edge cases ---
+
+  describe "Tarball.verify_integrity edge cases" do
+    test "handles sha512 with plus and slash characters" do
+      data = "complex content with special chars"
+      hash = :crypto.hash(:sha512, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha512-#{hash}")
+    end
+
+    test "handles large binary data" do
+      data = :crypto.strong_rand_bytes(100_000)
+      hash = :crypto.hash(:sha512, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha512-#{hash}")
+    end
+  end
+
+  # --- Cache edge cases ---
+
+  describe "Cache edge cases" do
+    test "package_dir uses correct separator" do
+      path = NPM.Cache.package_dir("test-pkg", "1.0.0")
+      assert path =~ "cache/test-pkg/1.0.0"
+    end
+
+    test "cached? returns false for nonexistent version" do
+      refute NPM.Cache.cached?("lodash", "0.0.0-nonexistent")
     end
   end
 

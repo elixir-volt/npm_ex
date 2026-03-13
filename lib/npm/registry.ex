@@ -47,6 +47,8 @@ defmodule NPM.Registry do
 
     %{
       dependencies: Map.get(info, "dependencies", %{}),
+      peer_dependencies: Map.get(info, "peerDependencies", %{}),
+      optional_dependencies: Map.get(info, "optionalDependencies", %{}),
       dist: %{
         tarball: Map.get(dist, "tarball", ""),
         integrity: Map.get(dist, "integrity", "")
