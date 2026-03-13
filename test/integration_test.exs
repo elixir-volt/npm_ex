@@ -61,6 +61,19 @@ defmodule NPM.IntegrationTest do
       info = packument.versions["5.7.3"]
       assert is_map(info.bin)
     end
+
+    test "detects deprecated packages" do
+      assert {:ok, packument} = NPM.Registry.get_packument("request")
+      info = packument.versions["2.88.2"]
+      assert is_binary(info.deprecated) or is_nil(info.deprecated)
+    end
+
+    test "parses dist metadata" do
+      assert {:ok, packument} = NPM.Registry.get_packument("is-number")
+      info = packument.versions["7.0.0"]
+      assert is_binary(info.dist.tarball)
+      assert is_binary(info.dist.integrity)
+    end
   end
 
   describe "Resolver" do

@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.4.0
+
+### New Tasks
+- `mix npm.init` — create a new `package.json`
+- `mix npm.update` — update all or specific packages
+- `mix npm.outdated` — show packages with newer versions available
+- `mix npm.tree` — display full dependency tree
+- `mix npm.why` — explain why a package is installed
+- `mix npm.info` — show package details from the registry
+- `mix npm.search` — search the npm registry
+- `mix npm.run` — run scripts from `package.json`
+- `mix npm.exec` — execute binaries from `node_modules/.bin/`
+- `mix npm.ci` — frozen lockfile install (CI shortcut)
+- `mix npm.check` — verify installation state
+- `mix npm.clean` — remove `node_modules/`
+- `mix npm.cache status|clean` — manage global cache
+- `mix npm.config` — show configuration
+- `mix npm.version` — show npm_ex version
+
+### Features
+- `devDependencies` support (`--save-dev`, `--production`)
+- `--save-exact` flag for pinning exact versions
+- `node_modules/.bin/` executable linking (string, map, and `directories.bin`)
+- Stale package pruning from `node_modules/` on re-install
+- Peer dependency warnings during resolution
+- Deprecation warnings during install
+- Lockfile diff output showing added/removed/updated packages
+- `overrides` support in `package.json`
+- Custom registry URL via `NPM_REGISTRY` env var
+- Auth token support via `NPM_TOKEN` env var
+- SHA-256 integrity verification (in addition to SHA-512 and SHA-1)
+- Retry with exponential backoff for failed HTTP requests
+- `engines`, `bin`, `deprecated`, `hasInstallScript` registry metadata parsing
+
 ## 0.3.1
 
 - Rename repository to [npm_ex](https://github.com/dannote/npm_ex)
