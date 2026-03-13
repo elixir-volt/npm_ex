@@ -64,7 +64,9 @@ defmodule NPM.Registry do
     end
   end
 
-  defp encode_package(package), do: String.replace(package, "/", "%2f")
+  @doc "URL-encode a package name (handles scoped packages)."
+  @spec encode_package(String.t()) :: String.t()
+  def encode_package(package), do: String.replace(package, "/", "%2f")
 
   defp parse_packument(data) do
     versions =

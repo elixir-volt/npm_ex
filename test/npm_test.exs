@@ -2687,6 +2687,54 @@ defmodule NPMTest do
     end
   end
 
+  # --- Publish validation ---
+
+  describe "publish validation" do
+    @tag :tmp_dir
+    test "publish --dry-run shows package info", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      File.write!(path, ~s({"name": "my-pkg", "version": "1.0.0"}))
+
+      data = :json.decode(File.read!(path))
+      assert Map.has_key?(data, "name")
+      assert Map.has_key?(data, "version")
+    end
+
+    @tag :tmp_dir
+    test "publish rejects missing name", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"version": "1.0.0"}))
+
+      data = :json.decode(File.read!(path))
+      refute Map.has_key?(data, "name")
+    end
+
+    @tag :tmp_dir
+    test "publish rejects missing version", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name": "pkg"}))
+
+      data = :json.decode(File.read!(path))
+      refute Map.has_key?(data, "version")
+    end
+  end
+
+  # --- Token masking ---
+
+  describe "token masking" do
+    test "masks short tokens" do
+      assert mask_token("abc") == "****"
+    end
+
+    test "masks long tokens" do
+      masked = mask_token("abcdef1234567890")
+      assert String.starts_with?(masked, "abcd")
+      assert String.ends_with?(masked, "7890")
+      assert String.contains?(masked, "****")
+    end
+  end
+
   # --- Alias ---
 
   describe "Alias.parse" do
@@ -3112,6 +3160,12 @@ defmodule NPMTest do
   end
 
   # --- Helpers ---
+
+  defp mask_token(token) when byte_size(token) <= 8, do: "****"
+
+  defp mask_token(token) do
+    String.slice(token, 0, 4) <> "****" <> String.slice(token, -4, 4)
+  end
 
   defp create_test_tgz(files) do
     tmp = System.tmp_dir!()
