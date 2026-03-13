@@ -4957,6 +4957,58 @@ defmodule NPMTest do
     end
   end
 
+  describe "Lockfile: package_names sorting" do
+    @tag :tmp_dir
+    test "package_names returns sorted list", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "z-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "a-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "m-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      NPM.Lockfile.write(lockfile, path)
+      {:ok, names} = NPM.Lockfile.package_names(path)
+      assert names == ["a-pkg", "m-pkg", "z-pkg"]
+    end
+  end
+
+  describe "Linker: link_bins with no bin field" do
+    @tag :tmp_dir
+    test "no .bin dir created when no packages have bins", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm, "plain-pkg"))
+
+      File.write!(
+        Path.join([nm, "plain-pkg", "package.json"]),
+        ~s({"name":"plain-pkg","version":"1.0.0"})
+      )
+
+      NPM.Linker.link_bins(nm, [{"plain-pkg", "1.0.0"}])
+      refute File.exists?(Path.join(nm, ".bin"))
+    end
+  end
+
+  describe "Config: multi-line npmrc" do
+    test "parses complex real-world npmrc" do
+      content = """
+      registry=https://registry.npmjs.org/
+      @myorg:registry=https://npm.myorg.com/
+      //npm.myorg.com/:_authToken=npm_abcdef
+      save-exact=true
+      engine-strict=true
+      fund=false
+      audit=false
+      """
+
+      result = NPM.Config.parse_npmrc(content)
+      assert map_size(result) == 7
+      assert result["fund"] == "false"
+      assert result["audit"] == "false"
+    end
+  end
+
   describe "Alias: parse with different formats" do
     test "alias with tilde range" do
       assert {:alias, "react", "~18.0.0"} = NPM.Alias.parse("npm:react@~18.0.0")

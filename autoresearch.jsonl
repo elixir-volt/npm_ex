@@ -104,3 +104,4 @@
 {"run":103,"commit":"8bf3b48","metric":795,"metrics":{},"status":"keep","description":"Add PackageJSON add_dep formatting, Lockfile get_package edge cases, Packager exclusion, DepTree paths_to, Format truncate — 7 tests","timestamp":1773404012562,"segment":0}
 {"run":104,"commit":"b8c6cb8","metric":800,"metrics":{},"status":"keep","description":"Add PackageSpec tag patterns, DepGraph diamond dep, scoped NodeModules, get_original_deps — 800 tests milestone","timestamp":1773404088228,"segment":0}
 {"run":105,"commit":"007fc63","metric":803,"metrics":{},"status":"keep","description":"Add scoped name validation, pre-release detection tests — 3 real behavior tests","timestamp":1773404169362,"segment":0}
+{"run":106,"commit":"32bc683","metric":809,"metrics":{},"status":"keep","description":"Add resolver overrides storage, hoist with deps, cache uncached check, SemverUtil OR range filter, Alias format variations — 6 tests","timestamp":1773404206002,"segment":0}
