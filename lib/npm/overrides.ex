@@ -94,7 +94,7 @@ defmodule NPM.Overrides do
     end
   end
 
-  defp apply_single(lockfile, _scoped_override), do: :noop
+  defp apply_single(_lockfile, _scoped_override), do: :noop
 
   defp valid_version_spec?(spec) do
     String.match?(spec, ~r/^\d+\.\d+\.\d+/) or

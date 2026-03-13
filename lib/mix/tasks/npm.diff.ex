@@ -39,23 +39,11 @@ defmodule Mix.Tasks.Npm.Diff do
     case System.cmd("git", ["show", "HEAD:npm.lock"], stderr_to_stdout: true) do
       {content, 0} ->
         data = :json.decode(content)
-        lockfile = parse_lockfile(Map.get(data, "packages", %{}))
+        lockfile = NPM.Lockfile.parse_packages(Map.get(data, "packages", %{}))
         {:ok, lockfile}
 
       {_, _} ->
         {:error, :not_committed}
-    end
-  end
-
-  defp parse_lockfile(packages) do
-    for {name, info} <- packages, into: %{} do
-      {name,
-       %{
-         version: Map.get(info, "version", ""),
-         integrity: Map.get(info, "integrity", ""),
-         tarball: Map.get(info, "tarball", ""),
-         dependencies: Map.get(info, "dependencies", %{})
-       }}
     end
   end
 

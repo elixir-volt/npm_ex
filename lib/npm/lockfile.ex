@@ -41,6 +41,10 @@ defmodule NPM.Lockfile do
     File.write(path, NPM.JSON.encode_pretty(data))
   end
 
+  @doc "Parse a raw packages map into lockfile entries."
+  @spec parse_packages(map()) :: t()
+  def parse_packages(packages), do: parse(packages)
+
   defp parse(packages) do
     for {name, info} <- packages, into: %{} do
       {name,

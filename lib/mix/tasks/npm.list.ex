@@ -40,21 +40,11 @@ defmodule Mix.Tasks.Npm.List do
       Enum.split_with(rest, fn {name, _} -> MapSet.member?(dev, name) end)
 
     if direct_pkgs != [] do
-      Mix.shell().info("dependencies:")
-
-      Enum.each(direct_pkgs, fn {name, version} ->
-        range = Map.get(deps, name, "")
-        Mix.shell().info("  ├── #{name}@#{version} (#{range})")
-      end)
+      print_dep_section("dependencies:", direct_pkgs, deps)
     end
 
     if dev_pkgs != [] do
-      Mix.shell().info("devDependencies:")
-
-      Enum.each(dev_pkgs, fn {name, version} ->
-        range = Map.get(dev_deps, name, "")
-        Mix.shell().info("  ├── #{name}@#{version} (#{range})")
-      end)
+      print_dep_section("devDependencies:", dev_pkgs, dev_deps)
     end
 
     if transitive_pkgs != [] and max_depth != 0 do
@@ -66,5 +56,14 @@ defmodule Mix.Tasks.Npm.List do
     end
 
     Mix.shell().info("#{length(packages)} packages total")
+  end
+
+  defp print_dep_section(header, pkgs, ranges) do
+    Mix.shell().info(header)
+
+    Enum.each(pkgs, fn {name, version} ->
+      range = Map.get(ranges, name, "")
+      Mix.shell().info("  ├── #{name}@#{version} (#{range})")
+    end)
   end
 end
