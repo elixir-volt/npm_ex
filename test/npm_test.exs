@@ -1732,6 +1732,61 @@ defmodule NPMTest do
     end
   end
 
+  # --- Validator ---
+
+  describe "Validator.validate_name" do
+    test "accepts valid names" do
+      assert :ok = NPM.Validator.validate_name("lodash")
+      assert :ok = NPM.Validator.validate_name("my-package")
+      assert :ok = NPM.Validator.validate_name("pkg123")
+      assert :ok = NPM.Validator.validate_name("@scope/pkg")
+    end
+
+    test "rejects empty name" do
+      assert {:error, _} = NPM.Validator.validate_name("")
+    end
+
+    test "rejects names starting with period" do
+      assert {:error, _} = NPM.Validator.validate_name(".hidden")
+    end
+
+    test "rejects names starting with underscore" do
+      assert {:error, _} = NPM.Validator.validate_name("_internal")
+    end
+
+    test "rejects uppercase names" do
+      assert {:error, _} = NPM.Validator.validate_name("MyPackage")
+    end
+
+    test "rejects names with spaces" do
+      assert {:error, _} = NPM.Validator.validate_name("my package")
+    end
+
+    test "rejects overly long names" do
+      name = String.duplicate("a", 215)
+      assert {:error, _} = NPM.Validator.validate_name(name)
+    end
+
+    test "accepts exactly 214 char name" do
+      name = String.duplicate("a", 214)
+      assert :ok = NPM.Validator.validate_name(name)
+    end
+  end
+
+  describe "Validator.validate_range" do
+    test "accepts valid ranges" do
+      assert :ok = NPM.Validator.validate_range("^4.0.0")
+      assert :ok = NPM.Validator.validate_range("~1.2.3")
+      assert :ok = NPM.Validator.validate_range(">=1.0.0")
+      assert :ok = NPM.Validator.validate_range("*")
+      assert :ok = NPM.Validator.validate_range("latest")
+    end
+
+    test "rejects empty range" do
+      assert {:error, _} = NPM.Validator.validate_range("")
+    end
+  end
+
   # --- Lockfile empty dependencies ---
 
   describe "Lockfile empty deps handling" do
