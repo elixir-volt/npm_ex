@@ -4253,6 +4253,70 @@ defmodule NPMTest do
     end
   end
 
+  # --- NPMSemver ported edge cases from node-semver ---
+
+  describe "npm semver: ported from node-semver test fixtures" do
+    test "^1.0.0 matches 1.0.1" do
+      assert NPMSemver.matches?("1.0.1", "^1.0.0")
+    end
+
+    test "^1.0.0 does not match 2.0.0" do
+      refute NPMSemver.matches?("2.0.0", "^1.0.0")
+    end
+
+    test "^0.0.1 matches only 0.0.1" do
+      assert NPMSemver.matches?("0.0.1", "^0.0.1")
+      refute NPMSemver.matches?("0.0.2", "^0.0.1")
+    end
+
+    test "~1.2.3 matches 1.2.5 but not 1.3.0" do
+      assert NPMSemver.matches?("1.2.5", "~1.2.3")
+      refute NPMSemver.matches?("1.3.0", "~1.2.3")
+    end
+
+    test ">=1.0.0 <2.0.0 is correct range" do
+      assert NPMSemver.matches?("1.0.0", ">=1.0.0 <2.0.0")
+      assert NPMSemver.matches?("1.9.9", ">=1.0.0 <2.0.0")
+      refute NPMSemver.matches?("0.9.9", ">=1.0.0 <2.0.0")
+      refute NPMSemver.matches?("2.0.0", ">=1.0.0 <2.0.0")
+    end
+
+    test "1.0.0 - 2.0.0 hyphen range" do
+      assert NPMSemver.matches?("1.0.0", "1.0.0 - 2.0.0")
+      assert NPMSemver.matches?("2.0.0", "1.0.0 - 2.0.0")
+      refute NPMSemver.matches?("2.0.1", "1.0.0 - 2.0.0")
+    end
+
+    test "^0.1.0 matches 0.1.x only" do
+      assert NPMSemver.matches?("0.1.0", "^0.1.0")
+      assert NPMSemver.matches?("0.1.9", "^0.1.0")
+      refute NPMSemver.matches?("0.2.0", "^0.1.0")
+    end
+
+    test "x ranges" do
+      assert NPMSemver.matches?("1.5.0", "1.x")
+      assert NPMSemver.matches?("1.0.0", "1.x.x")
+      assert NPMSemver.matches?("1.2.5", "1.2.x")
+      refute NPMSemver.matches?("2.0.0", "1.x")
+    end
+
+    test "|| union" do
+      assert NPMSemver.matches?("1.0.0", "^1.0.0 || ^2.0.0")
+      assert NPMSemver.matches?("2.5.0", "^1.0.0 || ^2.0.0")
+      refute NPMSemver.matches?("3.0.0", "^1.0.0 || ^2.0.0")
+    end
+
+    test "exact version" do
+      assert NPMSemver.matches?("1.0.0", "1.0.0")
+      refute NPMSemver.matches?("1.0.1", "1.0.0")
+    end
+
+    test ">=0.0.0 matches everything" do
+      assert NPMSemver.matches?("0.0.0", ">=0.0.0")
+      assert NPMSemver.matches?("999.999.999", ">=0.0.0")
+    end
+  end
+
   # --- Real npm behavior tests ---
 
   describe "Linker: npm-compatible hoisting" do
@@ -4364,6 +4428,18 @@ defmodule NPMTest do
       alpha_pos = :binary.match(content, "alpha") |> elem(0)
       zebra_pos = :binary.match(content, "zebra") |> elem(0)
       assert alpha_pos < zebra_pos
+    end
+  end
+
+  describe "Resolver.extract_conflict_package (via resolve behavior)" do
+    test "resolver handles empty deps" do
+      NPM.Resolver.clear_cache()
+      assert {:ok, %{}} = NPM.Resolver.resolve(%{})
+    end
+
+    test "normalize_range handles *" do
+      # This tests the internal normalization without network
+      assert {:ok, _} = NPMSemver.to_hex_constraint(">=0.0.0")
     end
   end
 

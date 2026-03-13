@@ -54,3 +54,4 @@
 {"run":53,"commit":"9abeb79","metric":500,"metrics":{},"status":"keep","description":"Add real npm behavior tests: hoisting, pruning, lockfile round-trip fidelity, semver edge cases, cache path conventions — 500 tests","timestamp":1773400521832,"segment":0}
 {"run":54,"commit":"7c9271d","metric":506,"metrics":{},"status":"keep","description":"Add 6 real npm integration tests: multi-dep resolution, tarball content verification, lockfile round-trip reinstall","timestamp":1773400650895,"segment":0}
 {"run":55,"commit":"c468820","metric":506,"metrics":{},"status":"keep","description":"Two-phase resolver: detect version conflicts, exclude conflicting package, retry with nesting — express@4.x now resolves (69 packages + ms nested)","timestamp":1773401036623,"segment":0}
+{"run":56,"commit":"9cb86ee","metric":506,"metrics":{},"status":"keep","description":"Track nested dependency parent info, fix credo nesting in save_original_deps","timestamp":1773401154567,"segment":0}
