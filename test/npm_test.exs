@@ -4710,6 +4710,51 @@ defmodule NPMTest do
     end
   end
 
+  describe "DepGraph: fan_out counting" do
+    test "fan_out counts outgoing edges" do
+      adj = %{"a" => ["b", "c"], "b" => ["c"], "c" => []}
+      fan_out = NPM.DepGraph.fan_out(adj)
+      assert fan_out["a"] == 2
+      assert fan_out["b"] == 1
+      assert fan_out["c"] == 0
+    end
+  end
+
+  describe "VersionUtil: edge cases" do
+    test "bump_major resets minor and patch" do
+      assert "2.0.0" = NPM.VersionUtil.bump_major("1.5.3")
+    end
+
+    test "bump_minor resets patch" do
+      assert "1.6.0" = NPM.VersionUtil.bump_minor("1.5.3")
+    end
+
+    test "sort with pre-release versions" do
+      versions = ["1.0.0", "1.0.0-alpha", "1.0.0-beta"]
+      sorted = NPM.VersionUtil.sort(versions)
+      # Pre-release versions sort before release
+      assert List.first(sorted) =~ "alpha"
+    end
+
+    test "compare with equal versions" do
+      assert :eq = NPM.VersionUtil.compare("1.0.0", "1.0.0")
+    end
+  end
+
+  describe "Integrity: round-trip verification" do
+    test "compute then verify succeeds for sha512" do
+      data = :crypto.strong_rand_bytes(256)
+      sri = NPM.Integrity.compute_sha512(data)
+      assert :ok = NPM.Integrity.verify(data, sri)
+    end
+
+    test "compute then verify succeeds for sha256" do
+      data = :crypto.strong_rand_bytes(256)
+      sri = NPM.Integrity.compute_sha256(data)
+      assert :ok = NPM.Integrity.verify(data, sri)
+    end
+  end
+
   describe "Format: package display" do
     test "package formats name@version" do
       assert NPM.Format.package("lodash", "4.17.21") == "lodash@4.17.21"
