@@ -2688,6 +2688,73 @@ defmodule NPMTest do
     end
   end
 
+  # --- DepGraph ---
+
+  describe "DepGraph.adjacency_list" do
+    test "builds adjacency list from lockfile" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      adj = NPM.DepGraph.adjacency_list(lockfile)
+      assert adj["a"] == ["b"]
+      assert adj["b"] == []
+    end
+  end
+
+  describe "DepGraph.fan_out" do
+    test "counts dependencies per package" do
+      adj = %{"a" => ["b", "c"], "b" => ["c"], "c" => []}
+      fout = NPM.DepGraph.fan_out(adj)
+      assert fout["a"] == 2
+      assert fout["b"] == 1
+      assert fout["c"] == 0
+    end
+  end
+
+  describe "DepGraph.fan_in" do
+    test "counts dependents per package" do
+      adj = %{"a" => ["b", "c"], "b" => ["c"], "c" => []}
+      fin = NPM.DepGraph.fan_in(adj)
+      assert fin["a"] == 0
+      assert fin["b"] == 1
+      assert fin["c"] == 2
+    end
+  end
+
+  describe "DepGraph.leaves" do
+    test "finds leaf packages" do
+      adj = %{"a" => ["b"], "b" => [], "c" => []}
+      assert NPM.DepGraph.leaves(adj) == ["b", "c"]
+    end
+  end
+
+  describe "DepGraph.roots" do
+    test "finds root packages" do
+      adj = %{"a" => ["b"], "b" => ["c"], "c" => []}
+      assert NPM.DepGraph.roots(adj) == ["a"]
+    end
+
+    test "multiple roots" do
+      adj = %{"a" => ["c"], "b" => ["c"], "c" => []}
+      assert NPM.DepGraph.roots(adj) == ["a", "b"]
+    end
+  end
+
+  describe "DepGraph.cycles" do
+    test "detects simple cycle" do
+      adj = %{"a" => ["b"], "b" => ["a"]}
+      cycles = NPM.DepGraph.cycles(adj)
+      assert cycles != []
+    end
+
+    test "no cycles in dag" do
+      adj = %{"a" => ["b"], "b" => ["c"], "c" => []}
+      assert NPM.DepGraph.cycles(adj) == []
+    end
+  end
+
   # --- Manifest ---
 
   describe "Manifest.from_json" do
