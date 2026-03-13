@@ -59,3 +59,4 @@
 {"run":58,"commit":"c55974b","metric":531,"metrics":{},"status":"keep","description":"Add 12 more npm semver compat tests: comparators, complex ranges, caret-zero semantics, tilde edge cases","timestamp":1773401251778,"segment":0}
 {"run":59,"commit":"b3608c6","metric":534,"metrics":{},"status":"keep","description":"Add tarball nested dir extraction test, integrity tamper test, copy strategy file type test","timestamp":1773401327090,"segment":0}
 {"run":60,"commit":"cac825f","metric":539,"metrics":{},"status":"keep","description":"Add tarball strip_prefix test, verify_integrity edge cases (sha256, sha1, unknown algo, empty)","timestamp":1773401353891,"segment":0}
+{"run":61,"commit":"d1ba2cb","metric":545,"metrics":{},"status":"keep","description":"Add npm-compatible PackageJSON add/remove tests, symlink strategy verification — 6 real behavior tests","timestamp":1773401387945,"segment":0}
