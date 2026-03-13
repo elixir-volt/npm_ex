@@ -2688,6 +2688,69 @@ defmodule NPMTest do
     end
   end
 
+  # --- Packager ---
+
+  describe "Packager.files_to_pack" do
+    @tag :tmp_dir
+    test "includes all files by default", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "package.json"), ~s({"name": "test"}))
+      File.write!(Path.join(dir, "index.js"), "console.log('hi')")
+      File.write!(Path.join(dir, "README.md"), "# Test")
+
+      files = NPM.Packager.files_to_pack(dir)
+      assert "package.json" in files
+      assert "index.js" in files
+      assert "README.md" in files
+    end
+
+    @tag :tmp_dir
+    test "respects files field", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "package.json"), ~s({"name": "test", "files": ["dist/*"]}))
+      File.mkdir_p!(Path.join(dir, "dist"))
+      File.write!(Path.join(dir, "dist/index.js"), "")
+      File.mkdir_p!(Path.join(dir, "src"))
+      File.write!(Path.join(dir, "src/main.js"), "")
+
+      files = NPM.Packager.files_to_pack(dir)
+      assert "dist/index.js" in files
+      assert "package.json" in files
+      refute "src/main.js" in files
+    end
+
+    @tag :tmp_dir
+    test "excludes node_modules and .git", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "package.json"), ~s({"name": "test"}))
+      File.mkdir_p!(Path.join(dir, "node_modules/pkg"))
+      File.write!(Path.join(dir, "node_modules/pkg/index.js"), "")
+
+      files = NPM.Packager.files_to_pack(dir)
+      refute Enum.any?(files, &String.starts_with?(&1, "node_modules"))
+    end
+  end
+
+  describe "Packager.pack_size" do
+    @tag :tmp_dir
+    test "calculates total size", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "package.json"), ~s({"name": "test"}))
+      File.write!(Path.join(dir, "data.txt"), String.duplicate("a", 500))
+
+      size = NPM.Packager.pack_size(dir)
+      assert size >= 500
+    end
+  end
+
+  describe "Packager.pack_file_count" do
+    @tag :tmp_dir
+    test "counts packable files", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "package.json"), ~s({"name": "test"}))
+      File.write!(Path.join(dir, "a.js"), "")
+      File.write!(Path.join(dir, "b.js"), "")
+
+      count = NPM.Packager.pack_file_count(dir)
+      assert count >= 3
+    end
+  end
+
   # --- NodeModules ---
 
   describe "NodeModules.installed" do

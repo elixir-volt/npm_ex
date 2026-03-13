@@ -46,3 +46,4 @@
 {"run":45,"commit":"6939890","metric":391,"metrics":{},"status":"keep","description":"Add NPM.PackageSpec (structured specifier parser), mix npm.completion — 13 new tests","timestamp":1773399139526,"segment":0}
 {"run":46,"commit":"0a821af","metric":400,"metrics":{},"status":"keep","description":"Add NPM.Manifest (structured package manifest), mix npm.completion — 400 tests milestone","timestamp":1773399200876,"segment":0}
 {"run":47,"commit":"36c705d","metric":408,"metrics":{},"status":"keep","description":"Add NPM.DepGraph (adjacency list, fan-in/out, leaves, roots, cycles), mix npm.stats — 8 new tests","timestamp":1773399280067,"segment":0}
+{"run":48,"commit":"0ec3e1c","metric":418,"metrics":{},"status":"keep","description":"Add NPM.NodeModules (installed, version, diff, disk_size, file_count), mix npm.verify — 10 new tests","timestamp":1773399375794,"segment":0}
