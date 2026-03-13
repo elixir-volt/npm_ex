@@ -21,13 +21,27 @@ defmodule NPM.Resolver do
   Returns `{:ok, %{name => version}}` where the map includes
   a `:nested` key with nested package info when version conflicts exist.
   """
-  @spec resolve(%{String.t() => String.t()}) ::
+  @spec resolve(%{String.t() => String.t()}, keyword()) ::
           {:ok, %{String.t() => String.t()}} | {:error, String.t()}
-  def resolve(root_deps) when map_size(root_deps) == 0, do: {:ok, %{}}
+  def resolve(root_deps, opts \\ [])
+  def resolve(root_deps, _opts) when map_size(root_deps) == 0, do: {:ok, %{}}
 
-  def resolve(root_deps) do
+  def resolve(root_deps, opts) do
     ensure_cache()
+    overrides = Keyword.get(opts, :overrides, %{})
+    if overrides != %{}, do: store_overrides(overrides)
     resolve_with_nesting(root_deps, MapSet.new(), %{}, 0)
+  end
+
+  defp store_overrides(overrides) do
+    :ets.insert(@table, {:__overrides__, overrides})
+  end
+
+  defp get_overrides do
+    case :ets.lookup(@table, :__overrides__) do
+      [{_, overrides}] -> overrides
+      [] -> %{}
+    end
   end
 
   defp resolve_with_nesting(_root_deps, _excluded, _nested, depth) when depth > 5 do
@@ -247,9 +261,12 @@ defmodule NPM.Resolver do
         :error
 
       info ->
+        overrides = get_overrides()
+
         deps =
           info.dependencies
           |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
+          |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range)} end)
           |> Enum.flat_map(&to_solver_dep/1)
 
         {:ok, deps}

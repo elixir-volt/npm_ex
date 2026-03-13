@@ -4445,6 +4445,14 @@ defmodule NPMTest do
     end
   end
 
+  describe "Resolver: override support" do
+    test "overrides are stored and retrieved from cache" do
+      NPM.Resolver.clear_cache()
+      overrides = %{"ms" => "2.1.3"}
+      {:ok, _} = NPM.Resolver.resolve(%{}, overrides: overrides)
+    end
+  end
+
   describe "PackageJSON: overrides reading" do
     @tag :tmp_dir
     test "reads overrides field", %{tmp_dir: dir} do

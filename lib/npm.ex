@@ -208,11 +208,12 @@ defmodule NPM do
 
   defp full_install(deps) do
     {:ok, old_lockfile} = NPM.Lockfile.read()
+    {:ok, overrides} = NPM.PackageJSON.read_overrides()
 
     {resolve_us, result} =
       :timer.tc(fn ->
         NPM.Resolver.clear_cache()
-        NPM.Resolver.resolve(deps)
+        NPM.Resolver.resolve(deps, overrides: overrides)
       end)
 
     case result do
