@@ -2687,6 +2687,98 @@ defmodule NPMTest do
     end
   end
 
+  # --- Alias ---
+
+  describe "Alias.parse" do
+    test "parses npm: alias" do
+      assert {:alias, "react", "^18.0.0"} = NPM.Alias.parse("npm:react@^18.0.0")
+    end
+
+    test "parses scoped alias" do
+      assert {:alias, "@scope/pkg", "1.0.0"} = NPM.Alias.parse("npm:@scope/pkg@1.0.0")
+    end
+
+    test "returns normal for regular range" do
+      assert {:normal, "^1.0.0"} = NPM.Alias.parse("^1.0.0")
+    end
+
+    test "returns normal for plain version" do
+      assert {:normal, "1.2.3"} = NPM.Alias.parse("1.2.3")
+    end
+
+    test "returns normal for unparseable npm: prefix" do
+      assert {:normal, "npm:"} = NPM.Alias.parse("npm:")
+    end
+  end
+
+  describe "Alias.alias?" do
+    test "detects alias" do
+      assert NPM.Alias.alias?("npm:react@^18.0.0")
+    end
+
+    test "non-alias" do
+      refute NPM.Alias.alias?("^1.0.0")
+    end
+  end
+
+  describe "Alias.real_name" do
+    test "extracts real package name from alias" do
+      assert "react" = NPM.Alias.real_name("my-react", "npm:react@^18.0.0")
+    end
+
+    test "extracts scoped real name" do
+      assert "@babel/core" = NPM.Alias.real_name("babel", "npm:@babel/core@7.0.0")
+    end
+
+    test "returns original name for non-alias" do
+      assert "lodash" = NPM.Alias.real_name("lodash", "^4.17.0")
+    end
+  end
+
+  # --- BundleDependencies ---
+
+  describe "PackageJSON.read_bundle_deps" do
+    @tag :tmp_dir
+    test "reads bundleDependencies array", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"bundleDependencies": ["lodash", "express"]}))
+
+      assert {:ok, ["lodash", "express"]} = NPM.PackageJSON.read_bundle_deps(path)
+    end
+
+    @tag :tmp_dir
+    test "reads bundledDependencies (alternative spelling)", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"bundledDependencies": ["chalk"]}))
+
+      assert {:ok, ["chalk"]} = NPM.PackageJSON.read_bundle_deps(path)
+    end
+
+    @tag :tmp_dir
+    test "handles true (bundle all deps)", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      File.write!(path, ~s({"bundleDependencies": true, "dependencies": {"a": "1", "b": "2"}}))
+
+      assert {:ok, names} = NPM.PackageJSON.read_bundle_deps(path)
+      assert "a" in names
+      assert "b" in names
+    end
+
+    @tag :tmp_dir
+    test "returns empty for missing field", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name": "test"}))
+
+      assert {:ok, []} = NPM.PackageJSON.read_bundle_deps(path)
+    end
+
+    @tag :tmp_dir
+    test "returns empty for missing file", %{tmp_dir: dir} do
+      assert {:ok, []} = NPM.PackageJSON.read_bundle_deps(Path.join(dir, "nope.json"))
+    end
+  end
+
   # --- PackageJSON resolutions ---
 
   describe "PackageJSON.read_resolutions" do

@@ -153,6 +153,35 @@ defmodule NPM.PackageJSON do
     read_field(path, "resolutions")
   end
 
+  @doc """
+  Read bundleDependencies (or bundledDependencies) from `package.json`.
+
+  Returns a list of package names that should be bundled in the tarball.
+  """
+  @spec read_bundle_deps(String.t()) :: {:ok, [String.t()]} | {:error, term()}
+  def read_bundle_deps(path \\ @default_path) do
+    case File.read(path) do
+      {:ok, content} ->
+        data = :json.decode(content)
+
+        bundle =
+          Map.get(data, "bundleDependencies") ||
+            Map.get(data, "bundledDependencies", [])
+
+        case bundle do
+          true -> {:ok, Map.keys(Map.get(data, "dependencies", %{}))}
+          deps when is_list(deps) -> {:ok, deps}
+          _ -> {:ok, []}
+        end
+
+      {:error, :enoent} ->
+        {:ok, []}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp read_field(path, field) do
     case File.read(path) do
       {:ok, content} ->
