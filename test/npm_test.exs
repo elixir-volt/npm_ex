@@ -2688,6 +2688,105 @@ defmodule NPMTest do
     end
   end
 
+  # --- Manifest ---
+
+  describe "Manifest.from_json" do
+    test "parses full package.json" do
+      json = ~s({
+        "name": "my-app",
+        "version": "1.0.0",
+        "license": "MIT",
+        "type": "module",
+        "dependencies": {"react": "^18.0"},
+        "devDependencies": {"typescript": "^5.0"},
+        "scripts": {"test": "jest"},
+        "engines": {"node": ">=18"},
+        "exports": "./index.js"
+      })
+
+      manifest = NPM.Manifest.from_json(json)
+      assert manifest.name == "my-app"
+      assert manifest.version == "1.0.0"
+      assert manifest.license == "MIT"
+      assert manifest.module_type == :esm
+      assert manifest.dependencies == %{"react" => "^18.0"}
+      assert manifest.dev_dependencies == %{"typescript" => "^5.0"}
+      assert manifest.exports == %{"." => "./index.js"}
+    end
+
+    test "handles minimal package.json" do
+      manifest = NPM.Manifest.from_json(~s({"name": "minimal"}))
+      assert manifest.name == "minimal"
+      assert manifest.version == nil
+      assert manifest.dependencies == %{}
+      assert manifest.module_type == :cjs
+    end
+  end
+
+  describe "Manifest.dep_count" do
+    test "counts all dep types" do
+      manifest = NPM.Manifest.from_json(~s({
+        "dependencies": {"a": "1", "b": "2"},
+        "devDependencies": {"c": "3"},
+        "optionalDependencies": {"d": "4"}
+      }))
+
+      assert NPM.Manifest.dep_count(manifest) == 4
+    end
+  end
+
+  describe "Manifest.has_scripts?" do
+    test "true when scripts exist" do
+      manifest = NPM.Manifest.from_json(~s({"scripts": {"test": "jest"}}))
+      assert NPM.Manifest.has_scripts?(manifest)
+    end
+
+    test "false when no scripts" do
+      manifest = NPM.Manifest.from_json(~s({"name": "no-scripts"}))
+      refute NPM.Manifest.has_scripts?(manifest)
+    end
+  end
+
+  describe "Manifest.all_dep_names" do
+    test "merges all dep names sorted and unique" do
+      manifest = NPM.Manifest.from_json(~s({
+        "dependencies": {"b": "1"},
+        "devDependencies": {"a": "1", "b": "2"},
+        "optionalDependencies": {"c": "1"}
+      }))
+
+      assert NPM.Manifest.all_dep_names(manifest) == ["a", "b", "c"]
+    end
+  end
+
+  describe "Manifest.module_type integration" do
+    test "esm exports with module type" do
+      manifest = NPM.Manifest.from_json(~s({
+        "type": "module",
+        "exports": {"import": "./esm.js", "require": "./cjs.js"}
+      }))
+
+      assert manifest.module_type == :esm
+      assert manifest.exports == %{"." => %{"import" => "./esm.js", "require" => "./cjs.js"}}
+    end
+  end
+
+  describe "Manifest.from_file" do
+    @tag :tmp_dir
+    test "reads from filesystem", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name": "from-file", "version": "2.0.0"}))
+
+      assert {:ok, manifest} = NPM.Manifest.from_file(path)
+      assert manifest.name == "from-file"
+    end
+
+    @tag :tmp_dir
+    test "returns error for missing file", %{tmp_dir: dir} do
+      assert {:error, :enoent} = NPM.Manifest.from_file(Path.join(dir, "nope.json"))
+    end
+  end
+
   # --- PackageSpec ---
 
   describe "PackageSpec.parse" do
