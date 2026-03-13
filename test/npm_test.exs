@@ -4255,6 +4255,30 @@ defmodule NPMTest do
 
   # --- NPMSemver: additional ported edge cases ---
 
+  describe "Platform: real OS/CPU detection" do
+    test "current_os returns a valid OS for this machine" do
+      os = NPM.Platform.current_os()
+      # Running on macOS in CI or dev
+      assert os in ["darwin", "linux", "freebsd", "win32"]
+    end
+
+    test "current_cpu returns a valid architecture" do
+      cpu = NPM.Platform.current_cpu()
+      assert cpu in ["x64", "arm64", "arm", "ia32"]
+    end
+
+    test "os_compatible? with allowlist and blocklist" do
+      current = NPM.Platform.current_os()
+
+      # Allowlist: must be in list
+      assert NPM.Platform.os_compatible?([current, "other-os"])
+      refute NPM.Platform.os_compatible?(["definitely-not-this-os"])
+
+      # Blocklist: must NOT be in list
+      refute NPM.Platform.os_compatible?(["!#{current}"])
+    end
+  end
+
   describe "Exports: real-world conditional export patterns" do
     test "Node.js-style conditions (import/require/default)" do
       export_map = %{
