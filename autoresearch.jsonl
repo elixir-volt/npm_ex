@@ -65,3 +65,4 @@
 {"run":64,"commit":"ebfb149","metric":556,"metrics":{},"status":"keep","description":"Add real-world exports pattern tests (Node.js import/require/default conditions, subpath exports)","timestamp":1773401489226,"segment":0}
 {"run":65,"commit":"e457ceb","metric":561,"metrics":{},"status":"keep","description":"Fix strip_excluded_from_cache crash on non-packument ETS entries, add 5 integration tests (exports, determinism, validator)","timestamp":1773401639838,"segment":0}
 {"run":66,"commit":"ce44a12","metric":564,"metrics":{},"status":"keep","description":"Add real platform detection tests (OS/CPU compat with allowlist/blocklist)","timestamp":1773401671961,"segment":0}
+{"run":67,"commit":"ecdc23f","metric":572,"metrics":{},"status":"keep","description":"Add real .npmrc config pattern tests, workspace read/expand tests — 8 real behavior tests","timestamp":1773401705527,"segment":0}

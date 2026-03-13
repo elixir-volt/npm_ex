@@ -4255,6 +4255,77 @@ defmodule NPMTest do
 
   # --- NPMSemver: additional ported edge cases ---
 
+  describe "Lifecycle: real-world install script detection" do
+    @tag :tmp_dir
+    test "detects esbuild-style postinstall", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      File.write!(path, ~s({
+        "name": "esbuild",
+        "scripts": {"postinstall": "node install.js"}
+      }))
+
+      hooks = NPM.Lifecycle.detect(path)
+      assert length(hooks) == 1
+      assert {"postinstall", "node install.js"} in hooks
+    end
+
+    @tag :tmp_dir
+    test "detects node-gyp rebuild pattern", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      File.write!(path, ~s({
+        "scripts": {
+          "install": "node-gyp rebuild",
+          "test": "tape test/*.js"
+        }
+      }))
+
+      hooks = NPM.Lifecycle.detect(path)
+      assert length(hooks) == 1
+      assert {"install", "node-gyp rebuild"} in hooks
+    end
+
+    @tag :tmp_dir
+    test "detects husky prepare script", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"scripts": {"prepare": "husky install"}}))
+
+      hooks = NPM.Lifecycle.detect(path)
+      assert {"prepare", "husky install"} in hooks
+    end
+  end
+
+  describe "Validator: npm naming rules" do
+    test "rejects names starting with dot" do
+      assert {:error, _} = NPM.Validator.validate_name(".hidden")
+    end
+
+    test "rejects names starting with underscore" do
+      assert {:error, _} = NPM.Validator.validate_name("_private")
+    end
+
+    test "rejects empty name" do
+      assert {:error, _} = NPM.Validator.validate_name("")
+    end
+
+    test "accepts hyphenated names" do
+      assert :ok = NPM.Validator.validate_name("my-package")
+    end
+
+    test "accepts scoped names" do
+      assert :ok = NPM.Validator.validate_name("@scope/package")
+    end
+
+    test "accepts names with numbers" do
+      assert :ok = NPM.Validator.validate_name("package123")
+    end
+
+    test "accepts single-char names" do
+      assert :ok = NPM.Validator.validate_name("a")
+    end
+  end
+
   describe "Config: real .npmrc patterns" do
     test "parses registry config" do
       content = "registry=https://registry.npmjs.org/"
