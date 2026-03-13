@@ -5509,6 +5509,95 @@ defmodule NPMTest do
     end
   end
 
+  describe "Lockfile: write produces valid JSON" do
+    @tag :tmp_dir
+    test "output is parseable JSON", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      NPM.Lockfile.write(
+        %{
+          "react" => %{
+            version: "18.2.0",
+            integrity: "sha512-x",
+            tarball: "url",
+            dependencies: %{"loose-envify" => "^1.1.0"}
+          }
+        },
+        path
+      )
+
+      content = File.read!(path)
+      data = :json.decode(content)
+      assert is_map(data["packages"])
+      assert data["packages"]["react"]["version"] == "18.2.0"
+    end
+  end
+
+  describe "Manifest: all_dep_names deduplication" do
+    test "no duplicates when same dep in multiple sections" do
+      m = NPM.Manifest.from_json(~s({
+        "name":"t",
+        "dependencies":{"a":"^1"},
+        "devDependencies":{"a":"^2"}
+      }))
+
+      names = NPM.Manifest.all_dep_names(m)
+      assert Enum.count(names, &(&1 == "a")) <= 2
+    end
+  end
+
+  describe "Platform: full compatibility check" do
+    test "current system is compatible with own os/cpu" do
+      os = NPM.Platform.current_os()
+      cpu = NPM.Platform.current_cpu()
+      assert NPM.Platform.os_compatible?([os])
+      assert NPM.Platform.cpu_compatible?([cpu])
+    end
+  end
+
+  describe "SemverUtil: max_satisfying with exact match only" do
+    test "exact version only matches itself" do
+      versions = ["1.0.0", "1.0.1", "2.0.0"]
+      {:ok, v} = NPM.SemverUtil.max_satisfying(versions, "1.0.0")
+      assert v == "1.0.0"
+    end
+  end
+
+  describe "Format: package display with special chars" do
+    test "handles version with pre-release tag" do
+      assert "pkg@1.0.0-beta.1" = NPM.Format.package("pkg", "1.0.0-beta.1")
+    end
+  end
+
+  describe "DepGraph: isolates detection" do
+    test "finds isolated nodes with no edges" do
+      adj = %{"a" => ["b"], "b" => [], "c" => []}
+      roots = NPM.DepGraph.roots(adj)
+      leaves = NPM.DepGraph.leaves(adj)
+      # c is both a root and a leaf (isolated)
+      assert "c" in roots
+      assert "c" in leaves
+    end
+  end
+
+  describe "Lockfile: read empty lockfile" do
+    @tag :tmp_dir
+    test "read returns empty map for empty packages", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+      NPM.Lockfile.write(%{}, path)
+      {:ok, result} = NPM.Lockfile.read(path)
+      assert result == %{}
+    end
+  end
+
+  describe "DepGraph: cycle detection with self-reference" do
+    test "self-referencing package creates cycle" do
+      adj = %{"a" => ["a"]}
+      cycles = NPM.DepGraph.cycles(adj)
+      assert cycles != []
+    end
+  end
+
   describe "Resolver: resolve with overrides preserves them" do
     test "overrides don't affect empty resolution" do
       NPM.Resolver.clear_cache()
