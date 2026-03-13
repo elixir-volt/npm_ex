@@ -2688,6 +2688,89 @@ defmodule NPMTest do
     end
   end
 
+  # --- PackageSpec ---
+
+  describe "PackageSpec.parse" do
+    test "plain name" do
+      spec = NPM.PackageSpec.parse("lodash")
+      assert spec.name == "lodash"
+      assert spec.range == nil
+      assert spec.type == :registry
+    end
+
+    test "name with range" do
+      spec = NPM.PackageSpec.parse("lodash@^4.0")
+      assert spec.name == "lodash"
+      assert spec.range == "^4.0"
+      assert spec.type == :registry
+    end
+
+    test "scoped package" do
+      spec = NPM.PackageSpec.parse("@babel/core@7.0.0")
+      assert spec.name == "@babel/core"
+      assert spec.range == "7.0.0"
+      assert spec.type == :registry
+    end
+
+    test "scoped without range" do
+      spec = NPM.PackageSpec.parse("@scope/pkg")
+      assert spec.name == "@scope/pkg"
+      assert spec.range == nil
+      assert spec.type == :registry
+    end
+
+    test "alias" do
+      spec = NPM.PackageSpec.parse("npm:react@^18.0")
+      assert spec.name == "react"
+      assert spec.range == "^18.0"
+      assert spec.type == :alias
+    end
+
+    test "file reference" do
+      spec = NPM.PackageSpec.parse("file:../local")
+      assert spec.type == :file
+    end
+
+    test "git reference" do
+      spec = NPM.PackageSpec.parse("git+https://github.com/user/repo")
+      assert spec.type == :git
+    end
+
+    test "github shorthand" do
+      spec = NPM.PackageSpec.parse("github:user/repo")
+      assert spec.type == :git
+    end
+
+    test "http URL" do
+      spec = NPM.PackageSpec.parse("https://example.com/pkg.tgz")
+      assert spec.type == :url
+    end
+  end
+
+  describe "PackageSpec.registry?" do
+    test "registry spec" do
+      spec = NPM.PackageSpec.parse("lodash@^4.0")
+      assert NPM.PackageSpec.registry?(spec)
+    end
+
+    test "non-registry spec" do
+      spec = NPM.PackageSpec.parse("file:../local")
+      refute NPM.PackageSpec.registry?(spec)
+    end
+  end
+
+  describe "PackageSpec.to_string" do
+    test "with range" do
+      spec = NPM.PackageSpec.parse("lodash@^4.0")
+      assert NPM.PackageSpec.to_string(spec) == "lodash@^4.0"
+    end
+
+    test "without range" do
+      spec = NPM.PackageSpec.parse("lodash")
+      assert NPM.PackageSpec.to_string(spec) == "lodash"
+    end
+  end
+
   # --- DepTree ---
 
   describe "DepTree.build" do

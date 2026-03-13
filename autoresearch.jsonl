@@ -42,3 +42,4 @@
 {"run":41,"commit":"e8d0e41","metric":343,"metrics":{},"status":"keep","description":"Add NPM.ScopeRegistry (per-scope registry URLs), mix npm.view (detailed package info) — 8 new tests","timestamp":1773398826907,"segment":0}
 {"run":42,"commit":"73c9cde","metric":359,"metrics":{},"status":"keep","description":"Add NPM.Integrity (SRI verification, parse, compute), mix npm.deprecations, mix npm.view — 16 new tests","timestamp":1773398904063,"segment":0}
 {"run":43,"commit":"a3f878c","metric":365,"metrics":{},"status":"keep","description":"Add Lockfile.version/package_names/has_package?/get_package, mix npm.explain — 6 new tests","timestamp":1773398972137,"segment":0}
+{"run":44,"commit":"c70b56e","metric":378,"metrics":{},"status":"keep","description":"Add NPM.DepTree (tree build, flatten, paths_to, depth, count), mix npm.licenses — 13 new tests","timestamp":1773399086486,"segment":0}
