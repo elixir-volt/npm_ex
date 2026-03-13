@@ -4741,6 +4741,31 @@ defmodule NPMTest do
     end
   end
 
+  describe "EnvCheck: environment detection" do
+    test "summary returns all expected keys" do
+      info = NPM.EnvCheck.summary()
+      assert Map.has_key?(info, :elixir_version)
+      assert Map.has_key?(info, :otp_version)
+      assert Map.has_key?(info, :os)
+      assert Map.has_key?(info, :cpu)
+      assert Map.has_key?(info, :npm_ex_version)
+    end
+
+    test "check_engines returns :ok for empty engines" do
+      assert :ok = NPM.EnvCheck.check_engines(%{})
+    end
+
+    test "check_engines warns for unknown engine" do
+      assert {:warn, warnings} = NPM.EnvCheck.check_engines(%{"deno" => ">=1.0"})
+      assert Enum.any?(warnings, &String.contains?(&1, "unknown engine"))
+    end
+
+    test "node_version returns {:ok, version} or :not_found" do
+      result = NPM.EnvCheck.node_version()
+      assert match?({:ok, "v" <> _}, result) or result == :not_found
+    end
+  end
+
   describe "Tarball: edge cases" do
     @tag :tmp_dir
     test "extract handles empty tarball", %{tmp_dir: dir} do

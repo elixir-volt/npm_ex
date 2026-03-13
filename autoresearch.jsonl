@@ -86,3 +86,4 @@
 {"run":85,"commit":"f8ae721","metric":700,"metrics":{},"status":"keep","description":"Add Manifest from_json edge cases (defaults, has_scripts?, all_dep_names, ESM type) — 700 tests milestone","timestamp":1773403165981,"segment":0}
 {"run":86,"commit":"70fad9e","metric":702,"metrics":{},"status":"keep","description":"Add frozen install lockfile mismatch detection test, default link strategy verification test","timestamp":1773403208004,"segment":0}
 {"run":87,"commit":"25104dc","metric":706,"metrics":{},"status":"keep","description":"Add NPM.LockMerge (merge, merge with resolver, diff) for workspace lockfile merging — 4 behavior tests","timestamp":1773403261427,"segment":0}
+{"run":88,"commit":"be885b6","metric":711,"metrics":{},"status":"keep","description":"Add tarball edge cases, lockfile complex round-trip, npmrc parse edge cases (= in values, trailing whitespace) — 5 behavior tests","timestamp":1773403292144,"segment":0}
