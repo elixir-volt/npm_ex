@@ -49,10 +49,16 @@ defmodule NPM.Registry do
       dependencies: Map.get(info, "dependencies", %{}),
       peer_dependencies: Map.get(info, "peerDependencies", %{}),
       optional_dependencies: Map.get(info, "optionalDependencies", %{}),
+      bin: parse_bin(info),
+      engines: Map.get(info, "engines", %{}),
       dist: %{
         tarball: Map.get(dist, "tarball", ""),
         integrity: Map.get(dist, "integrity", "")
       }
     }
   end
+
+  defp parse_bin(%{"bin" => bin}) when is_map(bin), do: bin
+  defp parse_bin(%{"bin" => bin}) when is_binary(bin), do: %{}
+  defp parse_bin(_), do: %{}
 end

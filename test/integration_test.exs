@@ -42,6 +42,25 @@ defmodule NPM.IntegrationTest do
       info = packument.versions["7.0.0"]
       assert info.dependencies == %{}
     end
+
+    test "parses peer dependencies" do
+      assert {:ok, packument} = NPM.Registry.get_packument("react-dom")
+      info = packument.versions["18.3.1"]
+      assert is_map(info.peer_dependencies)
+      assert Map.has_key?(info.peer_dependencies, "react")
+    end
+
+    test "parses engines field" do
+      assert {:ok, packument} = NPM.Registry.get_packument("typescript")
+      info = packument.versions["5.7.3"]
+      assert is_map(info.engines)
+    end
+
+    test "parses bin field" do
+      assert {:ok, packument} = NPM.Registry.get_packument("typescript")
+      info = packument.versions["5.7.3"]
+      assert is_map(info.bin)
+    end
   end
 
   describe "Resolver" do

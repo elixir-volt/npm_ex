@@ -59,6 +59,22 @@ defmodule NPM.PackageJSON do
     end
   end
 
+  @doc "Read overrides from `package.json`."
+  @spec read_overrides(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, term()}
+  def read_overrides(path \\ @default_path) do
+    case File.read(path) do
+      {:ok, content} ->
+        data = :json.decode(content)
+        {:ok, Map.get(data, "overrides", %{})}
+
+      {:error, :enoent} ->
+        {:ok, %{}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @doc """
   Add a dependency to `package.json`, creating the file if needed.
 
