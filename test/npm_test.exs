@@ -4255,6 +4255,76 @@ defmodule NPMTest do
 
   # --- NPMSemver: additional ported edge cases ---
 
+  describe "ScopeRegistry: per-scope registry routing" do
+    test "default registry for unscoped packages" do
+      assert NPM.ScopeRegistry.registry_for("lodash") == "https://registry.npmjs.org"
+    end
+
+    test "scoped? detects scoped packages" do
+      assert NPM.ScopeRegistry.scoped?("@myco/utils")
+      refute NPM.ScopeRegistry.scoped?("lodash")
+    end
+
+    test "scope extracts scope from scoped package" do
+      assert "@myco" = NPM.ScopeRegistry.scope("@myco/utils")
+    end
+
+    test "scope returns nil for unscoped" do
+      assert nil == NPM.ScopeRegistry.scope("lodash")
+    end
+  end
+
+  describe "DepGraph: adjacency list and analysis" do
+    test "fan_in counts incoming edges" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"c" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"c" => "^1.0"}},
+        "c" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      adj = NPM.DepGraph.adjacency_list(lockfile)
+      fan_in = NPM.DepGraph.fan_in(adj)
+      assert fan_in["c"] == 2
+      assert fan_in["a"] == 0
+    end
+
+    test "leaves are packages with no dependencies" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      adj = NPM.DepGraph.adjacency_list(lockfile)
+      leaves = NPM.DepGraph.leaves(adj)
+      assert "b" in leaves
+      refute "a" in leaves
+    end
+
+    test "roots are packages not depended on" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1.0"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      adj = NPM.DepGraph.adjacency_list(lockfile)
+      roots = NPM.DepGraph.roots(adj)
+      assert "a" in roots
+      refute "b" in roots
+    end
+
+    test "cycles detected in circular deps" do
+      adj = %{"a" => ["b"], "b" => ["c"], "c" => ["a"]}
+      cycles = NPM.DepGraph.cycles(adj)
+      assert cycles != []
+    end
+
+    test "no cycles in acyclic graph" do
+      adj = %{"a" => ["b"], "b" => ["c"], "c" => []}
+      cycles = NPM.DepGraph.cycles(adj)
+      assert cycles == []
+    end
+  end
+
   describe "Alias: real npm alias patterns" do
     test "npm:react@^18 for multiple React versions" do
       assert {:alias, "react", "^18.0.0"} = NPM.Alias.parse("npm:react@^18.0.0")

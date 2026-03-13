@@ -1,27 +1,22 @@
 # Autoresearch Ideas
 
-## Done: Two-Phase Resolver (express works!)
-- ✅ Detects version conflicts in PubGrub error messages
-- ✅ Excludes conflicting package, retries with nesting
-- ✅ express@4.x now resolves (69 packages + ms as nested)
-- Still TODO: Linker needs to create nested node_modules for excluded packages
-  - debug/node_modules/ms@2.0.0 and send/node_modules/ms@2.1.3
-  - Need to track WHICH version each parent needs
-  - Currently the excluded packages just aren't installed at all
+## High Priority: Nested Linker (express fully works end-to-end)
+- Two-phase resolver already works: detects conflicts, excludes package, retries with nesting
+- `Resolver.get_original_deps/1` tracks which parents need which version of excluded pkg
+- Need: Linker creates `parent_pkg/node_modules/excluded_pkg/` directories
+- Need: Lockfile tracks nested entries (version, integrity, parents)
+- This makes `mix npm.install express` actually produce working node_modules
 
-## Next: Nested Linker
-- Modify Linker to read the :nested key from resolved map
-- For each excluded package, find which parents need which version
-- Create parent_pkg/node_modules/excluded_pkg/ directories
-- This requires the lockfile to track nested entries too
+## Medium Priority: Real Features
+- `npm ci --frozen-lockfile` strict mode (reject if lockfile is out of sync)
+- `npm ls --json` output for tooling integration
+- `npm why` trace through nested deps
+- Pre/post install script execution (currently only detection)
+- `npm pack` integration with tarball creation from local project
+- Progress bar / streaming output during multi-package downloads
 
-## Other Real Compatibility Gaps
-- `npm ls` should show nested packages in tree output
-- `npm ci` should handle nested lockfile entries
-- `npm why` should trace through nested deps
-- Pre-release ranges (e.g., `1.0.0-alpha || ^1.0.0`)
-
-## Lower Priority
-- mix npm.publish, mix npm.import already partially implemented
-- Progress bar during download
+## Lower Priority: Polish
+- `npm audit` with real advisory API integration
+- `npm diff` between installed and registry versions
+- `npm fund` with real funding URL display
 - bundleDependencies handling in tarballs

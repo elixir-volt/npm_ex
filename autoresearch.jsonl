@@ -67,3 +67,4 @@
 {"run":66,"commit":"ce44a12","metric":564,"metrics":{},"status":"keep","description":"Add real platform detection tests (OS/CPU compat with allowlist/blocklist)","timestamp":1773401671961,"segment":0}
 {"run":67,"commit":"ecdc23f","metric":572,"metrics":{},"status":"keep","description":"Add real .npmrc config pattern tests, workspace read/expand tests — 8 real behavior tests","timestamp":1773401705527,"segment":0}
 {"run":68,"commit":"b7c94f3","metric":582,"metrics":{},"status":"keep","description":"Add lifecycle script detection tests (esbuild, node-gyp, husky), npm naming rule validation tests — 10 tests","timestamp":1773401743431,"segment":0}
+{"run":69,"commit":"e7e2098","metric":593,"metrics":{},"status":"keep","description":"Add Alias parse/real_name tests, PackageSpec specifier parsing tests, DepTree traversal + depth tests — 11 real behavior tests","timestamp":1773401858236,"segment":0}
