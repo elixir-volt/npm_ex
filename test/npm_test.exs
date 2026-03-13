@@ -5230,6 +5230,58 @@ defmodule NPMTest do
     end
   end
 
+  describe "npm semver: complete caret behavior suite" do
+    test "^1.2.3 allows >=1.2.3 <2.0.0" do
+      assert NPMSemver.matches?("1.2.3", "^1.2.3")
+      assert NPMSemver.matches?("1.9.9", "^1.2.3")
+      refute NPMSemver.matches?("2.0.0", "^1.2.3")
+    end
+
+    test "^0.2.3 allows >=0.2.3 <0.3.0" do
+      assert NPMSemver.matches?("0.2.3", "^0.2.3")
+      assert NPMSemver.matches?("0.2.9", "^0.2.3")
+      refute NPMSemver.matches?("0.3.0", "^0.2.3")
+    end
+
+    test "^0.0.3 allows only 0.0.3" do
+      assert NPMSemver.matches?("0.0.3", "^0.0.3")
+      refute NPMSemver.matches?("0.0.4", "^0.0.3")
+    end
+  end
+
+  describe "npm semver: complete tilde behavior suite" do
+    test "~1.2.3 allows >=1.2.3 <1.3.0" do
+      assert NPMSemver.matches?("1.2.3", "~1.2.3")
+      assert NPMSemver.matches?("1.2.9", "~1.2.3")
+      refute NPMSemver.matches?("1.3.0", "~1.2.3")
+    end
+
+    test "~0.2.3 allows >=0.2.3 <0.3.0" do
+      assert NPMSemver.matches?("0.2.3", "~0.2.3")
+      assert NPMSemver.matches?("0.2.9", "~0.2.3")
+      refute NPMSemver.matches?("0.3.0", "~0.2.3")
+    end
+
+    test "~0 allows >=0.0.0 <1.0.0" do
+      assert NPMSemver.matches?("0.0.0", "~0")
+      assert NPMSemver.matches?("0.9.9", "~0")
+      refute NPMSemver.matches?("1.0.0", "~0")
+    end
+  end
+
+  describe "npm semver: x-range completeness" do
+    test "* matches everything" do
+      assert NPMSemver.matches?("0.0.0", "*")
+      assert NPMSemver.matches?("99.99.99", "*")
+    end
+
+    test "1.* matches any 1.x.y" do
+      assert NPMSemver.matches?("1.0.0", "1.*")
+      assert NPMSemver.matches?("1.99.99", "1.*")
+      refute NPMSemver.matches?("2.0.0", "1.*")
+    end
+  end
+
   describe "SemverUtil: filter with tilde" do
     test "tilde constrains to minor version" do
       versions = ["1.2.0", "1.2.5", "1.3.0", "2.0.0"]
