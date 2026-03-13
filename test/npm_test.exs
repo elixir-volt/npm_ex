@@ -1952,6 +1952,81 @@ defmodule NPMTest do
     end
   end
 
+  # --- Linker prune with .bin and hidden dirs ---
+
+  describe "Linker.prune with dotfiles" do
+    @tag :tmp_dir
+    test "preserves .cache directory", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm_dir, ".cache"))
+      File.write!(Path.join([nm_dir, ".cache", "data"]), "cached")
+
+      NPM.Linker.prune(nm_dir, MapSet.new())
+
+      assert File.exists?(Path.join([nm_dir, ".cache", "data"]))
+    end
+
+    @tag :tmp_dir
+    test "preserves .package-lock.json", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm_dir)
+      File.write!(Path.join(nm_dir, ".package-lock.json"), "{}")
+
+      NPM.Linker.prune(nm_dir, MapSet.new())
+
+      assert File.exists?(Path.join(nm_dir, ".package-lock.json"))
+    end
+  end
+
+  # --- Cache full flow ---
+
+  describe "Cache full flow with multiple packages" do
+    @tag :tmp_dir
+    test "caches multiple packages independently", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+
+      setup_cached_package(cache_dir, "alpha", "1.0.0", %{
+        "package.json" => ~s({"name":"alpha"})
+      })
+
+      setup_cached_package(cache_dir, "beta", "2.0.0", %{
+        "package.json" => ~s({"name":"beta"})
+      })
+
+      assert NPM.Cache.cached?("alpha", "1.0.0")
+      assert NPM.Cache.cached?("beta", "2.0.0")
+      refute NPM.Cache.cached?("alpha", "2.0.0")
+      refute NPM.Cache.cached?("gamma", "1.0.0")
+
+      System.delete_env("NPM_EX_CACHE_DIR")
+    end
+  end
+
+  # --- Lockfile with special characters ---
+
+  describe "Lockfile with special values" do
+    @tag :tmp_dir
+    test "handles special characters in tarball URLs", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "@scope/pkg" => %{
+          version: "1.0.0",
+          integrity: "sha512-abc+def/ghi==",
+          tarball: "https://registry.npmjs.org/@scope%2fpkg/-/pkg-1.0.0.tgz",
+          dependencies: %{}
+        }
+      }
+
+      NPM.Lockfile.write(lockfile, path)
+      {:ok, read_back} = NPM.Lockfile.read(path)
+
+      assert read_back["@scope/pkg"].integrity == "sha512-abc+def/ghi=="
+      assert read_back["@scope/pkg"].tarball =~ "%2f"
+    end
+  end
+
   # --- Helpers ---
 
   defp create_test_tgz(files) do
