@@ -6,3 +6,4 @@
 {"run":5,"commit":"e159548","metric":99,"metrics":{},"status":"keep","description":"Add mix npm.info, mix npm.why, peerDependencies warnings, optionalDependencies parsing, pruning + bin integration tests","timestamp":1773396387414,"segment":0}
 {"run":6,"commit":"27ab44b","metric":104,"metrics":{},"status":"keep","description":"Add mix npm.cache, mix npm.exec, mix npm.init tasks; more round-trip and integration tests","timestamp":1773396479461,"segment":0}
 {"run":7,"commit":"8822109","metric":114,"metrics":{},"status":"keep","description":"Add mix npm.clean, directories.bin support, hoist/tarball/lockfile edge case tests","timestamp":1773396565946,"segment":0}
+{"run":8,"commit":"65723df","metric":120,"metrics":{},"status":"keep","description":"Add overrides, engines/bin registry parsing, mix npm.clean, peerDeps/engines integration tests","timestamp":1773396613829,"segment":0}

@@ -1016,6 +1016,39 @@ defmodule NPMTest do
     end
   end
 
+  # --- Linker.link removes .bin on empty ---
+
+  describe "Linker.link_bins with no bins" do
+    @tag :tmp_dir
+    test "does not create .bin dir when no packages have bins", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      pkg_dir = Path.join(nm_dir, "no-bins")
+      File.mkdir_p!(pkg_dir)
+      File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"no-bins","version":"1.0.0"}))
+
+      NPM.Linker.link_bins(nm_dir, [{"no-bins", "1.0.0"}])
+
+      refute File.exists?(Path.join(nm_dir, ".bin"))
+    end
+  end
+
+  # --- Prune preserves .bin ---
+
+  describe "Linker.prune preserves special dirs" do
+    @tag :tmp_dir
+    test "prune does not remove .bin directory", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm_dir, ".bin"))
+      File.mkdir_p!(Path.join(nm_dir, "pkg"))
+      File.write!(Path.join([nm_dir, "pkg", "index.js"]), "ok")
+
+      NPM.Linker.prune(nm_dir, MapSet.new(["pkg"]))
+
+      assert File.exists?(Path.join(nm_dir, ".bin"))
+      assert File.exists?(Path.join([nm_dir, "pkg", "index.js"]))
+    end
+  end
+
   # --- Lockfile format ---
 
   describe "Lockfile format" do

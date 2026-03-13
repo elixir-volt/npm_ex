@@ -117,7 +117,7 @@ defmodule NPM.Linker do
     {scopes, packages} = Enum.split_with(entries, &String.starts_with?(&1, "@"))
 
     packages
-    |> Enum.reject(&MapSet.member?(expected_names, &1))
+    |> Enum.reject(&(MapSet.member?(expected_names, &1) or String.starts_with?(&1, ".")))
     |> Enum.each(&File.rm_rf!(Path.join(node_modules_dir, &1)))
 
     Enum.each(scopes, &prune_scope(node_modules_dir, &1, expected_names))
