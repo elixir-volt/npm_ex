@@ -4326,6 +4326,118 @@ defmodule NPMTest do
     end
   end
 
+  describe "Manifest: structured package.json access" do
+    @tag :tmp_dir
+    test "from_file reads package.json", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      File.write!(path, ~s({
+        "name": "my-app",
+        "version": "1.0.0",
+        "dependencies": {"react": "^18.0", "lodash": "^4.0"},
+        "devDependencies": {"jest": "^29.0"},
+        "scripts": {"test": "jest", "build": "tsc"}
+      }))
+
+      {:ok, manifest} = NPM.Manifest.from_file(path)
+      assert manifest.name == "my-app"
+      assert manifest.version == "1.0.0"
+      assert NPM.Manifest.dep_count(manifest) == 3
+      assert NPM.Manifest.has_scripts?(manifest)
+      names = NPM.Manifest.all_dep_names(manifest)
+      assert "react" in names
+      assert "jest" in names
+    end
+
+    test "from_json parses raw JSON string" do
+      json = ~s({"name": "test", "version": "0.1.0", "dependencies": {"a": "^1.0"}})
+      manifest = NPM.Manifest.from_json(json)
+      assert manifest.name == "test"
+      assert NPM.Manifest.dep_count(manifest) == 1
+    end
+  end
+
+  describe "Format: human-readable output helpers" do
+    test "bytes formats file sizes" do
+      assert NPM.Format.bytes(0) == "0 B"
+      assert NPM.Format.bytes(1023) == "1023 B"
+      assert NPM.Format.bytes(1024) =~ "KB"
+      assert NPM.Format.bytes(1_048_576) =~ "MB"
+    end
+
+    test "duration formats microseconds" do
+      assert NPM.Format.duration(0) =~ "0"
+      assert NPM.Format.duration(1_500_000) =~ "1.5"
+    end
+
+    test "pluralize handles singular and plural" do
+      assert NPM.Format.pluralize(1, "package", "packages") == "1 package"
+      assert NPM.Format.pluralize(5, "package", "packages") == "5 packages"
+      assert NPM.Format.pluralize(0, "package", "packages") == "0 packages"
+    end
+
+    test "truncate shortens long strings" do
+      assert NPM.Format.truncate("hello", 10) == "hello"
+      assert NPM.Format.truncate("hello world this is long", 10) =~ "..."
+    end
+  end
+
+  describe "NodeModules: introspection" do
+    @tag :tmp_dir
+    test "installed lists packages in node_modules", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm, "lodash"))
+
+      File.write!(
+        Path.join([nm, "lodash", "package.json"]),
+        ~s({"name":"lodash","version":"4.17.21"})
+      )
+
+      File.mkdir_p!(Path.join(nm, "react"))
+
+      File.write!(
+        Path.join([nm, "react", "package.json"]),
+        ~s({"name":"react","version":"18.2.0"})
+      )
+
+      installed = NPM.NodeModules.installed(nm)
+      assert "lodash" in installed
+      assert "react" in installed
+    end
+
+    @tag :tmp_dir
+    test "version reads installed package version", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm, "lodash"))
+
+      File.write!(
+        Path.join([nm, "lodash", "package.json"]),
+        ~s({"name":"lodash","version":"4.17.21"})
+      )
+
+      assert "4.17.21" = NPM.NodeModules.version("lodash", nm)
+    end
+
+    @tag :tmp_dir
+    test "version returns error for missing package", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm)
+
+      assert nil == NPM.NodeModules.version("nonexistent", nm)
+    end
+
+    @tag :tmp_dir
+    test "file_count counts files in node_modules", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm, "pkg"))
+      File.write!(Path.join([nm, "pkg", "index.js"]), "module.exports = {}")
+      File.write!(Path.join([nm, "pkg", "package.json"]), "{}")
+
+      count = NPM.NodeModules.file_count(nm)
+      assert count >= 2
+    end
+  end
+
   describe "Integrity: SRI hash operations" do
     test "compute_sha512 produces valid SRI string" do
       result = NPM.Integrity.compute_sha512("hello world")
