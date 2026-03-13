@@ -14,3 +14,4 @@
 {"run":13,"commit":"201d079","metric":139,"metrics":{},"status":"keep","description":"Add deprecation warnings, SHA-256, deprecated/hasInstallScript/dist metadata, npm.version, npm.config, diamond dep test","timestamp":1773397001993,"segment":0}
 {"run":14,"commit":"fbc90d2","metric":141,"metrics":{},"status":"keep","description":"Update README, CHANGELOG for v0.4.0, add deprecated package integration test, dist metadata test","timestamp":1773397066071,"segment":0}
 {"run":15,"commit":"3975312","metric":148,"metrics":{},"status":"keep","description":"Add mix npm.link, copy vs symlink tests, field preservation tests, resolver edge case tests","timestamp":1773397111481,"segment":0}
+{"run":16,"commit":"f0959ed","metric":152,"metrics":{},"status":"keep","description":"Add NPM.Compiler (Mix compiler), JSON roundtrip test, binary tarball test, resolver integration test","timestamp":1773397158581,"segment":0}

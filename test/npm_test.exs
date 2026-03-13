@@ -156,6 +156,63 @@ defmodule NPMTest do
     end
   end
 
+  # --- PackageJSON.read_workspaces ---
+
+  describe "PackageJSON.read_workspaces" do
+    @tag :tmp_dir
+    test "returns empty list for missing file", %{tmp_dir: dir} do
+      assert {:ok, []} = NPM.PackageJSON.read_workspaces(Path.join(dir, "package.json"))
+    end
+
+    @tag :tmp_dir
+    test "reads array-style workspaces", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"workspaces": ["packages/*", "apps/*"]}))
+
+      assert {:ok, ["packages/*", "apps/*"]} = NPM.PackageJSON.read_workspaces(path)
+    end
+
+    @tag :tmp_dir
+    test "reads object-style workspaces", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"workspaces": {"packages": ["packages/*"]}}))
+
+      assert {:ok, ["packages/*"]} = NPM.PackageJSON.read_workspaces(path)
+    end
+
+    @tag :tmp_dir
+    test "returns empty list when no workspaces", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name": "my-app"}))
+
+      assert {:ok, []} = NPM.PackageJSON.read_workspaces(path)
+    end
+  end
+
+  describe "PackageJSON.expand_workspaces" do
+    @tag :tmp_dir
+    test "expands glob patterns to directories with package.json", %{tmp_dir: dir} do
+      pkg_a = Path.join([dir, "packages", "a"])
+      pkg_b = Path.join([dir, "packages", "b"])
+      File.mkdir_p!(pkg_a)
+      File.mkdir_p!(pkg_b)
+      File.write!(Path.join(pkg_a, "package.json"), ~s({"name":"a"}))
+      File.write!(Path.join(pkg_b, "package.json"), ~s({"name":"b"}))
+
+      # directory without package.json should be excluded
+      File.mkdir_p!(Path.join([dir, "packages", "c"]))
+
+      result = NPM.PackageJSON.expand_workspaces(["packages/*"], dir)
+      assert length(result) == 2
+    end
+
+    @tag :tmp_dir
+    test "returns empty list for no matches", %{tmp_dir: dir} do
+      result = NPM.PackageJSON.expand_workspaces(["nonexistent/*"], dir)
+      assert result == []
+    end
+  end
+
   # --- PackageJSON.read_overrides ---
 
   describe "PackageJSON.read_overrides" do

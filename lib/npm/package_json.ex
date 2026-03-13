@@ -59,6 +59,42 @@ defmodule NPM.PackageJSON do
     end
   end
 
+  @doc "Read workspace patterns from `package.json`."
+  @spec read_workspaces(String.t()) :: {:ok, [String.t()]} | {:error, term()}
+  def read_workspaces(path \\ @default_path) do
+    case File.read(path) do
+      {:ok, content} ->
+        data = :json.decode(content)
+
+        case Map.get(data, "workspaces") do
+          nil -> {:ok, []}
+          patterns when is_list(patterns) -> {:ok, patterns}
+          %{"packages" => patterns} when is_list(patterns) -> {:ok, patterns}
+          _ -> {:ok, []}
+        end
+
+      {:error, :enoent} ->
+        {:ok, []}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Expand workspace patterns to actual directories with package.json files.
+
+  Supports glob patterns like `packages/*` and `apps/**`.
+  """
+  @spec expand_workspaces([String.t()], String.t()) :: [String.t()]
+  def expand_workspaces(patterns, base_dir \\ ".") do
+    Enum.flat_map(patterns, fn pattern ->
+      Path.join(base_dir, pattern)
+      |> Path.wildcard()
+      |> Enum.filter(&File.exists?(Path.join(&1, "package.json")))
+    end)
+  end
+
   @doc "Read overrides from `package.json`."
   @spec read_overrides(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, term()}
   def read_overrides(path \\ @default_path) do
