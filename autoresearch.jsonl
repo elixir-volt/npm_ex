@@ -99,3 +99,4 @@
 {"run":98,"commit":"1093ef9","metric":768,"metrics":{},"status":"keep","description":"Add SemverUtil empty list edge cases, update_type none/invalid, EnvCheck summary fields, Config round-trip — 9 tests","timestamp":1773403774861,"segment":0}
 {"run":99,"commit":"d7b87dc","metric":770,"metrics":{},"status":"keep","description":"Add SemverUtil integration tests with real packument versions (lodash, is-number)","timestamp":1773403800664,"segment":0}
 {"run":100,"commit":"3b13074","metric":777,"metrics":{},"status":"keep","description":"Add BinResolver symlink resolution, Lockfile missing file edge cases, VersionUtil/Platform/Integrity edge cases — experiment 100","timestamp":1773403833223,"segment":0}
+{"run":101,"commit":"e352473","metric":781,"metrics":{},"status":"keep","description":"Add SemverUtil tilde/exact range tests, LockMerge diff version change detection, Resolver clear_cache stability test","timestamp":1773403876653,"segment":0}

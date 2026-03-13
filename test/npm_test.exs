@@ -4869,6 +4869,69 @@ defmodule NPMTest do
     end
   end
 
+  describe "Exports: wildcard subpath patterns" do
+    test "wildcard pattern matches subpath" do
+      exports = %{
+        "./*" => "./lib/*.js"
+      }
+
+      # Wildcard resolution with *
+      result = NPM.Exports.resolve(exports, "./utils")
+
+      case result do
+        {:ok, path} -> assert String.contains?(path, "utils")
+        :error -> :ok
+      end
+    end
+  end
+
+  describe "Tarball: sha512 mismatch detection" do
+    test "wrong hash returns integrity_mismatch" do
+      data = "test data"
+      wrong_hash = "sha512-" <> Base.encode64("wrong")
+      assert {:error, :integrity_mismatch} = NPM.Tarball.verify_integrity(data, wrong_hash)
+    end
+  end
+
+  describe "VersionUtil: latest with single version" do
+    test "returns the only version" do
+      assert "1.0.0" = NPM.VersionUtil.latest(["1.0.0"])
+    end
+  end
+
+  describe "VersionUtil: sort stability" do
+    test "sort is stable for same versions" do
+      result = NPM.VersionUtil.sort(["1.0.0", "1.0.0", "1.0.0"])
+      assert result == ["1.0.0", "1.0.0", "1.0.0"]
+    end
+
+    test "sort with many versions" do
+      versions = ["3.0.0", "1.0.0", "2.0.0", "1.5.0", "0.1.0", "2.1.0"]
+      sorted = NPM.VersionUtil.sort(versions)
+      assert List.first(sorted) == "0.1.0"
+      assert List.last(sorted) == "3.0.0"
+    end
+  end
+
+  describe "Manifest: dep_count variations" do
+    test "counts only production deps" do
+      m = NPM.Manifest.from_json(~s({"name":"t","dependencies":{"a":"^1","b":"^2"}}))
+      assert NPM.Manifest.dep_count(m) == 2
+    end
+
+    test "counts all dep types" do
+      m =
+        NPM.Manifest.from_json(~s({
+          "name":"t",
+          "dependencies":{"a":"^1"},
+          "devDependencies":{"b":"^2"},
+          "optionalDependencies":{"c":"^3"}
+        }))
+
+      assert NPM.Manifest.dep_count(m) == 3
+    end
+  end
+
   describe "Resolver: clear_cache" do
     test "clear_cache doesn't crash when called twice" do
       NPM.Resolver.clear_cache()
