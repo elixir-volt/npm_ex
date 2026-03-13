@@ -4781,6 +4781,104 @@ defmodule NPMTest do
     end
   end
 
+  describe "Cache: ensure downloads and caches" do
+    @tag :tmp_dir
+    test "cached? returns true after setup", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+
+      setup_cached_package(cache_dir, "my-pkg", "1.0.0", %{
+        "package.json" => ~s({"name":"my-pkg"})
+      })
+
+      assert NPM.Cache.cached?("my-pkg", "1.0.0")
+      refute NPM.Cache.cached?("my-pkg", "2.0.0")
+
+      System.delete_env("NPM_EX_CACHE_DIR")
+    end
+
+    @tag :tmp_dir
+    test "package_dir returns correct path", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+
+      path = NPM.Cache.package_dir("my-pkg", "1.0.0")
+      assert String.contains?(path, "my-pkg")
+      assert String.ends_with?(path, "1.0.0")
+
+      System.delete_env("NPM_EX_CACHE_DIR")
+    end
+  end
+
+  describe "Linker: bin linking with map format" do
+    @tag :tmp_dir
+    test "creates .bin links for map-style bin field", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      pkg_dir = Path.join(nm_dir, "my-tool")
+      bin_dir = Path.join(nm_dir, ".bin")
+      File.mkdir_p!(pkg_dir)
+
+      File.write!(Path.join(pkg_dir, "package.json"), ~s({
+        "name": "my-tool",
+        "bin": {
+          "tool": "./bin/tool.js",
+          "tool-dev": "./bin/dev.js"
+        }
+      }))
+
+      File.mkdir_p!(Path.join(pkg_dir, "bin"))
+      File.write!(Path.join(pkg_dir, "bin/tool.js"), "#!/usr/bin/env node")
+      File.write!(Path.join(pkg_dir, "bin/dev.js"), "#!/usr/bin/env node")
+
+      NPM.Linker.link_bins(nm_dir, [{"my-tool", "1.0.0"}])
+
+      assert File.exists?(Path.join(bin_dir, "tool"))
+      assert File.exists?(Path.join(bin_dir, "tool-dev"))
+    end
+  end
+
+  describe "Linker: bin linking with string format" do
+    @tag :tmp_dir
+    test "creates .bin link using package name for string bin", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      pkg_dir = Path.join(nm_dir, "simple-cli")
+      File.mkdir_p!(pkg_dir)
+
+      File.write!(Path.join(pkg_dir, "package.json"), ~s({
+        "name": "simple-cli",
+        "bin": "./cli.js"
+      }))
+
+      File.write!(Path.join(pkg_dir, "cli.js"), "#!/usr/bin/env node")
+
+      NPM.Linker.link_bins(nm_dir, [{"simple-cli", "1.0.0"}])
+
+      bin_dir = Path.join(nm_dir, ".bin")
+      assert File.exists?(Path.join(bin_dir, "simple-cli"))
+    end
+  end
+
+  describe "Linker: bin linking with scoped package" do
+    @tag :tmp_dir
+    test "scoped package string bin uses unscoped name", %{tmp_dir: dir} do
+      nm_dir = Path.join(dir, "node_modules")
+      scope_dir = Path.join([nm_dir, "@scope", "my-tool"])
+      File.mkdir_p!(scope_dir)
+
+      File.write!(Path.join(scope_dir, "package.json"), ~s({
+        "name": "@scope/my-tool",
+        "bin": "./cli.js"
+      }))
+
+      File.write!(Path.join(scope_dir, "cli.js"), "#!/usr/bin/env node")
+
+      NPM.Linker.link_bins(nm_dir, [{"@scope/my-tool", "1.0.0"}])
+
+      bin_dir = Path.join(nm_dir, ".bin")
+      assert File.exists?(Path.join(bin_dir, "my-tool"))
+    end
+  end
+
   describe "Linker: symlink strategy creates links" do
     @tag :tmp_dir
     test "symlink points to cache directory", %{tmp_dir: dir} do

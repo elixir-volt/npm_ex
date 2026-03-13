@@ -60,3 +60,4 @@
 {"run":59,"commit":"b3608c6","metric":534,"metrics":{},"status":"keep","description":"Add tarball nested dir extraction test, integrity tamper test, copy strategy file type test","timestamp":1773401327090,"segment":0}
 {"run":60,"commit":"cac825f","metric":539,"metrics":{},"status":"keep","description":"Add tarball strip_prefix test, verify_integrity edge cases (sha256, sha1, unknown algo, empty)","timestamp":1773401353891,"segment":0}
 {"run":61,"commit":"d1ba2cb","metric":545,"metrics":{},"status":"keep","description":"Add npm-compatible PackageJSON add/remove tests, symlink strategy verification — 6 real behavior tests","timestamp":1773401387945,"segment":0}
+{"run":62,"commit":"0baf7af","metric":549,"metrics":{},"status":"keep","description":"Add lockfile format tests (pretty-print, sorted keys, dependency ranges), registry parsing structure test","timestamp":1773401425676,"segment":0}
