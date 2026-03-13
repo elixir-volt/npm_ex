@@ -4423,6 +4423,41 @@ defmodule NPMTest do
     end
   end
 
+  describe "Tarball: strip_prefix behavior" do
+    @tag :tmp_dir
+    test "strips package/ prefix from tar entries", %{tmp_dir: dir} do
+      # npm tarballs have files under package/ prefix
+      tgz = create_test_tgz(%{"package.json" => ~s({"name":"test"})})
+      {:ok, _count} = NPM.Tarball.extract(tgz, dir)
+
+      # Should be extracted without the package/ prefix
+      assert File.exists?(Path.join(dir, "package.json"))
+      refute File.exists?(Path.join(dir, "package/package.json"))
+    end
+  end
+
+  describe "Tarball: verify_integrity edge cases" do
+    test "empty integrity passes" do
+      assert :ok = NPM.Tarball.verify_integrity("data", "")
+    end
+
+    test "sha256 integrity works" do
+      data = "hello"
+      hash = :crypto.hash(:sha256, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha256-#{hash}")
+    end
+
+    test "sha1 integrity works" do
+      data = "hello"
+      hash = :crypto.hash(:sha, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha1-#{hash}")
+    end
+
+    test "unknown algorithm passes" do
+      assert :ok = NPM.Tarball.verify_integrity("data", "md5-something")
+    end
+  end
+
   describe "Linker: copy strategy creates real files" do
     @tag :tmp_dir
     test "copy strategy creates independent files, not symlinks", %{tmp_dir: dir} do

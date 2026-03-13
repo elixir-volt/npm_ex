@@ -57,3 +57,4 @@
 {"run":56,"commit":"9cb86ee","metric":506,"metrics":{},"status":"keep","description":"Track nested dependency parent info, fix credo nesting in save_original_deps","timestamp":1773401154567,"segment":0}
 {"run":57,"commit":"d6ed003","metric":519,"metrics":{},"status":"keep","description":"Add 13 npm semver compat tests ported from node-semver fixtures (caret, tilde, hyphen, x-range, union, exact)","timestamp":1773401215419,"segment":0}
 {"run":58,"commit":"c55974b","metric":531,"metrics":{},"status":"keep","description":"Add 12 more npm semver compat tests: comparators, complex ranges, caret-zero semantics, tilde edge cases","timestamp":1773401251778,"segment":0}
+{"run":59,"commit":"b3608c6","metric":534,"metrics":{},"status":"keep","description":"Add tarball nested dir extraction test, integrity tamper test, copy strategy file type test","timestamp":1773401327090,"segment":0}
