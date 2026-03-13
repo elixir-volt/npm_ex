@@ -5046,6 +5046,34 @@ defmodule NPMTest do
     end
   end
 
+  describe "VersionUtil: major/minor for various versions" do
+    test "major returns first component" do
+      assert 0 = NPM.VersionUtil.major("0.1.0")
+      assert 10 = NPM.VersionUtil.major("10.0.0")
+    end
+
+    test "minor returns second component" do
+      assert 0 = NPM.VersionUtil.minor("1.0.0")
+      assert 15 = NPM.VersionUtil.minor("1.15.3")
+    end
+  end
+
+  describe "SemverUtil: max_satisfying with >= range" do
+    test "finds max for >= range" do
+      versions = ["1.0.0", "2.0.0", "3.0.0"]
+      {:ok, best} = NPM.SemverUtil.max_satisfying(versions, ">=2.0.0")
+      assert best == "3.0.0"
+    end
+  end
+
+  describe "Registry: encode_package preserves simple names" do
+    test "simple names pass through unchanged" do
+      assert "react" = NPM.Registry.encode_package("react")
+      assert "lodash" = NPM.Registry.encode_package("lodash")
+      assert "is-number" = NPM.Registry.encode_package("is-number")
+    end
+  end
+
   describe "EnvCheck: version_satisfies?" do
     test "check_engines with satisfied range" do
       case NPM.EnvCheck.node_version() do

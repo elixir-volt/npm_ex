@@ -106,3 +106,4 @@
 {"run":105,"commit":"007fc63","metric":803,"metrics":{},"status":"keep","description":"Add scoped name validation, pre-release detection tests — 3 real behavior tests","timestamp":1773404169362,"segment":0}
 {"run":106,"commit":"32bc683","metric":809,"metrics":{},"status":"keep","description":"Add resolver overrides storage, hoist with deps, cache uncached check, SemverUtil OR range filter, Alias format variations — 6 tests","timestamp":1773404206002,"segment":0}
 {"run":107,"commit":"862aaf3","metric":812,"metrics":{},"status":"keep","description":"Add Lockfile package_names sorting, Linker no-bin edge case, Config complex multi-line npmrc parsing — 3 tests","timestamp":1773404242932,"segment":0}
+{"run":108,"commit":"1d348de","metric":819,"metrics":{},"status":"keep","description":"Add DepTree circular deps, remove_dep error handling, Integrity parse formats, BinResolver sorting, EnvCheck engine satisfy — 7 tests","timestamp":1773404301631,"segment":0}
