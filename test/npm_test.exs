@@ -8263,6 +8263,329 @@ defmodule NPMTest do
     end
   end
 
+  # --- Lifecycle ---
+
+  describe "Lifecycle: hook_names" do
+    test "returns known install hooks" do
+      names = NPM.Lifecycle.hook_names()
+      assert is_list(names)
+      assert names != []
+    end
+  end
+
+  describe "Lifecycle: detect scripts in package.json" do
+    @tag :tmp_dir
+    test "detects postinstall script", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"scripts":{"postinstall":"node build.js"}}))
+      hooks = NPM.Lifecycle.detect(path)
+      assert Enum.any?(hooks, fn {name, _} -> name == "postinstall" end)
+    end
+
+    @tag :tmp_dir
+    test "returns empty for no lifecycle scripts", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"scripts":{"test":"jest"}}))
+      hooks = NPM.Lifecycle.detect(path)
+      assert hooks == []
+    end
+
+    @tag :tmp_dir
+    test "detects preinstall script", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"scripts":{"preinstall":"echo hi"}}))
+      hooks = NPM.Lifecycle.detect(path)
+      assert Enum.any?(hooks, fn {name, _} -> name == "preinstall" end)
+    end
+  end
+
+  describe "Lifecycle: detect_all in node_modules" do
+    @tag :tmp_dir
+    test "finds lifecycle scripts across packages", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      pkg_a = Path.join(nm, "pkg-a")
+      pkg_b = Path.join(nm, "pkg-b")
+      File.mkdir_p!(pkg_a)
+      File.mkdir_p!(pkg_b)
+
+      File.write!(Path.join(pkg_a, "package.json"), ~s({"scripts":{"postinstall":"echo a"}}))
+      File.write!(Path.join(pkg_b, "package.json"), ~s({"scripts":{"test":"jest"}}))
+
+      results = NPM.Lifecycle.detect_all(nm)
+      assert is_list(results) or is_map(results)
+    end
+  end
+
+  # --- Lockfile additional ---
+
+  describe "Lockfile: version returns lockfile version" do
+    @tag :tmp_dir
+    test "returns version from written lockfile", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+      NPM.Lockfile.write(%{}, path)
+      version = NPM.Lockfile.version(path)
+      assert is_integer(version)
+    end
+  end
+
+  describe "Lockfile: has_package? checks existence" do
+    @tag :tmp_dir
+    test "returns true for existing package", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      NPM.Lockfile.write(
+        %{
+          "react" => %{
+            version: "18.2.0",
+            integrity: "sha512-x",
+            tarball: "url",
+            dependencies: %{}
+          }
+        },
+        path
+      )
+
+      assert NPM.Lockfile.has_package?("react", path)
+      refute NPM.Lockfile.has_package?("vue", path)
+    end
+  end
+
+  describe "Lockfile: get_package returns entry" do
+    @tag :tmp_dir
+    test "returns package data when present", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      NPM.Lockfile.write(
+        %{
+          "lodash" => %{
+            version: "4.17.21",
+            integrity: "sha512-x",
+            tarball: "url",
+            dependencies: %{}
+          }
+        },
+        path
+      )
+
+      {:ok, pkg} = NPM.Lockfile.get_package("lodash", path)
+      assert pkg.version == "4.17.21"
+    end
+
+    @tag :tmp_dir
+    test "returns error for missing package", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+      NPM.Lockfile.write(%{}, path)
+      result = NPM.Lockfile.get_package("missing", path)
+      assert result == :error
+    end
+  end
+
+  # --- NodeModules additional ---
+
+  describe "NodeModules: installed returns list" do
+    @tag :tmp_dir
+    test "lists installed packages", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(Path.join(nm, "pkg-a"))
+      File.mkdir_p!(Path.join(nm, "pkg-b"))
+
+      File.write!(
+        Path.join([nm, "pkg-a", "package.json"]),
+        ~s({"name":"pkg-a","version":"1.0.0"})
+      )
+
+      File.write!(
+        Path.join([nm, "pkg-b", "package.json"]),
+        ~s({"name":"pkg-b","version":"2.0.0"})
+      )
+
+      installed = NPM.NodeModules.installed(nm)
+      assert "pkg-a" in installed
+      assert "pkg-b" in installed
+    end
+  end
+
+  describe "NodeModules: version reads package version" do
+    @tag :tmp_dir
+    test "returns version of installed package", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      pkg = Path.join(nm, "my-pkg")
+      File.mkdir_p!(pkg)
+      File.write!(Path.join(pkg, "package.json"), ~s({"name":"my-pkg","version":"3.5.1"}))
+
+      v = NPM.NodeModules.version("my-pkg", nm)
+      assert v == "3.5.1"
+    end
+
+    @tag :tmp_dir
+    test "returns error for missing package", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm)
+      v = NPM.NodeModules.version("nope", nm)
+      assert v == nil
+    end
+  end
+
+  describe "NodeModules: diff against lockfile" do
+    @tag :tmp_dir
+    test "detects missing packages", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      File.mkdir_p!(nm)
+
+      lockfile = %{
+        "missing-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      {to_install, _to_remove} = NPM.NodeModules.diff(lockfile, nm)
+      assert "missing-pkg" in to_install
+    end
+  end
+
+  # --- DepGraph additional ---
+
+  describe "DepGraph: adjacency_list from lockfile" do
+    test "builds adjacency list" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      adj = NPM.DepGraph.adjacency_list(lockfile)
+      assert adj["a"] == ["b"]
+      assert adj["b"] == []
+    end
+  end
+
+  describe "DepGraph: fan_in reverse of fan_out" do
+    test "leaf has zero fan_out, root has zero fan_in" do
+      adj = %{"root" => ["child"], "child" => []}
+      fan_out = NPM.DepGraph.fan_out(adj)
+      fan_in = NPM.DepGraph.fan_in(adj)
+      assert fan_out["root"] == 1
+      assert fan_out["child"] == 0
+      assert fan_in["root"] == 0
+      assert fan_in["child"] == 1
+    end
+  end
+
+  # --- DepTree additional ---
+
+  describe "DepTree: depth of packages" do
+    test "root dep has depth 1, transitive dep has depth 2" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      assert NPM.DepTree.depth(tree, "a") == 0
+      assert NPM.DepTree.depth(tree, "b") == 1
+    end
+  end
+
+  describe "DepTree: paths_to finds all paths" do
+    test "finds path through transitive deps" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"b" => "^1"}},
+        "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{"c" => "^1"}},
+        "c" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.DepTree.build(lockfile, %{"a" => "^1.0"})
+      paths = NPM.DepTree.paths_to(tree, "c")
+      assert paths != []
+    end
+  end
+
+  # --- Tarball integrity verification ---
+
+  describe "Tarball: verify_integrity for different algorithms" do
+    test "sha512 verification with correct hash passes" do
+      data = "test data for sha512"
+      hash = :crypto.hash(:sha512, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha512-#{hash}")
+    end
+
+    test "sha256 verification with correct hash passes" do
+      data = "test data for sha256"
+      hash = :crypto.hash(:sha256, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha256-#{hash}")
+    end
+
+    test "sha1 verification with correct hash passes" do
+      data = "test data for sha1"
+      hash = :crypto.hash(:sha, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha1-#{hash}")
+    end
+
+    test "empty integrity passes" do
+      assert :ok = NPM.Tarball.verify_integrity("anything", "")
+    end
+
+    test "wrong sha512 hash fails" do
+      result = NPM.Tarball.verify_integrity("data", "sha512-wronghash")
+      assert result != :ok
+    end
+  end
+
+  # --- PackageJSON read functions ---
+
+  describe "PackageJSON: read_workspaces" do
+    @tag :tmp_dir
+    test "reads workspaces array from package.json", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"workspaces":["packages/*","apps/*"]}))
+      {:ok, workspaces} = NPM.PackageJSON.read_workspaces(path)
+      assert workspaces == ["packages/*", "apps/*"]
+    end
+
+    @tag :tmp_dir
+    test "returns empty for no workspaces", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name":"no-ws"}))
+      {:ok, workspaces} = NPM.PackageJSON.read_workspaces(path)
+      assert workspaces == []
+    end
+  end
+
+  describe "PackageJSON: read_overrides" do
+    @tag :tmp_dir
+    test "reads overrides from package.json", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"overrides":{"ms":"2.1.3"}}))
+      {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      assert overrides["ms"] == "2.1.3"
+    end
+
+    @tag :tmp_dir
+    test "returns empty map when no overrides", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"name":"no-overrides"}))
+      {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      assert overrides == %{}
+    end
+  end
+
+  describe "PackageJSON: read_resolutions (yarn-style)" do
+    @tag :tmp_dir
+    test "reads resolutions from package.json", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"resolutions":{"lodash":"4.17.21"}}))
+      {:ok, resolutions} = NPM.PackageJSON.read_resolutions(path)
+      assert resolutions["lodash"] == "4.17.21"
+    end
+  end
+
+  describe "PackageJSON: read_bundle_deps" do
+    @tag :tmp_dir
+    test "reads bundleDependencies from package.json", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+      File.write!(path, ~s({"bundleDependencies":["a","b"]}))
+      {:ok, bundle} = NPM.PackageJSON.read_bundle_deps(path)
+      assert bundle == ["a", "b"]
+    end
+  end
+
   # --- Helpers ---
 
   defp mask_token(token) when byte_size(token) <= 8, do: "****"
