@@ -4274,6 +4274,93 @@ defmodule NPMTest do
     end
   end
 
+  describe "VersionUtil: npm version operations" do
+    test "parse_triple splits version correctly" do
+      assert {:ok, {1, 2, 3}} = NPM.VersionUtil.parse_triple("1.2.3")
+    end
+
+    test "compare follows semver ordering" do
+      assert :lt = NPM.VersionUtil.compare("1.0.0", "2.0.0")
+      assert :gt = NPM.VersionUtil.compare("2.0.0", "1.0.0")
+      assert :eq = NPM.VersionUtil.compare("1.0.0", "1.0.0")
+    end
+
+    test "compare handles minor/patch differences" do
+      assert :lt = NPM.VersionUtil.compare("1.0.0", "1.1.0")
+      assert :lt = NPM.VersionUtil.compare("1.0.0", "1.0.1")
+      assert :gt = NPM.VersionUtil.compare("1.0.1", "1.0.0")
+    end
+
+    test "bump operations follow npm semantics" do
+      assert "2.0.0" = NPM.VersionUtil.bump_major("1.2.3")
+      assert "1.3.0" = NPM.VersionUtil.bump_minor("1.2.3")
+      assert "1.2.4" = NPM.VersionUtil.bump_patch("1.2.3")
+    end
+
+    test "sort orders versions correctly" do
+      versions = ["2.0.0", "1.0.0", "1.5.0", "0.9.0", "1.0.1"]
+      sorted = NPM.VersionUtil.sort(versions)
+      assert sorted == ["0.9.0", "1.0.0", "1.0.1", "1.5.0", "2.0.0"]
+    end
+
+    test "latest returns highest version" do
+      assert "3.0.0" = NPM.VersionUtil.latest(["1.0.0", "3.0.0", "2.0.0"])
+    end
+
+    test "prerelease? detects pre-release versions" do
+      assert NPM.VersionUtil.prerelease?("1.0.0-alpha.1")
+      assert NPM.VersionUtil.prerelease?("1.0.0-beta")
+      refute NPM.VersionUtil.prerelease?("1.0.0")
+    end
+
+    test "major/minor accessors" do
+      assert 1 = NPM.VersionUtil.major("1.2.3")
+      assert 2 = NPM.VersionUtil.minor("1.2.3")
+    end
+
+    test "gt? and lt? comparison" do
+      assert NPM.VersionUtil.gt?("2.0.0", "1.0.0")
+      refute NPM.VersionUtil.gt?("1.0.0", "2.0.0")
+      assert NPM.VersionUtil.lt?("1.0.0", "2.0.0")
+      refute NPM.VersionUtil.lt?("2.0.0", "1.0.0")
+    end
+  end
+
+  describe "Integrity: SRI hash operations" do
+    test "compute_sha512 produces valid SRI string" do
+      result = NPM.Integrity.compute_sha512("hello world")
+      assert String.starts_with?(result, "sha512-")
+    end
+
+    test "compute_sha256 produces valid SRI string" do
+      result = NPM.Integrity.compute_sha256("hello world")
+      assert String.starts_with?(result, "sha256-")
+    end
+
+    test "parse extracts algorithm and hash" do
+      sri = "sha512-" <> Base.encode64("testhash")
+      {:ok, {algo, hash}} = NPM.Integrity.parse(sri)
+      assert algo == "sha512"
+      assert is_binary(hash)
+    end
+
+    test "verify succeeds for matching data" do
+      data = "test data"
+      sri = NPM.Integrity.compute_sha512(data)
+      assert :ok = NPM.Integrity.verify(data, sri)
+    end
+
+    test "verify fails for mismatched data" do
+      sri = NPM.Integrity.compute_sha512("original")
+      assert {:error, :integrity_mismatch} = NPM.Integrity.verify("tampered", sri)
+    end
+
+    test "algorithm extracts algo from SRI string" do
+      assert "sha512" = NPM.Integrity.algorithm("sha512-abc")
+      assert "sha256" = NPM.Integrity.algorithm("sha256-abc")
+    end
+  end
+
   describe "DepGraph: adjacency list and analysis" do
     test "fan_in counts incoming edges" do
       lockfile = %{

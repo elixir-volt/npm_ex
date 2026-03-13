@@ -69,3 +69,4 @@
 {"run":68,"commit":"b7c94f3","metric":582,"metrics":{},"status":"keep","description":"Add lifecycle script detection tests (esbuild, node-gyp, husky), npm naming rule validation tests — 10 tests","timestamp":1773401743431,"segment":0}
 {"run":69,"commit":"e7e2098","metric":593,"metrics":{},"status":"keep","description":"Add Alias parse/real_name tests, PackageSpec specifier parsing tests, DepTree traversal + depth tests — 11 real behavior tests","timestamp":1773401858236,"segment":0}
 {"run":70,"commit":"e0e0da4","metric":602,"metrics":{},"status":"keep","description":"Fix ScopeRegistry/DepGraph API tests, add roots/cycles/fan_in real behavior tests — 600 milestone","timestamp":1773402004403,"segment":0}
+{"run":71,"commit":"4d227b0","metric":604,"metrics":{},"status":"keep","description":"Implement nested linker (link_nested creates parent/node_modules/nested_pkg dirs), wire into full_install, add 2 nested structure tests","timestamp":1773402187500,"segment":0}
