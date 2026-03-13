@@ -2048,6 +2048,75 @@ defmodule NPMTest do
     end
   end
 
+  # --- Full flow: install → remove → prune ---
+
+  describe "full local flow with prune and bins" do
+    @tag :tmp_dir
+    test "install, add bin, prune, verify", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      nm_dir = Path.join(dir, "node_modules")
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+
+      setup_cached_package(cache_dir, "tool-a", "1.0.0", %{
+        "package.json" => ~s({"name":"tool-a","bin":"./run.js"}),
+        "run.js" => "#!/usr/bin/env node"
+      })
+
+      setup_cached_package(cache_dir, "lib-b", "2.0.0", %{
+        "package.json" => ~s({"name":"lib-b"})
+      })
+
+      setup_cached_package(cache_dir, "old-pkg", "1.0.0", %{
+        "package.json" => ~s({"name":"old-pkg"})
+      })
+
+      lockfile_v1 = %{
+        "tool-a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "lib-b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "old-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      NPM.Linker.link(lockfile_v1, nm_dir, :copy)
+
+      assert File.exists?(Path.join([nm_dir, "tool-a", "run.js"]))
+      assert File.exists?(Path.join([nm_dir, "lib-b", "package.json"]))
+      assert File.exists?(Path.join([nm_dir, "old-pkg", "package.json"]))
+      assert File.exists?(Path.join([nm_dir, ".bin", "tool-a"]))
+
+      lockfile_v2 = %{
+        "tool-a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}},
+        "lib-b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      NPM.Linker.link(lockfile_v2, nm_dir, :copy)
+
+      assert File.exists?(Path.join([nm_dir, "tool-a", "run.js"]))
+      assert File.exists?(Path.join([nm_dir, "lib-b", "package.json"]))
+      refute File.exists?(Path.join(nm_dir, "old-pkg"))
+      assert File.exists?(Path.join([nm_dir, ".bin", "tool-a"]))
+
+      System.delete_env("NPM_EX_CACHE_DIR")
+    end
+  end
+
+  # --- PackageJSON.add_dep preserves all fields ---
+
+  describe "PackageJSON.add_dep field interaction" do
+    @tag :tmp_dir
+    test "adding dev dep doesn't affect dependencies", %{tmp_dir: dir} do
+      path = Path.join(dir, "package.json")
+
+      NPM.PackageJSON.add_dep("react", "^18.0", path)
+      NPM.PackageJSON.add_dep("jest", "^29.0", path, dev: true)
+      NPM.PackageJSON.add_dep("fsevents", "^2.3", path, optional: true)
+
+      {:ok, result} = NPM.PackageJSON.read_all(path)
+      assert result.dependencies == %{"react" => "^18.0"}
+      assert result.dev_dependencies == %{"jest" => "^29.0"}
+      assert result.optional_dependencies == %{"fsevents" => "^2.3"}
+    end
+  end
+
   # --- Lockfile with special characters ---
 
   describe "Lockfile with special values" do

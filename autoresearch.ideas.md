@@ -1,46 +1,43 @@
 # Autoresearch Ideas
 
-## Completed
-- ✅ devDependencies support (read_all, add_dep dev:true, --production, --save-dev)
-- ✅ Stale package pruning in linker
-- ✅ mix npm.outdated
-- ✅ bin linking (node_modules/.bin/, string/map/directories.bin)
-- ✅ mix npm.update (all / specific package)
-- ✅ mix npm.run (scripts from package.json)
-- ✅ mix npm.info (inspect package from registry)
-- ✅ mix npm.why (dependency chain explanation)
-- ✅ mix npm.cache status/clean
-- ✅ mix npm.exec (run package binaries)
-- ✅ mix npm.init (create package.json)
-- ✅ mix npm.clean (remove node_modules)
-- ✅ mix npm.ci (frozen lockfile shortcut)
-- ✅ mix npm.check (verify installation state)
-- ✅ mix npm.tree (full dependency tree with circular detection)
-- ✅ mix npm.search (search npm registry)
+## Completed Features (v0.4.0)
+- ✅ devDependencies support
+- ✅ optionalDependencies support (--save-optional)
+- ✅ Stale package pruning
+- ✅ bin linking (string/map/directories.bin)
+- ✅ --save-exact flag
+- ✅ Workspaces support (read/expand)
+- ✅ Custom registry URL (NPM_REGISTRY)
+- ✅ Auth tokens (NPM_TOKEN)
+- ✅ Retry with exponential backoff
+- ✅ SHA-256 integrity verification
 - ✅ peerDependencies warnings
-- ✅ optionalDependencies parsing
-- ✅ engines field parsing
-- ✅ Custom registry URL (NPM_REGISTRY env var)
-- ✅ Auth tokens (NPM_TOKEN env var)
-- ✅ Retry logic with exponential backoff
-- ✅ overrides support in package.json
-- ✅ .bin pruning protection
+- ✅ Deprecation warnings
+- ✅ Lockfile diff output
+- ✅ NPM.Validator (name/range validation)
+- ✅ NPM.Compiler (Mix compiler)
+- ✅ overrides in package.json
+
+## Completed Tasks (25 total)
+- ✅ mix npm.init, install, get, remove, list
+- ✅ mix npm.update, outdated, tree, why, info
+- ✅ mix npm.search, run, exec, ci, check
+- ✅ mix npm.clean, cache, config, version
+- ✅ mix npm.link, diff, pack, audit, dedupe
 
 ## Pending Ideas
-- Lockfile diff on update (show what changed)
-- `--save-exact` flag (pin exact version, no ^ prefix)
-- `--save-optional` flag for optionalDependencies
-- Workspaces support (monorepo package.json workspaces field)
 - `.npmrc` file support for registry config
-- Lock file migration (detect old format, upgrade)
-- `mix npm.fund` — show funding info for installed packages
-- `mix npm.pack` — create tarball of current project
+- `mix npm.fund` — show funding info
 - `mix npm.publish` — publish to npm registry
-- `mix npm.link` — link local packages for development
-- Parallel cache downloads with progress bar
-- `npm.lock` hash in ETS for fast staleness checks
-- `engines` field warnings during install
-- Conditional exports support (package.json "exports" field)
 - `mix npm.rebuild` — rebuild native packages
-- `type: "module"` detection and ES module support
-- SHA-256 integrity support (currently only sha512 and sha1)
+- `mix npm.prune` — remove extraneous packages
+- Parallel cache downloads with progress bar
+- Conditional exports support (package.json "exports" field)
+- `type: "module"` detection
+- Lock file migration (detect old format)
+- `engines` field warnings during install
+- Nested node_modules for version conflicts
+- Lifecycle scripts (preinstall, postinstall)
+- Git dependency support (git+https:// URLs)
+- File dependency support (file:../local-pkg)
+- `resolutions` field (Yarn-style)

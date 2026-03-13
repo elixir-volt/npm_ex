@@ -20,3 +20,4 @@
 {"run":19,"commit":"5dd829f","metric":175,"metrics":{},"status":"keep","description":"Add mix npm.diff, npm.pack, scoped package tests, fix copy strategy for scoped packages, validator edge cases","timestamp":1773397314250,"segment":0}
 {"run":20,"commit":"32154bc","metric":177,"metrics":{},"status":"keep","description":"Add Tarball.fetch_and_extract integration tests with mock HTTP server, integrity mismatch test","timestamp":1773397352513,"segment":0}
 {"run":21,"commit":"16eadf5","metric":181,"metrics":{},"status":"keep","description":"Add mix npm.audit, dotfile preservation in prune, multi-cache test, special characters in lockfile test","timestamp":1773397399710,"segment":0}
+{"run":22,"commit":"bdfdf8c","metric":184,"metrics":{},"status":"keep","description":"Add optionalDependencies support, --save-optional flag, mix npm.dedupe, mix npm.audit","timestamp":1773397506911,"segment":0}
