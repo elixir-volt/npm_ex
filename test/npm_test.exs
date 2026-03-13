@@ -1267,6 +1267,32 @@ defmodule NPMTest do
     end
   end
 
+  # --- Registry configuration ---
+
+  describe "Registry.registry_url" do
+    test "defaults to npmjs.org" do
+      original = System.get_env("NPM_REGISTRY")
+      System.delete_env("NPM_REGISTRY")
+
+      assert NPM.Registry.registry_url() == "https://registry.npmjs.org"
+
+      if original, do: System.put_env("NPM_REGISTRY", original)
+    end
+
+    test "respects NPM_REGISTRY env var" do
+      original = System.get_env("NPM_REGISTRY")
+      System.put_env("NPM_REGISTRY", "https://registry.example.com")
+
+      assert NPM.Registry.registry_url() == "https://registry.example.com"
+
+      if original do
+        System.put_env("NPM_REGISTRY", original)
+      else
+        System.delete_env("NPM_REGISTRY")
+      end
+    end
+  end
+
   # --- Cache edge cases ---
 
   describe "Cache edge cases" do
