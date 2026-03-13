@@ -4485,6 +4485,55 @@ defmodule NPMTest do
     end
   end
 
+  describe "Linker: hoist selects most common version" do
+    test "hoists single version of each package" do
+      lockfile = %{
+        "lodash" => %{version: "4.17.21", integrity: "", tarball: "", dependencies: %{}},
+        "react" => %{version: "18.2.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      tree = NPM.Linker.hoist(lockfile)
+      names = Enum.map(tree, &elem(&1, 0))
+      assert "lodash" in names
+      assert "react" in names
+    end
+
+    test "hoist returns name-version tuples" do
+      lockfile = %{
+        "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      [{name, version}] = NPM.Linker.hoist(lockfile)
+      assert name == "a"
+      assert version == "1.0.0"
+    end
+  end
+
+  describe "Cache: directory structure" do
+    test "package_dir includes name and version" do
+      dir = NPM.Cache.package_dir("lodash", "4.17.21")
+      assert String.contains?(dir, "lodash")
+      assert String.contains?(dir, "4.17.21")
+    end
+
+    test "package_dir for scoped packages" do
+      dir = NPM.Cache.package_dir("@babel/core", "7.0.0")
+      assert String.contains?(dir, "7.0.0")
+    end
+
+    test "cache dir is configurable via env" do
+      old = System.get_env("NPM_EX_CACHE_DIR")
+      System.put_env("NPM_EX_CACHE_DIR", "/tmp/custom_cache")
+
+      dir = NPM.Cache.dir()
+      assert dir == "/tmp/custom_cache"
+
+      if old,
+        do: System.put_env("NPM_EX_CACHE_DIR", old),
+        else: System.delete_env("NPM_EX_CACHE_DIR")
+    end
+  end
+
   describe "Linker: prune removes stale packages" do
     @tag :tmp_dir
     test "prune removes packages not in expected set", %{tmp_dir: dir} do

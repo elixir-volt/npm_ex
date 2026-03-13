@@ -77,3 +77,4 @@
 {"run":76,"commit":"2bcfa33","metric":640,"metrics":{},"status":"keep","description":"Add overrides reading, peerDependencies reading, engines field tests — 3 real PackageJSON behavior tests","timestamp":1773402689785,"segment":0}
 {"run":77,"commit":"492fd8b","metric":641,"metrics":{},"status":"keep","description":"Implement resolver override support — overrides from package.json replace dep ranges during resolution, wired into full_install","timestamp":1773402779726,"segment":0}
 {"run":78,"commit":"bf0aa28","metric":650,"metrics":{},"status":"keep","description":"Add Registry encode_package, RegistryMirror URL rewriting, Linker prune (regular, scoped, .bin preservation) tests — 9 real behavior tests","timestamp":1773402871301,"segment":0}
+{"run":79,"commit":"86c9b47","metric":652,"metrics":{},"status":"keep","description":"Add integration tests for override resolution and scoped package resolution","timestamp":1773402901894,"segment":0}
