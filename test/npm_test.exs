@@ -4741,6 +4741,41 @@ defmodule NPMTest do
     end
   end
 
+  describe "Manifest: from_json edge cases" do
+    test "missing fields default gracefully" do
+      m = NPM.Manifest.from_json(~s({"name": "minimal"}))
+      assert m.name == "minimal"
+      assert m.version == nil
+      assert m.dependencies == %{}
+      assert m.scripts == %{}
+    end
+
+    test "has_scripts? returns false for empty scripts" do
+      m = NPM.Manifest.from_json(~s({"name": "no-scripts"}))
+      refute NPM.Manifest.has_scripts?(m)
+    end
+
+    test "all_dep_names includes all dependency types" do
+      m =
+        NPM.Manifest.from_json(~s({
+          "name": "multi",
+          "dependencies": {"a": "^1.0"},
+          "devDependencies": {"b": "^2.0"},
+          "optionalDependencies": {"c": "^3.0"}
+        }))
+
+      names = NPM.Manifest.all_dep_names(m)
+      assert "a" in names
+      assert "b" in names
+      assert "c" in names
+    end
+
+    test "module_type detects ESM from type field" do
+      m = NPM.Manifest.from_json(~s({"name": "esm-pkg", "type": "module"}))
+      assert m.module_type == :esm
+    end
+  end
+
   describe "Integrity: round-trip verification" do
     test "compute then verify succeeds for sha512" do
       data = :crypto.strong_rand_bytes(256)
