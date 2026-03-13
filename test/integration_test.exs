@@ -529,7 +529,7 @@ defmodule NPM.IntegrationTest do
 
     test "^0.0.x pins to exact patch" do
       # ^0.0.3 should match >=0.0.3, <0.0.4
-      assert {:ok, constraint} = NPMSemver.to_hex_constraint("^0.0.3")
+      assert {:ok, _constraint} = NPMSemver.to_hex_constraint("^0.0.3")
       assert NPMSemver.matches?("0.0.3", "^0.0.3")
       refute NPMSemver.matches?("0.0.4", "^0.0.3")
     end

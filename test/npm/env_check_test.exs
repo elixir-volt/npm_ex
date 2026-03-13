@@ -26,7 +26,7 @@ defmodule NPM.EnvCheckTest do
   describe "EnvCheck: version_satisfies?" do
     test "check_engines with satisfied range" do
       case NPM.EnvCheck.node_version() do
-        {:ok, "v" <> version} ->
+        {:ok, "v" <> _version} ->
           result = NPM.EnvCheck.check_engines(%{"node" => ">= 0.0.1"})
           assert result == :ok
 

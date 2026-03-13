@@ -199,7 +199,7 @@ defmodule NPM.LifecycleTest do
     test "returns known install hooks" do
       names = NPM.Lifecycle.hook_names()
       assert is_list(names)
-      assert names != []
+      assert Enum.any?(names)
     end
   end
 

@@ -7,8 +7,6 @@ defmodule NPM.PeerDeps do
   checks whether peer dependency requirements are satisfied.
   """
 
-  alias NPM.VersionUtil
-
   @type peer_warning :: %{
           package: String.t(),
           peer: String.t(),

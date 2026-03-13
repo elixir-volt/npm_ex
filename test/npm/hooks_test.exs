@@ -60,7 +60,7 @@ defmodule NPM.HooksTest do
     test "available returns list of hook names" do
       hooks = NPM.Hooks.available()
       assert is_list(hooks)
-      assert hooks != []
+      assert Enum.any?(hooks)
     end
 
     test "configured returns currently configured hooks" do

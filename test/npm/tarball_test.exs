@@ -284,7 +284,7 @@ defmodule NPM.TarballTest do
     end
 
     @tag :tmp_dir
-    test "integrity check rejects tampered data", %{tmp_dir: dir} do
+    test "integrity check rejects tampered data", %{tmp_dir: _dir} do
       tgz = create_test_tgz(%{"package.json" => ~s({"name":"test"})})
 
       good_integrity = NPM.Integrity.compute_sha512(tgz)
