@@ -4834,6 +4834,67 @@ defmodule NPMTest do
     end
   end
 
+  describe "BinResolver: symlink resolution" do
+    @tag :tmp_dir
+    test "find resolves symlink targets", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      bin_dir = Path.join(nm, ".bin")
+      pkg_dir = Path.join(nm, "eslint")
+      File.mkdir_p!(bin_dir)
+      File.mkdir_p!(pkg_dir)
+
+      target = Path.join(pkg_dir, "bin/eslint.js")
+      File.mkdir_p!(Path.dirname(target))
+      File.write!(target, "#!/usr/bin/env node")
+
+      link = Path.join(bin_dir, "eslint")
+      File.ln_s!(target, link)
+
+      {:ok, resolved} = NPM.BinResolver.find("eslint", nm)
+      assert String.contains?(resolved, "eslint")
+    end
+  end
+
+  describe "Lockfile: has_package? with missing file" do
+    test "returns false when lockfile doesn't exist" do
+      refute NPM.Lockfile.has_package?("anything", "/tmp/nonexistent_dir/npm.lock")
+    end
+  end
+
+  describe "Lockfile: version with missing file" do
+    test "returns nil when lockfile doesn't exist" do
+      assert nil == NPM.Lockfile.version("/tmp/nonexistent_dir/npm.lock")
+    end
+  end
+
+  describe "VersionUtil: gt?/lt? edge cases" do
+    test "equal versions are neither gt nor lt" do
+      refute NPM.VersionUtil.gt?("1.0.0", "1.0.0")
+      refute NPM.VersionUtil.lt?("1.0.0", "1.0.0")
+    end
+  end
+
+  describe "Platform: os_compatible? with empty list" do
+    test "empty list means compatible" do
+      assert NPM.Platform.os_compatible?([])
+    end
+  end
+
+  describe "Integrity: compute consistency" do
+    test "same input produces same hash" do
+      data = "deterministic"
+      h1 = NPM.Integrity.compute_sha512(data)
+      h2 = NPM.Integrity.compute_sha512(data)
+      assert h1 == h2
+    end
+
+    test "different input produces different hash" do
+      h1 = NPM.Integrity.compute_sha512("aaa")
+      h2 = NPM.Integrity.compute_sha512("bbb")
+      assert h1 != h2
+    end
+  end
+
   describe "Config: parse_npmrc round-trip" do
     @tag :tmp_dir
     test "manually written npmrc parses correctly", %{tmp_dir: dir} do

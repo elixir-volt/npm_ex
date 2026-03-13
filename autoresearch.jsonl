@@ -97,3 +97,4 @@
 {"run":96,"commit":"233a4f8","metric":750,"metrics":{},"status":"keep","description":"Add DepGraph adjacency_list edge cases (empty, sorted deps) — 750 tests milestone","timestamp":1773403632500,"segment":0}
 {"run":97,"commit":"d908989","metric":759,"metrics":{},"status":"keep","description":"Add NPM.SemverUtil (max/min_satisfying, filter, any_satisfying?, update_type) with 9 behavior tests","timestamp":1773403713284,"segment":0}
 {"run":98,"commit":"1093ef9","metric":768,"metrics":{},"status":"keep","description":"Add SemverUtil empty list edge cases, update_type none/invalid, EnvCheck summary fields, Config round-trip — 9 tests","timestamp":1773403774861,"segment":0}
+{"run":99,"commit":"d7b87dc","metric":770,"metrics":{},"status":"keep","description":"Add SemverUtil integration tests with real packument versions (lodash, is-number)","timestamp":1773403800664,"segment":0}
