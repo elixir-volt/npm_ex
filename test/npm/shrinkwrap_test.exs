@@ -143,4 +143,35 @@ defmodule NPM.ShrinkwrapTest do
       assert :ok = NPM.Shrinkwrap.remove(dir)
     end
   end
+
+  describe "create and read roundtrip" do
+    @tag :tmp_dir
+    test "shrinkwrap matches lockfile content", %{tmp_dir: dir} do
+      lock_data = %{
+        "lockfileVersion" => 3,
+        "packages" => %{
+          "react" => %{"version" => "18.2.0"},
+          "lodash" => %{"version" => "4.17.21"}
+        }
+      }
+
+      File.write!(Path.join(dir, "package-lock.json"), :json.encode(lock_data))
+      :ok = NPM.Shrinkwrap.create(dir)
+      {:ok, shrink} = NPM.Shrinkwrap.read(dir)
+      assert shrink["packages"]["react"]["version"] == "18.2.0"
+      assert shrink["packages"]["lodash"]["version"] == "4.17.21"
+    end
+  end
+
+  describe "verify mixed results" do
+    test "both missing and mismatched" do
+      shrinkwrap = %{"a" => "1.0.0", "b" => "2.0.0"}
+      installed = %{"a" => %{version: "1.0.1"}}
+
+      mismatches = NPM.Shrinkwrap.verify(shrinkwrap, installed)
+      types = Map.new(mismatches, &{&1.name, &1.type})
+      assert types["a"] == :version_mismatch
+      assert types["b"] == :missing
+    end
+  end
 end

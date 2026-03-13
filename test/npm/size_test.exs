@@ -129,4 +129,33 @@ defmodule NPM.SizeTest do
       assert s.formatted_size =~ "KB"
     end
   end
+
+  describe "analyze with nested directories" do
+    @tag :tmp_dir
+    test "counts files in subdirectories", %{tmp_dir: dir} do
+      nm = Path.join(dir, "node_modules")
+      pkg = Path.join(nm, "deep-pkg")
+      File.mkdir_p!(Path.join(pkg, "lib"))
+      File.write!(Path.join(pkg, "package.json"), ~s({"name":"deep-pkg"}))
+      File.write!(Path.join(pkg, "index.js"), "root")
+      File.write!(Path.join([pkg, "lib", "util.js"]), "nested")
+
+      entries = NPM.Size.analyze(nm)
+      assert hd(entries).file_count == 3
+    end
+  end
+
+  describe "format_size boundaries" do
+    test "1023 bytes" do
+      assert "1023 B" = NPM.Size.format_size(1023)
+    end
+
+    test "exactly 1 KB" do
+      assert NPM.Size.format_size(1024) =~ "KB"
+    end
+
+    test "exactly 1 MB" do
+      assert NPM.Size.format_size(1_048_576) =~ "MB"
+    end
+  end
 end

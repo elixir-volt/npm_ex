@@ -170,4 +170,36 @@ defmodule NPM.LicenseTest do
       assert [] = NPM.License.scan("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
   end
+
+  describe "extract number license" do
+    test "license as number is nil" do
+      assert nil == NPM.License.extract(%{"license" => 42})
+    end
+  end
+
+  describe "check_policy with empty policy" do
+    test "everything violates empty allowed list" do
+      entries = [%{package: "a", version: "1.0.0", license: "MIT"}]
+      violations = NPM.License.check_policy(entries, [])
+      assert length(violations) == 1
+    end
+  end
+
+  describe "more permissive licenses" do
+    test "0BSD is permissive" do
+      assert NPM.License.permissive?("0BSD")
+    end
+
+    test "CC0-1.0 is permissive" do
+      assert NPM.License.permissive?("CC0-1.0")
+    end
+
+    test "Unlicense is permissive" do
+      assert NPM.License.permissive?("Unlicense")
+    end
+
+    test "AGPL-3.0 is not permissive" do
+      refute NPM.License.permissive?("AGPL-3.0")
+    end
+  end
 end

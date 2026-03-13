@@ -111,4 +111,38 @@ defmodule NPM.WhyTest do
       assert NPM.Why.format_reasons([]) =~ "not installed"
     end
   end
+
+  describe "explain with deep transitive chain" do
+    test "finds multi-level path" do
+      lockfile = %{
+        "express" => %{
+          version: "4.21.2",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"debug" => "^2.6"}
+        },
+        "debug" => %{
+          version: "2.6.9",
+          integrity: "",
+          tarball: "",
+          dependencies: %{"ms" => "^2.0.0"}
+        },
+        "ms" => %{version: "2.1.3", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      root_deps = %{"express" => "^4.0.0"}
+      reasons = NPM.Why.explain("ms", lockfile, root_deps)
+      refute Enum.empty?(reasons)
+    end
+  end
+
+  describe "dependents empty result" do
+    test "returns empty for packages nothing depends on" do
+      lockfile = %{
+        "standalone" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      assert [] = NPM.Why.dependents("standalone", lockfile)
+    end
+  end
 end

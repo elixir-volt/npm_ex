@@ -144,4 +144,33 @@ defmodule NPM.PackTest do
       assert "index.js" in files
     end
   end
+
+  describe "tarball_name edge cases" do
+    test "package with dots in name" do
+      assert "co.pilot-1.0.0.tgz" =
+               NPM.Pack.tarball_name(%{"name" => "co.pilot", "version" => "1.0.0"})
+    end
+
+    test "package with hyphens" do
+      assert "my-cool-pkg-0.1.0.tgz" =
+               NPM.Pack.tarball_name(%{"name" => "my-cool-pkg", "version" => "0.1.0"})
+    end
+  end
+
+  describe "list_files with main field" do
+    @tag :tmp_dir
+    test "includes main entry point when files field specified", %{tmp_dir: dir} do
+      File.write!(
+        Path.join(dir, "package.json"),
+        ~s({"name":"test","version":"1.0.0","main":"index.js","files":["lib"]})
+      )
+
+      File.mkdir_p!(Path.join(dir, "lib"))
+      File.write!(Path.join([dir, "lib", "util.js"]), "code")
+      File.write!(Path.join(dir, "index.js"), "main entry")
+
+      {:ok, files} = NPM.Pack.list_files(dir)
+      assert "index.js" in files
+    end
+  end
 end

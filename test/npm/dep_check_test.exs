@@ -167,4 +167,30 @@ const path = require('path')])
       assert MapSet.size(imports) == 0
     end
   end
+
+  describe "extract_imports edge cases" do
+    test "empty source" do
+      assert [] = NPM.DepCheck.extract_imports("")
+    end
+
+    test "double-quoted imports" do
+      source = ~s[import React from "react"]
+      assert "react" in NPM.DepCheck.extract_imports(source)
+    end
+
+    test "require with double quotes" do
+      source = ~s[const _ = require("lodash")]
+      assert "lodash" in NPM.DepCheck.extract_imports(source)
+    end
+  end
+
+  describe "normalize_package_name edge cases" do
+    test "single-word package" do
+      assert "react" = NPM.DepCheck.normalize_package_name("react")
+    end
+
+    test "package with many slashes" do
+      assert "lodash" = NPM.DepCheck.normalize_package_name("lodash/fp/get")
+    end
+  end
 end

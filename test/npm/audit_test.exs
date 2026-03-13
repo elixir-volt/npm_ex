@@ -195,4 +195,56 @@ defmodule NPM.AuditTest do
       assert :eq = NPM.Audit.compare_severity(:high, :high)
     end
   end
+
+  describe "check with multiple advisories matching same package" do
+    test "returns findings for each matching advisory" do
+      lockfile = %{
+        "pkg" => %{version: "1.5.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      advisories = [
+        %{
+          id: 1,
+          title: "Issue A",
+          severity: :high,
+          vulnerable_versions: "<2.0.0",
+          patched_versions: ">=2.0.0",
+          url: nil
+        },
+        %{
+          id: 2,
+          title: "Issue B",
+          severity: :critical,
+          vulnerable_versions: "<1.6.0",
+          patched_versions: ">=1.6.0",
+          url: nil
+        }
+      ]
+
+      findings = NPM.Audit.check(lockfile, advisories)
+      assert length(findings) == 2
+    end
+  end
+
+  describe "summary counts moderate" do
+    test "moderate severity is counted" do
+      findings = [
+        %{
+          package: "a",
+          installed_version: "1.0.0",
+          advisory: %{
+            id: 1,
+            title: "x",
+            severity: :moderate,
+            vulnerable_versions: "*",
+            patched_versions: nil,
+            url: nil
+          }
+        }
+      ]
+
+      s = NPM.Audit.summary(findings)
+      assert s.moderate == 1
+    end
+  end
 end

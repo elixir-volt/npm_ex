@@ -162,4 +162,35 @@ defmodule NPM.WorkspaceTest do
       assert right_idx < app_idx
     end
   end
+
+  describe "build_order single package" do
+    test "single package returns just that name" do
+      packages = [
+        %{name: "solo", version: "1.0.0", path: "/solo", dependencies: %{}}
+      ]
+
+      assert ["solo"] = NPM.Workspace.build_order(packages)
+    end
+  end
+
+  describe "dep_graph with no internal deps" do
+    test "all packages have empty dependency lists" do
+      packages = [
+        %{name: "a", version: "1.0.0", path: "/a", dependencies: %{"lodash" => "^4"}},
+        %{name: "b", version: "1.0.0", path: "/b", dependencies: %{"react" => "^18"}}
+      ]
+
+      graph = NPM.Workspace.dep_graph(packages)
+      assert graph["a"] == []
+      assert graph["b"] == []
+    end
+  end
+
+  describe "workspace_root? with empty workspaces array" do
+    @tag :tmp_dir
+    test "false for empty workspaces array", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "package.json"), ~s({"workspaces": []}))
+      refute NPM.Workspace.workspace_root?(dir)
+    end
+  end
 end

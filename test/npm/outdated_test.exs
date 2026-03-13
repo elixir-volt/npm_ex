@@ -132,4 +132,56 @@ defmodule NPM.OutdatedTest do
       assert s.major == 0
     end
   end
+
+  describe "check with scoped packages" do
+    test "handles scoped package names" do
+      lockfile = %{
+        "@babel/core" => %{version: "7.23.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      deps = %{"@babel/core" => "^7.0.0"}
+      latest = %{"@babel/core" => "7.24.5"}
+
+      [entry] = NPM.Outdated.check(lockfile, deps, latest)
+      assert entry.name == "@babel/core"
+      assert entry.type == :minor
+    end
+  end
+
+  describe "check with missing latest info" do
+    test "treats missing latest as current" do
+      lockfile = %{
+        "internal-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
+      }
+
+      deps = %{"internal-pkg" => "^1.0.0"}
+      latest = %{}
+
+      assert [] = NPM.Outdated.check(lockfile, deps, latest)
+    end
+  end
+
+  describe "filter_by_type minor and patch" do
+    test "filters minor updates" do
+      entries = [
+        %{name: "a", current: "1.0.0", wanted: "1.1.0", latest: "1.1.0", type: :minor},
+        %{name: "b", current: "1.0.0", wanted: "1.0.1", latest: "1.0.1", type: :patch}
+      ]
+
+      minor = NPM.Outdated.filter_by_type(entries, :minor)
+      assert length(minor) == 1
+      assert hd(minor).name == "a"
+    end
+
+    test "filters patch updates" do
+      entries = [
+        %{name: "a", current: "1.0.0", wanted: "1.0.0", latest: "2.0.0", type: :major},
+        %{name: "b", current: "1.0.0", wanted: "1.0.1", latest: "1.0.1", type: :patch}
+      ]
+
+      patch = NPM.Outdated.filter_by_type(entries, :patch)
+      assert length(patch) == 1
+      assert hd(patch).name == "b"
+    end
+  end
 end

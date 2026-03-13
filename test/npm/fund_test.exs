@@ -127,4 +127,32 @@ defmodule NPM.FundTest do
       assert s.unique_urls == 0
     end
   end
+
+  describe "extract invalid funding structure" do
+    test "funding as number is ignored" do
+      data = %{"name" => "pkg", "version" => "1.0.0", "funding" => 42}
+      assert [] = NPM.Fund.extract(data)
+    end
+
+    test "list with mixed valid and invalid entries" do
+      data = %{
+        "name" => "pkg",
+        "version" => "1.0.0",
+        "funding" => [
+          "https://valid.com",
+          42,
+          %{"url" => "https://also-valid.com", "type" => "github"}
+        ]
+      }
+
+      entries = NPM.Fund.extract(data)
+      assert length(entries) == 2
+    end
+  end
+
+  describe "group_by_url empty list" do
+    test "returns empty map" do
+      assert %{} = NPM.Fund.group_by_url([])
+    end
+  end
 end

@@ -143,4 +143,29 @@ defmodule NPM.DiffTest do
       assert NPM.Diff.format_changes([]) =~ "No changes"
     end
   end
+
+  describe "compare_files mixed changes" do
+    test "simultaneous add, remove, and modify" do
+      old = %{"keep.js" => "h1", "remove.js" => "h2", "modify.js" => "h3"}
+      new = %{"keep.js" => "h1", "add.js" => "h4", "modify.js" => "h5"}
+
+      changes = NPM.Diff.compare_files(old, new)
+      types = Map.new(changes, &{&1.path, &1.type})
+      assert types["add.js"] == :added
+      assert types["remove.js"] == :removed
+      assert types["modify.js"] == :modified
+      refute Map.has_key?(types, "keep.js")
+    end
+  end
+
+  describe "file_hashes deeply nested" do
+    @tag :tmp_dir
+    test "handles 3-level nesting", %{tmp_dir: dir} do
+      File.mkdir_p!(Path.join([dir, "a", "b", "c"]))
+      File.write!(Path.join([dir, "a", "b", "c", "deep.txt"]), "deep content")
+
+      hashes = NPM.Diff.file_hashes(dir)
+      assert Map.has_key?(hashes, "a/b/c/deep.txt")
+    end
+  end
 end
