@@ -17,3 +17,4 @@
 {"run":16,"commit":"f0959ed","metric":152,"metrics":{},"status":"keep","description":"Add NPM.Compiler (Mix compiler), JSON roundtrip test, binary tarball test, resolver integration test","timestamp":1773397158581,"segment":0}
 {"run":17,"commit":"f37e23e","metric":158,"metrics":{},"status":"keep","description":"Add workspaces support (read_workspaces, expand_workspaces with glob patterns)","timestamp":1773397191483,"segment":0}
 {"run":18,"commit":"aca277c","metric":168,"metrics":{},"status":"keep","description":"Add NPM.Validator (name/range validation), 10 validation tests","timestamp":1773397241819,"segment":0}
+{"run":19,"commit":"5dd829f","metric":175,"metrics":{},"status":"keep","description":"Add mix npm.diff, npm.pack, scoped package tests, fix copy strategy for scoped packages, validator edge cases","timestamp":1773397314250,"segment":0}

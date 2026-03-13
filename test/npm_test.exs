@@ -1882,6 +1882,56 @@ defmodule NPMTest do
     end
   end
 
+  # --- Tarball.fetch_and_extract with mock server ---
+
+  describe "Tarball.fetch_and_extract" do
+    @tag :tmp_dir
+    test "fetches and extracts valid tarball", %{tmp_dir: dir} do
+      tgz = create_test_tgz(%{"package/index.js" => "test content"})
+      hash = :crypto.hash(:sha512, tgz) |> Base.encode64()
+
+      {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+      {:ok, port} = :inet.port(listen)
+
+      spawn(fn ->
+        {:ok, conn} = :gen_tcp.accept(listen)
+        {:ok, _data} = :gen_tcp.recv(conn, 0, 5000)
+        response = "HTTP/1.1 200 OK\r\nContent-Length: #{byte_size(tgz)}\r\n\r\n" <> tgz
+        :gen_tcp.send(conn, response)
+        :gen_tcp.close(conn)
+      end)
+
+      url = "http://127.0.0.1:#{port}/test.tgz"
+      assert {:ok, 1} = NPM.Tarball.fetch_and_extract(url, "sha512-#{hash}", dir)
+      assert File.read!(Path.join(dir, "index.js")) == "test content"
+
+      :gen_tcp.close(listen)
+    end
+
+    @tag :tmp_dir
+    test "fails on integrity mismatch", %{tmp_dir: dir} do
+      tgz = create_test_tgz(%{"package/index.js" => "content"})
+
+      {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+      {:ok, port} = :inet.port(listen)
+
+      spawn(fn ->
+        {:ok, conn} = :gen_tcp.accept(listen)
+        {:ok, _data} = :gen_tcp.recv(conn, 0, 5000)
+        response = "HTTP/1.1 200 OK\r\nContent-Length: #{byte_size(tgz)}\r\n\r\n" <> tgz
+        :gen_tcp.send(conn, response)
+        :gen_tcp.close(conn)
+      end)
+
+      url = "http://127.0.0.1:#{port}/test.tgz"
+
+      assert {:error, :integrity_mismatch} =
+               NPM.Tarball.fetch_and_extract(url, "sha512-wrong==", dir)
+
+      :gen_tcp.close(listen)
+    end
+  end
+
   # --- Validator edge cases ---
 
   describe "Validator additional cases" do
