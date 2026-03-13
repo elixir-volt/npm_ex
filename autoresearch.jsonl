@@ -25,3 +25,4 @@
 {"run":24,"commit":"4be6467","metric":191,"metrics":{},"status":"keep","description":"Add file: dependency support, lockfile listing test, file_dep?/resolve_file_dep functions","timestamp":1773397645894,"segment":0}
 {"run":25,"commit":"a8b504a","metric":200,"metrics":{},"status":"keep","description":"Add mix npm.fund, comprehensive validator tests, empty lockfile test, error handling test — 200 tests milestone","timestamp":1773397703426,"segment":0}
 {"run":26,"commit":"c457800","metric":206,"metrics":{},"status":"keep","description":"Add cache path pattern tests, tarball multi-file extraction tests","timestamp":1773397745914,"segment":0}
+{"run":27,"commit":"9abefb4","metric":206,"metrics":{},"status":"keep","description":"Add mix npm.uninstall, npm.rebuild, update CHANGELOG with all 26 tasks and features","timestamp":1773397832092,"segment":0}

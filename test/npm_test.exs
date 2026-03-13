@@ -2309,6 +2309,75 @@ defmodule NPMTest do
     end
   end
 
+  # --- Workspaces expand with nested dirs ---
+
+  describe "PackageJSON workspaces with nested patterns" do
+    @tag :tmp_dir
+    test "expands multiple patterns", %{tmp_dir: dir} do
+      apps_a = Path.join([dir, "apps", "web"])
+      apps_b = Path.join([dir, "apps", "api"])
+      pkgs_a = Path.join([dir, "packages", "core"])
+
+      File.mkdir_p!(apps_a)
+      File.mkdir_p!(apps_b)
+      File.mkdir_p!(pkgs_a)
+
+      File.write!(Path.join(apps_a, "package.json"), ~s({"name":"web"}))
+      File.write!(Path.join(apps_b, "package.json"), ~s({"name":"api"}))
+      File.write!(Path.join(pkgs_a, "package.json"), ~s({"name":"core"}))
+
+      result = NPM.PackageJSON.expand_workspaces(["apps/*", "packages/*"], dir)
+      assert length(result) == 3
+    end
+  end
+
+  # --- JSON pretty print indentation ---
+
+  describe "JSON.encode_pretty indentation" do
+    test "uses two-space indentation" do
+      json = NPM.JSON.encode_pretty(%{"a" => 1})
+      assert json == "{\n  \"a\": 1\n}\n"
+    end
+
+    test "nested maps use correct indentation" do
+      json = NPM.JSON.encode_pretty(%{"outer" => %{"inner" => 1}})
+      assert json =~ "  \"outer\": {\n    \"inner\": 1\n  }"
+    end
+
+    test "trailing newline" do
+      json = NPM.JSON.encode_pretty(%{})
+      assert String.ends_with?(json, "\n")
+    end
+  end
+
+  # --- Tarball.verify_integrity comprehensive ---
+
+  describe "Tarball integrity comprehensive" do
+    test "sha512 with correct padding" do
+      data = String.duplicate("a", 1000)
+      hash = :crypto.hash(:sha512, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha512-#{hash}")
+    end
+
+    test "sha256 with small data" do
+      data = "x"
+      hash = :crypto.hash(:sha256, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha256-#{hash}")
+    end
+
+    test "sha1 with empty data" do
+      data = ""
+      hash = :crypto.hash(:sha, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha1-#{hash}")
+    end
+
+    test "sha512 with binary data" do
+      data = <<0, 1, 2, 255, 254, 253>>
+      hash = :crypto.hash(:sha512, data) |> Base.encode64()
+      assert :ok = NPM.Tarball.verify_integrity(data, "sha512-#{hash}")
+    end
+  end
+
   # --- Helpers ---
 
   defp create_test_tgz(files) do
