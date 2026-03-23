@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.4
+
+- Fix npm registry packument decoding for optional platform dependency inspection
+- Select the correct platform-specific optional binding for packages like `oxfmt` and `oxlint`
+- Keep `mix npm.exec` running binaries through Node instead of shell string spawning
+- Preserve `optional_dependencies` in `npm.lock`
+- Skip linking crashes when optional packages are unavailable
+
 ## 0.4.3
 
 - Fix `mix npm.exec` to resolve binaries via `NPM.Exec.which/2` and run them through Node instead of shell string spawning

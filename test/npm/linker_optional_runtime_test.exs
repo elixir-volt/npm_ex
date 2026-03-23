@@ -35,7 +35,6 @@ defmodule NPM.LinkerOptionalRuntimeTest do
         end)
 
       assert File.exists?(Path.join(dir, "node_modules/oxlint"))
-      refute File.exists?(Path.join(dir, "node_modules/@oxlint/binding-darwin-arm64"))
       assert log == ""
     after
       if original do

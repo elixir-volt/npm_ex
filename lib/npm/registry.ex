@@ -49,10 +49,10 @@ defmodule NPM.Registry do
   end
 
   defp fetch_with_retry(url, headers, retries_left) do
-    result = Req.get(url, headers: headers)
+    result = Req.get(url, headers: headers, decode_body: false)
 
     case classify_result(result) do
-      {:ok, body} -> {:ok, parse_packument(body)}
+      {:ok, body} -> {:ok, body |> decode_body() |> parse_packument()}
       {:retry, _} when retries_left > 0 -> retry(url, headers, retries_left)
       {_, error} -> error
     end
@@ -81,6 +81,9 @@ defmodule NPM.Registry do
   @doc "URL-encode a package name (handles scoped packages)."
   @spec encode_package(String.t()) :: String.t()
   def encode_package(package), do: String.replace(package, "/", "%2f")
+
+  defp decode_body(body) when is_binary(body), do: :json.decode(body)
+  defp decode_body(body) when is_map(body), do: body
 
   defp parse_packument(data) do
     versions =

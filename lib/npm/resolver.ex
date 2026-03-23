@@ -77,13 +77,17 @@ defmodule NPM.Resolver do
   end
 
   defp build_dependencies(root_deps) do
-    Enum.flat_map(root_deps, fn {name, range} ->
-      {:ok, packument} = get_cached_packument(name)
-      version = highest_matching_version(packument, range)
-      info = Map.fetch!(packument.versions, version)
+    Enum.map(root_deps, fn {name, range} ->
+      {:ok, constraint} = normalize_range(range)
 
-      [%{repo: nil, name: name, constraint: elem(normalize_range(range), 1), optional: false, label: name, dependencies: []} |
-       solver_dependencies(info, MapSet.new(), get_overrides())]
+      %{
+        repo: nil,
+        name: name,
+        constraint: constraint,
+        optional: false,
+        label: name,
+        dependencies: []
+      }
     end)
   end
 
@@ -287,8 +291,8 @@ defmodule NPM.Resolver do
 
     optional =
       info.optional_dependencies
+      |> NPM.PlatformOptional.select()
       |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
-      |> Enum.filter(fn {name, _} -> optional_dependency_relevant?(name) end)
       |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)
 
     (required ++ optional)
@@ -318,47 +322,11 @@ defmodule NPM.Resolver do
     to_solver_dep({name, range, false})
   end
 
-  defp optional_dependency_relevant?(name) do
-    case NPM.Registry.get_packument(name) do
-      {:ok, optional_packument} ->
-        optional_packument.versions
-        |> Map.values()
-        |> Enum.any?(fn optional_info ->
-          NPM.Platform.os_compatible?(optional_info.os) and
-            NPM.Platform.cpu_compatible?(optional_info.cpu)
-        end)
-
-      _ ->
-        false
-    end
-  end
-
   defp normalize_range(range) when range in ["*", "", "latest"] do
     NPMSemver.to_hex_constraint(">=0.0.0")
   end
 
   defp normalize_range(range), do: NPMSemver.to_hex_constraint(range)
-
-  defp highest_matching_version(packument, range) do
-    packument.versions
-    |> Map.keys()
-    |> Enum.filter(&version_matches?(&1, range))
-    |> Enum.sort(&version_gt?/2)
-    |> List.first()
-  end
-
-  defp version_matches?(version, range) do
-    NPMSemver.matches?(version, range)
-  rescue
-    _ -> false
-  end
-
-  defp version_gt?(a, b) do
-    case Version.compare(Version.parse!(a), Version.parse!(b)) do
-      :gt -> true
-      _ -> false
-    end
-  end
 
   # --- Cache ---
 
