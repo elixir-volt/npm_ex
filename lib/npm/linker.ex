@@ -21,8 +21,8 @@ defmodule NPM.Linker do
   """
   @spec link(resolved(), String.t(), strategy()) :: :ok | {:error, term()}
   def link(lockfile, node_modules_dir \\ "node_modules", strategy \\ default_strategy()) do
-    with :ok <- populate_cache(lockfile) do
-      create_node_modules(lockfile, node_modules_dir, strategy)
+    with {:ok, skipped} <- populate_cache(lockfile) do
+      create_node_modules(lockfile, node_modules_dir, strategy, skipped)
     end
   end
 
@@ -49,21 +49,32 @@ defmodule NPM.Linker do
     lockfile
     |> Task.async_stream(
       fn {name, entry} ->
-        NPM.Cache.ensure(name, entry.version, entry.tarball, entry.integrity)
+        optional? = optional_dependency?(name, lockfile)
+
+        case NPM.Cache.ensure(name, entry.version, entry.tarball, entry.integrity, optional?: optional?) do
+          {:ok, :missing_optional} -> {:skip, name}
+          other -> other
+        end
       end,
       max_concurrency: 8,
       timeout: 60_000
     )
-    |> Enum.reduce(:ok, fn
-      {:ok, {:ok, _}}, acc -> acc
-      {:ok, {:error, reason}}, _ -> {:error, reason}
-      {:exit, reason}, _ -> {:error, reason}
+    |> Enum.reduce({:ok, MapSet.new()}, fn
+      {:ok, {:ok, _}}, {status, skipped} -> {status, skipped}
+      {:ok, {:skip, name}}, {status, skipped} -> {status, MapSet.put(skipped, name)}
+      {:ok, {:error, reason}}, {_status, _skipped} -> {{:error, reason}, MapSet.new()}
+      {:exit, reason}, {_status, _skipped} -> {{:error, reason}, MapSet.new()}
     end)
   end
 
-  defp create_node_modules(lockfile, node_modules_dir, strategy) do
+  defp create_node_modules(lockfile, node_modules_dir, strategy, skipped) do
     File.mkdir_p!(node_modules_dir)
-    tree = hoist(lockfile)
+
+    tree =
+      lockfile
+      |> hoist()
+      |> Enum.reject(fn {name, _version} -> MapSet.member?(skipped, name) end)
+
     expected_names = MapSet.new(tree, &elem(&1, 0))
 
     prune(node_modules_dir, expected_names)
@@ -259,17 +270,24 @@ defmodule NPM.Linker do
     end
   end
 
+  defp optional_dependency?(name, lockfile) do
+    Enum.any?(lockfile, fn {_pkg, entry} ->
+      Map.has_key?(Map.get(entry, :optional_dependencies, %{}), name)
+    end)
+  end
+
   defp install_single_nested(_pkg, nil, _parent, _nm_dir, _strategy), do: :ok
 
   defp install_single_nested(pkg, version, parent, nm_dir, strategy) do
     with {:ok, packument} <- NPM.Registry.get_packument(pkg),
-         %{} = info <- Map.get(packument.versions, version) do
-      tarball = info.tarball
-      integrity = info.integrity
-      NPM.Cache.ensure(pkg, version, tarball, integrity)
-      cache_path = NPM.Cache.package_dir(pkg, version)
-      target = Path.join([nm_dir, parent, "node_modules", pkg])
-      link_package(cache_path, target, strategy)
+         %{} = info <- Map.get(packument.versions, version),
+         {:ok, cache_result} <-
+           NPM.Cache.ensure(pkg, version, info.dist.tarball, info.dist.integrity) do
+      if cache_result != :missing_optional do
+        cache_path = NPM.Cache.package_dir(pkg, version)
+        target = Path.join([nm_dir, parent, "node_modules", pkg])
+        link_package(cache_path, target, strategy)
+      end
     end
 
     :ok

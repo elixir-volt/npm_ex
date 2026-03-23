@@ -106,13 +106,19 @@ defmodule NPM.ExecTest do
   describe "env" do
     test "prepends .bin to PATH" do
       env = NPM.Exec.env("node_modules")
-      assert [{"PATH", path}] = env
+      assert {"PATH", path} = Enum.find(env, fn {key, _} -> key == "PATH" end)
       assert String.contains?(path, ".bin")
+    end
+
+    test "includes node_modules in NODE_PATH" do
+      env = NPM.Exec.env("node_modules")
+      assert {"NODE_PATH", path} = Enum.find(env, fn {key, _} -> key == "NODE_PATH" end)
+      assert String.contains?(path, Path.expand("node_modules"))
     end
 
     test "custom node_modules dir" do
       env = NPM.Exec.env("/custom/nm")
-      [{"PATH", path}] = env
+      assert {"PATH", path} = Enum.find(env, fn {key, _} -> key == "PATH" end)
       assert String.starts_with?(path, "/custom/nm/.bin:")
     end
   end

@@ -16,7 +16,21 @@ defmodule NPM.Registry do
 
   @type version_info :: %{
           dependencies: %{String.t() => String.t()},
-          dist: %{tarball: String.t(), integrity: String.t()}
+          optional_dependencies: %{String.t() => String.t()},
+          peer_dependencies: %{String.t() => String.t()},
+          peer_dependencies_meta: %{String.t() => map()},
+          bin: %{optional(String.t()) => String.t()},
+          engines: %{String.t() => String.t()},
+          os: [String.t()],
+          cpu: [String.t()],
+          has_install_script: boolean(),
+          deprecated: String.t() | nil,
+          dist: %{
+            tarball: String.t(),
+            integrity: String.t(),
+            file_count: integer() | nil,
+            unpacked_size: integer() | nil
+          }
         }
 
   @doc "Get the configured registry URL."

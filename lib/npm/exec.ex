@@ -72,8 +72,16 @@ defmodule NPM.Exec do
   @spec env(String.t()) :: [{String.t(), String.t()}]
   def env(node_modules_dir \\ "node_modules") do
     bin_dir = Path.expand(Path.join(node_modules_dir, ".bin"))
+    node_modules_dir = Path.expand(node_modules_dir)
     current_path = System.get_env("PATH") || ""
-    [{"PATH", "#{bin_dir}:#{current_path}"}]
+    node_path = [node_modules_dir, System.get_env("NODE_PATH")]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(":")
+
+    [
+      {"PATH", "#{bin_dir}:#{current_path}"},
+      {"NODE_PATH", node_path}
+    ]
   end
 
   defp find_in_packages(command, node_modules_dir) do

@@ -277,7 +277,8 @@ defmodule NPM do
            version: version_str,
            integrity: info.dist.integrity,
            tarball: info.dist.tarball,
-           dependencies: info.dependencies
+           dependencies: info.dependencies,
+           optional_dependencies: info.optional_dependencies
          }}
       end
 

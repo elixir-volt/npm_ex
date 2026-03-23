@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.3
+
+- Fix `mix npm.exec` to resolve binaries via `NPM.Exec.which/2` and run them through Node instead of shell string spawning
+- Preserve `optional_dependencies` in `npm.lock`
+- Skip linking missing optional packages instead of crashing during install
+- Add focused test coverage for exec environment, cached Node runner execution, optional runtime linking, and resolver optional dependency handling
+
 ## 0.4.2
 
 - Speculative parallel prefetch of transitive dependencies before solving — fetches the full dep tree breadth-first with 16 concurrent requests

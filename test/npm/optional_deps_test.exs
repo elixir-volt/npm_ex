@@ -43,8 +43,20 @@ defmodule NPM.OptionalDepsTest do
   describe "check_installed" do
     test "separates installed from missing" do
       lockfile = %{
-        "fsevents" => %{version: "2.3.3", integrity: "", tarball: "", dependencies: %{}},
-        "react" => %{version: "18.2.0", integrity: "", tarball: "", dependencies: %{}}
+        "fsevents" => %{
+          version: "2.3.3",
+          integrity: "",
+          tarball: "",
+          dependencies: %{},
+          optional_dependencies: %{}
+        },
+        "react" => %{
+          version: "18.2.0",
+          integrity: "",
+          tarball: "",
+          dependencies: %{},
+          optional_dependencies: %{}
+        }
       }
 
       result = NPM.OptionalDeps.check_installed(@pkg_data, lockfile)
@@ -61,14 +73,27 @@ defmodule NPM.OptionalDepsTest do
 
     test "all installed" do
       lockfile = %{
-        "fsevents" => %{version: "2.3.3", integrity: "", tarball: "", dependencies: %{}},
+        "fsevents" => %{
+          version: "2.3.3",
+          integrity: "",
+          tarball: "",
+          dependencies: %{},
+          optional_dependencies: %{}
+        },
         "@esbuild/darwin-arm64" => %{
           version: "0.19.0",
           integrity: "",
           tarball: "",
-          dependencies: %{}
+          dependencies: %{},
+          optional_dependencies: %{}
         },
-        "bufferutil" => %{version: "4.0.8", integrity: "", tarball: "", dependencies: %{}}
+        "bufferutil" => %{
+          version: "4.0.8",
+          integrity: "",
+          tarball: "",
+          dependencies: %{},
+          optional_dependencies: %{}
+        }
       }
 
       result = NPM.OptionalDeps.check_installed(@pkg_data, lockfile)

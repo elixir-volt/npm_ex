@@ -33,9 +33,9 @@ defmodule NPM.Cache do
   Downloads and extracts the tarball if not already cached.
   Returns `{:ok, cache_path}` or `{:error, reason}`.
   """
-  @spec ensure(String.t(), String.t(), String.t(), String.t()) ::
+  @spec ensure(String.t(), String.t(), String.t(), String.t(), keyword()) ::
           {:ok, String.t()} | {:error, term()}
-  def ensure(name, version, tarball_url, integrity) do
+  def ensure(name, version, tarball_url, integrity, opts \\ []) do
     dest = package_dir(name, version)
 
     if cached?(name, version) do
@@ -43,7 +43,13 @@ defmodule NPM.Cache do
     else
       case NPM.Tarball.fetch_and_extract(tarball_url, integrity, dest) do
         {:ok, _count} -> {:ok, dest}
-        error -> error
+        {:error, reason} ->
+          if Keyword.get(opts, :optional?, false) do
+            File.rm_rf(dest)
+            {:ok, :missing_optional}
+          else
+            {:error, reason}
+          end
       end
     end
   end

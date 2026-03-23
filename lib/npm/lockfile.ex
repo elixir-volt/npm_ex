@@ -12,7 +12,8 @@ defmodule NPM.Lockfile do
           version: String.t(),
           integrity: String.t(),
           tarball: String.t(),
-          dependencies: %{String.t() => String.t()}
+          dependencies: %{String.t() => String.t()},
+          optional_dependencies: %{String.t() => String.t()}
         }
 
   @type t :: %{String.t() => entry()}
@@ -52,7 +53,8 @@ defmodule NPM.Lockfile do
          version: Map.get(info, "version", ""),
          integrity: Map.get(info, "integrity", ""),
          tarball: Map.get(info, "tarball", ""),
-         dependencies: Map.get(info, "dependencies", %{})
+         dependencies: Map.get(info, "dependencies", %{}),
+         optional_dependencies: Map.get(info, "optional_dependencies", %{})
        }}
     end
   end
@@ -106,7 +108,8 @@ defmodule NPM.Lockfile do
          "version" => entry.version,
          "integrity" => entry.integrity,
          "tarball" => entry.tarball,
-         "dependencies" => entry.dependencies
+         "dependencies" => entry.dependencies,
+         "optional_dependencies" => Map.get(entry, :optional_dependencies, %{})
        }}
     end
   end

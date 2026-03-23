@@ -16,13 +16,13 @@ defmodule Mix.Tasks.Npm.Exec do
   def run([command | args]) do
     Application.ensure_all_started(:req)
 
-    bin_path = Path.join("node_modules/.bin", command)
+    case NPM.Exec.which(command, "node_modules") do
+      {:ok, bin_path} ->
+        execute(bin_path, args)
 
-    if File.exists?(bin_path) do
-      execute(bin_path, args)
-    else
-      Mix.shell().error("Binary #{command} not found in node_modules/.bin/")
-      Mix.shell().info("Run `mix npm.install` to install packages.")
+      {:error, :not_found} ->
+        Mix.shell().error("Binary #{command} not found in node_modules/.bin/")
+        Mix.shell().info("Run `mix npm.install` to install packages.")
     end
   end
 
@@ -44,30 +44,20 @@ defmodule Mix.Tasks.Npm.Exec do
   end
 
   defp execute(bin_path, args) do
-    full_command = Enum.join([bin_path | args], " ")
+    {output, status} =
+      NPM.NodeRunner.run(Path.expand(bin_path), args,
+        node_modules_dir: "node_modules",
+        cd: File.cwd!()
+      )
 
-    port =
-      Port.open({:spawn, full_command}, [
-        :binary,
-        :exit_status,
-        :stderr_to_stdout
-      ])
+    if output != "", do: IO.write(output)
 
-    stream_port(port)
-  end
-
-  defp stream_port(port) do
-    receive do
-      {^port, {:data, data}} ->
-        IO.write(data)
-        stream_port(port)
-
-      {^port, {:exit_status, 0}} ->
-        :ok
-
-      {^port, {:exit_status, code}} ->
+    case status do
+      0 -> :ok
+      code ->
         Mix.shell().error("Exited with code #{code}")
         {:error, {:exit, code}}
     end
   end
+
 end

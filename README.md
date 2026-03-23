@@ -107,6 +107,10 @@ mix npm.config
 9. Warns about unmet peer dependencies and deprecated packages
 10. Retries failed downloads with exponential backoff
 
+## Why `npm.lock` instead of `package-lock.json`?
+
+`npm_ex` is not npm, so it keeps its own lockfile. `package.json` is the shared manifest; `npm.lock` is the reproducibility file for the `npm_ex` installer.
+
 ## Configuration
 
 Set environment variables to customize behavior:

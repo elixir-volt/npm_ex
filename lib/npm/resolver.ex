@@ -77,17 +77,13 @@ defmodule NPM.Resolver do
   end
 
   defp build_dependencies(root_deps) do
-    Enum.map(root_deps, fn {name, range} ->
-      {:ok, constraint} = normalize_range(range)
+    Enum.flat_map(root_deps, fn {name, range} ->
+      {:ok, packument} = get_cached_packument(name)
+      version = highest_matching_version(packument, range)
+      info = Map.fetch!(packument.versions, version)
 
-      %{
-        repo: nil,
-        name: name,
-        constraint: constraint,
-        optional: false,
-        label: name,
-        dependencies: []
-      }
+      [%{repo: nil, name: name, constraint: elem(normalize_range(range), 1), optional: false, label: name, dependencies: []} |
+       solver_dependencies(info, MapSet.new(), get_overrides())]
     end)
   end
 
@@ -273,16 +269,33 @@ defmodule NPM.Resolver do
         overrides = get_overrides()
 
         deps =
-          info.dependencies
-          |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
-          |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range)} end)
-          |> Enum.flat_map(&to_solver_dep/1)
+          info
+          |> solver_dependencies(excluded, overrides)
 
         {:ok, deps}
     end
   end
 
-  defp to_solver_dep({name, range}) do
+  defp solver_dependencies(info, excluded, overrides) do
+    optional_dependency_names = Map.keys(info.optional_dependencies)
+
+    required =
+      info.dependencies
+      |> Enum.reject(fn {name, _} -> name in optional_dependency_names end)
+      |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
+      |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)
+
+    optional =
+      info.optional_dependencies
+      |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
+      |> Enum.filter(fn {name, _} -> optional_dependency_relevant?(name) end)
+      |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)
+
+    (required ++ optional)
+    |> Enum.flat_map(&to_solver_dep/1)
+  end
+
+  defp to_solver_dep({name, range, optional?}) do
     case normalize_range(range) do
       {:ok, constraint} ->
         [
@@ -290,7 +303,7 @@ defmodule NPM.Resolver do
             repo: nil,
             name: name,
             constraint: constraint,
-            optional: false,
+            optional: optional?,
             label: name,
             dependencies: []
           }
@@ -301,11 +314,51 @@ defmodule NPM.Resolver do
     end
   end
 
+  defp to_solver_dep({name, range}) do
+    to_solver_dep({name, range, false})
+  end
+
+  defp optional_dependency_relevant?(name) do
+    case NPM.Registry.get_packument(name) do
+      {:ok, optional_packument} ->
+        optional_packument.versions
+        |> Map.values()
+        |> Enum.any?(fn optional_info ->
+          NPM.Platform.os_compatible?(optional_info.os) and
+            NPM.Platform.cpu_compatible?(optional_info.cpu)
+        end)
+
+      _ ->
+        false
+    end
+  end
+
   defp normalize_range(range) when range in ["*", "", "latest"] do
     NPMSemver.to_hex_constraint(">=0.0.0")
   end
 
   defp normalize_range(range), do: NPMSemver.to_hex_constraint(range)
+
+  defp highest_matching_version(packument, range) do
+    packument.versions
+    |> Map.keys()
+    |> Enum.filter(&version_matches?(&1, range))
+    |> Enum.sort(&version_gt?/2)
+    |> List.first()
+  end
+
+  defp version_matches?(version, range) do
+    NPMSemver.matches?(version, range)
+  rescue
+    _ -> false
+  end
+
+  defp version_gt?(a, b) do
+    case Version.compare(Version.parse!(a), Version.parse!(b)) do
+      :gt -> true
+      _ -> false
+    end
+  end
 
   # --- Cache ---
 
