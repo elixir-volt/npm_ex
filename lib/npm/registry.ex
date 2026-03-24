@@ -42,21 +42,39 @@ defmodule NPM.Registry do
   @doc "Fetch the abbreviated packument for a package."
   @spec get_packument(String.t()) :: {:ok, packument()} | {:error, term()}
   def get_packument(package) do
-    url = "#{registry_url()}/#{encode_package(package)}"
-    headers = auth_headers() ++ [accept: "application/vnd.npm.install-v1+json"]
+    case NPM.PackumentCache.get(package) do
+      {:ok, packument} ->
+        {:ok, packument}
 
-    fetch_with_retry(url, headers, @max_retries)
+      :miss ->
+        fetch_packument(package)
+    end
   end
 
-  defp fetch_with_retry(url, headers, retries_left) do
+  defp fetch_packument(package) do
+    url = "#{registry_url()}/#{encode_package(package)}"
+    headers = auth_headers() ++ [accept: "application/vnd.npm.install-v1+json"]
+    fetch_with_retry(package, url, headers, @max_retries)
+  end
+
+  defp fetch_with_retry(package, url, headers, retries_left) do
     result = Req.get(url, headers: headers, decode_body: false)
 
     case classify_result(result) do
-      {:ok, body} -> {:ok, body |> decode_body() |> parse_packument()}
-      {:retry, _} when retries_left > 0 -> retry(url, headers, retries_left)
-      {_, error} -> error
+      {:ok, body} ->
+        packument = body |> decode_body() |> parse_packument()
+        NPM.PackumentCache.put(package, packument)
+        {:ok, packument}
+
+      {:retry, _} when retries_left > 0 ->
+        retry(package, url, headers, retries_left)
+
+      {_, error} ->
+        error
     end
   end
+
+
 
   defp classify_result({:ok, %{status: 200, body: body}}), do: {:ok, body}
   defp classify_result({:ok, %{status: 404}}), do: {:error, {:error, :not_found}}
@@ -66,9 +84,9 @@ defmodule NPM.Registry do
   defp classify_result({:ok, %{status: s}}), do: {:error, {:error, {:http, s}}}
   defp classify_result({:error, reason}), do: {:retry, {:error, reason}}
 
-  defp retry(url, headers, retries_left) do
+  defp retry(package, url, headers, retries_left) do
     Process.sleep(1000 * (@max_retries - retries_left + 1))
-    fetch_with_retry(url, headers, retries_left - 1)
+    fetch_with_retry(package, url, headers, retries_left - 1)
   end
 
   defp auth_headers do

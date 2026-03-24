@@ -208,6 +208,22 @@ defmodule NPM do
 
   defp full_install(deps) do
     {:ok, old_lockfile} = NPM.Lockfile.read()
+
+    if old_lockfile != %{} and lockfile_matches?(old_lockfile, deps) and node_modules_intact?(old_lockfile) do
+      Mix.shell().info("Already up to date.")
+      :ok
+    else
+      resolve_and_install(deps, old_lockfile)
+    end
+  end
+
+  defp node_modules_intact?(lockfile) do
+    Enum.all?(lockfile, fn {name, _entry} ->
+      Path.join([@node_modules, name, "package.json"]) |> File.exists?()
+    end)
+  end
+
+  defp resolve_and_install(deps, old_lockfile) do
     {:ok, overrides} = NPM.PackageJSON.read_overrides()
 
     {resolve_us, result} =

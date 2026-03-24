@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.6
+
+- Add packument disk cache (`~/.npm_ex/packuments/`) with 1h TTL — avoids refetching registry metadata on repeat installs
+- Skip resolution entirely when lockfile matches `package.json` and `node_modules` is intact
+
 ## 0.4.5
 
 - Switch default linker strategy from symlink to copy, fixing ESM module resolution for cached packages
