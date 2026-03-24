@@ -301,9 +301,6 @@ defmodule NPM.Linker do
   end
 
   defp default_strategy do
-    case :os.type() do
-      {:unix, _} -> :symlink
-      _ -> :copy
-    end
+    :copy
   end
 end

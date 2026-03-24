@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.5
+
+- Switch default linker strategy from symlink to copy, fixing ESM module resolution for cached packages
+- Fix `NodeRunner` entrypoint resolution to follow bin symlinks correctly
+- Cache platform binding selection results, reducing resolve time from ~35s to ~1.5s for packages like `oxfmt`
+- Generalize platform binding family detection for both old-style (`@oxfmt/darwin-arm64`) and new-style (`@oxfmt/binding-darwin-arm64`) naming
+- Avoid grouping non-platform optional dependencies (e.g. `@babel/core`) as platform variants
+
 ## 0.4.4
 
 - Fix npm registry packument decoding for optional platform dependency inspection

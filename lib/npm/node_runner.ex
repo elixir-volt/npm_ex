@@ -3,13 +3,16 @@ defmodule NPM.NodeRunner do
 
   @spec run(String.t(), [String.t()], keyword()) :: {String.t(), non_neg_integer()}
   def run(entrypoint, args, opts \\ []) do
-    node_modules_dir = Keyword.get(opts, :node_modules_dir, "node_modules")
+    node_modules_dir = Path.expand(Keyword.get(opts, :node_modules_dir, "node_modules"))
     env = Keyword.get(opts, :env, []) ++ NPM.Exec.env(node_modules_dir)
+    entrypoint = resolve_entrypoint(Path.expand(entrypoint), node_modules_dir)
 
-    loader_path = write_loader(Path.expand(node_modules_dir), Path.expand(entrypoint))
+    loader_path = write_loader(node_modules_dir, entrypoint)
 
     try do
-      System.cmd("node", [loader_path | args],
+      node_args = ["--preserve-symlinks", "--preserve-symlinks-main", loader_path | args]
+
+      System.cmd("node", node_args,
         env: env,
         stderr_to_stdout: true,
         cd: Keyword.get(opts, :cd, File.cwd!())
@@ -19,16 +22,63 @@ defmodule NPM.NodeRunner do
     end
   end
 
+  defp resolve_entrypoint(entrypoint, node_modules_dir) do
+    bin_dir = Path.join(node_modules_dir, ".bin")
+
+    if String.starts_with?(entrypoint, bin_dir) do
+      command = Path.basename(entrypoint)
+
+      case find_package_entrypoint(command, node_modules_dir) do
+        {:ok, resolved} -> resolved
+        :error -> entrypoint
+      end
+    else
+      entrypoint
+    end
+  end
+
+  defp find_package_entrypoint(command, node_modules_dir) do
+    bin_path = Path.join([node_modules_dir, ".bin", command])
+    real_bin_path = resolve_symlink(bin_path)
+
+    with {:ok, content} <- File.read(real_bin_path),
+         [_, rel_path] <- Regex.run(~r{import\s+["'](\.\./[^"']+)["']}, content) do
+      {:ok, Path.expand(rel_path, Path.dirname(real_bin_path))}
+    else
+      _ ->
+        case NPM.Exec.which(command, node_modules_dir) do
+          {:ok, pkg_path} -> {:ok, Path.expand(pkg_path)}
+          _ -> :error
+        end
+    end
+  end
+
+  defp resolve_symlink(path, depth \\ 10)
+  defp resolve_symlink(path, 0), do: path
+
+  defp resolve_symlink(path, depth) do
+    case File.read_link(path) do
+      {:ok, target} ->
+        resolve_symlink(Path.expand(target, Path.dirname(path)), depth - 1)
+
+      {:error, _} ->
+        path
+    end
+  end
+
   defp write_loader(node_modules_dir, entrypoint) do
-    path = Path.join(System.tmp_dir!(), "npm-node-runner-#{System.unique_integer([:positive])}.mjs")
+    path = Path.join(Path.dirname(node_modules_dir), ".npm-node-runner-#{System.unique_integer([:positive])}.mjs")
 
     File.write!(path, """
     import { createRequire } from 'node:module'
-    const require = createRequire(import.meta.url)
-    globalThis.require = require
-    process.env.NODE_PATH = #{inspect(node_modules_dir)}
+    import { pathToFileURL } from 'node:url'
+
+    const nmDir = #{inspect(node_modules_dir)}
+    globalThis.require = createRequire(pathToFileURL(nmDir + '/').href)
+    process.env.NODE_PATH = nmDir
     require('node:module').Module._initPaths()
-    await import(#{inspect(entrypoint)})
+
+    await import(pathToFileURL(#{inspect(entrypoint)}).href)
     """)
 
     path
