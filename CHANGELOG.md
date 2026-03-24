@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- Platform-agnostic lockfile: `npm.lock` now includes all optional platform bindings, not just the current platform
+- Only install matching platform bindings into `node_modules` at link time
+- Lockfiles are now portable across OS/arch — same as npm's `package-lock.json` behavior
+
 ## 0.5.0
 
 - Add `NPM.install/2` for script context — works like `Mix.install/2`, installs to a content-addressed cache directory without requiring a Mix project

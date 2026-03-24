@@ -293,6 +293,7 @@ defmodule NPM.Resolver do
     optional =
       info.optional_dependencies
       |> NPM.PlatformOptional.select()
+      |> Enum.reject(fn {name, _} -> name == self_name end)
       |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
       |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)
 

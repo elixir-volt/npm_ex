@@ -285,6 +285,7 @@ defmodule NPM do
         end
 
         lockfile = build_lockfile(flat)
+        lockfile = expand_all_optional_deps(lockfile)
         print_lockfile_diff(old_lockfile, lockfile)
         NPM.Lockfile.write(lockfile)
         link_and_nest(lockfile, nested_info, flat)
@@ -342,6 +343,48 @@ defmodule NPM do
 
     warn_unmet_peers(resolved)
     lockfile
+  end
+
+  defp expand_all_optional_deps(lockfile) do
+    Enum.reduce(lockfile, lockfile, fn {_name, entry}, acc ->
+      Enum.reduce(Map.get(entry, :optional_dependencies, %{}), acc, fn {opt_name, opt_range}, inner ->
+        if Map.has_key?(inner, opt_name) do
+          inner
+        else
+          case resolve_version(opt_name, opt_range) do
+            {:ok, version_str, info} ->
+              Map.put(inner, opt_name, %{
+                version: version_str,
+                integrity: info.dist.integrity,
+                tarball: info.dist.tarball,
+                dependencies: info.dependencies,
+                optional_dependencies: Map.get(info, :optional_dependencies, %{})
+              })
+
+            :error ->
+              inner
+          end
+        end
+      end)
+    end)
+  end
+
+  defp resolve_version(name, range) do
+    case NPM.Registry.get_packument(name) do
+      {:ok, packument} ->
+        packument.versions
+        |> Enum.filter(fn {v, _} -> NPMSemver.matches?(v, range) end)
+        |> Enum.sort_by(fn {v, _} -> Version.parse!(v) end, {:desc, Version})
+        |> case do
+          [{version_str, info} | _] -> {:ok, version_str, info}
+          [] -> :error
+        end
+
+      _ ->
+        :error
+    end
+  rescue
+    _ -> :error
   end
 
   defp warn_unmet_peers(resolved) do

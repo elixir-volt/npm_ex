@@ -46,7 +46,10 @@ defmodule NPM.Linker do
   end
 
   defp populate_cache(lockfile) do
+    platform_skipped = platform_incompatible_packages(lockfile)
+
     lockfile
+    |> Enum.reject(fn {name, _} -> MapSet.member?(platform_skipped, name) end)
     |> Task.async_stream(
       fn {name, entry} ->
         optional? = optional_dependency?(name, lockfile)
@@ -59,7 +62,7 @@ defmodule NPM.Linker do
       max_concurrency: 8,
       timeout: 60_000
     )
-    |> Enum.reduce({:ok, MapSet.new()}, fn
+    |> Enum.reduce({:ok, MapSet.union(platform_skipped, MapSet.new())}, fn
       {:ok, {:ok, _}}, {status, skipped} -> {status, skipped}
       {:ok, {:skip, name}}, {status, skipped} -> {status, MapSet.put(skipped, name)}
       {:ok, {:error, reason}}, {_status, _skipped} -> {{:error, reason}, MapSet.new()}
@@ -268,6 +271,29 @@ defmodule NPM.Linker do
       :gt -> true
       _ -> false
     end
+  end
+
+  defp platform_incompatible_packages(lockfile) do
+    optional_names =
+      lockfile
+      |> Enum.flat_map(fn {_pkg, entry} -> Map.keys(Map.get(entry, :optional_dependencies, %{})) end)
+      |> MapSet.new()
+
+    lockfile
+    |> Enum.filter(fn {name, _} -> MapSet.member?(optional_names, name) end)
+    |> Enum.reject(fn {name, entry} ->
+      case NPM.Registry.get_packument(name) do
+        {:ok, packument} ->
+          case Map.get(packument.versions, entry.version) do
+            nil -> false
+            info -> NPM.Platform.os_compatible?(info.os) and NPM.Platform.cpu_compatible?(info.cpu)
+          end
+
+        _ ->
+          true
+      end
+    end)
+    |> MapSet.new(fn {name, _} -> name end)
   end
 
   defp optional_dependency?(name, lockfile) do
