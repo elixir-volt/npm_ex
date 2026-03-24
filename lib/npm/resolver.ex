@@ -229,7 +229,7 @@ defmodule NPM.Resolver do
   @impl true
   def dependencies(_repo, package, version) do
     case get_cached_packument(package) do
-      {:ok, packument} -> deps_for_version(packument, to_string(version))
+      {:ok, packument} -> deps_for_version(package, packument, to_string(version))
       {:error, _} -> :error
     end
   end
@@ -262,7 +262,7 @@ defmodule NPM.Resolver do
     |> Enum.sort(Version)
   end
 
-  defp deps_for_version(packument, version_str) do
+  defp deps_for_version(package, packument, version_str) do
     excluded = get_excluded()
 
     case Map.get(packument.versions, version_str) do
@@ -274,17 +274,18 @@ defmodule NPM.Resolver do
 
         deps =
           info
-          |> solver_dependencies(excluded, overrides)
+          |> solver_dependencies(package, excluded, overrides)
 
         {:ok, deps}
     end
   end
 
-  defp solver_dependencies(info, excluded, overrides) do
+  defp solver_dependencies(info, self_name, excluded, overrides) do
     optional_dependency_names = Map.keys(info.optional_dependencies)
 
     required =
       info.dependencies
+      |> Enum.reject(fn {name, _} -> name == self_name end)
       |> Enum.reject(fn {name, _} -> name in optional_dependency_names end)
       |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
       |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)

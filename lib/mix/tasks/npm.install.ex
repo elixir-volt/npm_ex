@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Npm.Install do
       mix npm.install --frozen                # Fail if lockfile is stale (CI)
       mix npm.install --production            # Skip devDependencies
       mix npm.install eslint --save-dev       # Add to devDependencies
+      mix npm.install lodash react vue        # Add multiple packages
 
   Resolves all dependencies using the PubGrub solver, writes `npm.lock`,
   and links packages into `node_modules/`.
@@ -25,8 +26,7 @@ defmodule Mix.Tasks.Npm.Install do
 
     case positional do
       [] -> NPM.install(opts)
-      [spec] -> install_spec(spec, opts)
-      _ -> Mix.shell().error("Usage: mix npm.install [package[@range]] [--frozen] [--save-dev]")
+      specs -> Enum.each(specs, &install_spec(&1, opts))
     end
   end
 

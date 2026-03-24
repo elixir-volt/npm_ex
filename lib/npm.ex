@@ -22,7 +22,49 @@ defmodule NPM do
   @node_modules "node_modules"
 
   @doc """
-  Install all dependencies from `package.json`.
+  Install npm packages in a script context, without a Mix project.
+
+  Works like `Mix.install/2` — installs to a content-addressed cache directory,
+  is idempotent, and can only be called once per VM (raises on different deps).
+
+      NPM.install(%{"tailwindcss" => "^4.2.2"})
+
+  After installation, use `NPM.install_dir!/0` and `NPM.node_modules_dir!/0`
+  to locate the installed packages.
+
+  ## Options
+
+    * `:force` — reinstall even if cached (default: `false`)
+  """
+  @spec install(map(), keyword()) :: :ok
+  def install(deps, opts) when is_map(deps) do
+    NPM.ScriptInstall.install(deps, opts)
+  end
+
+  @doc """
+  Returns whether `NPM.install/2` has been called in this VM.
+  """
+  @spec installed? :: boolean()
+  defdelegate installed?, to: NPM.ScriptInstall
+
+  @doc """
+  Returns the root directory of the current `NPM.install/2` installation.
+
+  Raises if `NPM.install/2` has not been called.
+  """
+  @spec install_dir! :: String.t()
+  defdelegate install_dir!, to: NPM.ScriptInstall
+
+  @doc """
+  Returns the `node_modules` path of the current `NPM.install/2` installation.
+
+  Raises if `NPM.install/2` has not been called.
+  """
+  @spec node_modules_dir! :: String.t()
+  defdelegate node_modules_dir!, to: NPM.ScriptInstall
+
+  @doc """
+  Install all dependencies from `package.json` (project context).
 
   ## Options
 
@@ -31,7 +73,7 @@ defmodule NPM do
     * `:production` - when `true`, skips `devDependencies`.
   """
   @spec install(keyword()) :: :ok | {:error, term()}
-  def install(opts \\ []) do
+  def install(opts \\ []) when is_list(opts) do
     case NPM.PackageJSON.read_all() do
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps, optional_dependencies: opt_deps}} ->
         all_deps =

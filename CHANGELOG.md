@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Add `NPM.install/2` for script context — works like `Mix.install/2`, installs to a content-addressed cache directory without requiring a Mix project
+- Add `NPM.installed?/0`, `NPM.install_dir!/0`, `NPM.node_modules_dir!/0` helpers
+- `mix npm.install` now accepts multiple packages: `mix npm.install lodash react vue`
+- Fix infinite loop when a package lists itself as a dependency (e.g. `sqlite-napi`)
+
 ## 0.4.6
 
 - Add packument disk cache (`~/.npm_ex/packuments/`) with 1h TTL — avoids refetching registry metadata on repeat installs

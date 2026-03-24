@@ -1,7 +1,7 @@
 defmodule NPM.MixProject do
   use Mix.Project
 
-  @version "0.4.6"
+  @version "0.5.0"
   @source_url "https://github.com/elixir-volt/npm_ex"
 
   def project do
