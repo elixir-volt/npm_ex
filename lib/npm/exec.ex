@@ -74,9 +74,11 @@ defmodule NPM.Exec do
     bin_dir = Path.expand(Path.join(node_modules_dir, ".bin"))
     node_modules_dir = Path.expand(node_modules_dir)
     current_path = System.get_env("PATH") || ""
-    node_path = [node_modules_dir, System.get_env("NODE_PATH")]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(":")
+
+    node_path =
+      [node_modules_dir, System.get_env("NODE_PATH")]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(":")
 
     [
       {"PATH", "#{bin_dir}:#{current_path}"},
@@ -96,7 +98,7 @@ defmodule NPM.Exec do
         {:error, :not_found}
     end
   rescue
-    _ -> {:error, :not_found}
+    ErlangError -> {:error, :not_found}
   end
 
   defp resolve_bin(%{"bin" => bin}, _command, nm_dir) when is_binary(bin) do

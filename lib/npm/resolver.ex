@@ -285,16 +285,18 @@ defmodule NPM.Resolver do
 
     required =
       info.dependencies
-      |> Enum.reject(fn {name, _} -> name == self_name end)
-      |> Enum.reject(fn {name, _} -> name in optional_dependency_names end)
-      |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
+      |> Enum.reject(fn {name, _} ->
+        name == self_name or name in optional_dependency_names or
+          MapSet.member?(excluded, name)
+      end)
       |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)
 
     optional =
       info.optional_dependencies
       |> NPM.PlatformOptional.select()
-      |> Enum.reject(fn {name, _} -> name == self_name end)
-      |> Enum.reject(fn {name, _} -> MapSet.member?(excluded, name) end)
+      |> Enum.reject(fn {name, _} ->
+        name == self_name or MapSet.member?(excluded, name)
+      end)
       |> Enum.map(fn {name, range} -> {name, Map.get(overrides, name, range), false} end)
 
     (required ++ optional)
@@ -333,8 +335,12 @@ defmodule NPM.Resolver do
   # --- Cache ---
 
   defp ensure_cache do
-    if :ets.info(@table) == :undefined do
-      :ets.new(@table, [:named_table, :set, :public])
+    if :ets.whereis(@table) == :undefined do
+      try do
+        :ets.new(@table, [:named_table, :set, :public])
+      rescue
+        ArgumentError -> :ok
+      end
     end
   end
 

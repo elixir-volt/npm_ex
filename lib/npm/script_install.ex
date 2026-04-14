@@ -9,7 +9,9 @@ defmodule NPM.ScriptInstall do
 
     unless Keyword.get(opts, :__skip_project_check__, false) do
       if Mix.Project.get() do
-        Mix.raise("NPM.install/2 cannot be used inside a Mix project. Use mix npm.install instead.")
+        Mix.raise(
+          "NPM.install/2 cannot be used inside a Mix project. Use mix npm.install instead."
+        )
       end
     end
 

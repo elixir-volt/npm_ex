@@ -34,13 +34,10 @@ defmodule NPM.DepsOutput do
       |> Enum.filter(fn k -> old[k].version != new[k].version end)
       |> Enum.sort()
 
-    lines = []
-    lines = lines ++ Enum.map(added, fn n -> "  + #{n} #{new[n].version}" end)
-
     lines =
-      lines ++ Enum.map(updated, fn n -> "  ↑ #{n} #{old[n].version} → #{new[n].version}" end)
-
-    lines = lines ++ Enum.map(removed, fn n -> "  - #{n} #{old[n].version}" end)
+      Enum.map(added, fn n -> "  + #{n} #{new[n].version}" end) ++
+        Enum.map(updated, fn n -> "  ↑ #{n} #{old[n].version} → #{new[n].version}" end) ++
+        Enum.map(removed, fn n -> "  - #{n} #{old[n].version}" end)
 
     case lines do
       [] -> ""

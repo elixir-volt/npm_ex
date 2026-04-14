@@ -54,7 +54,9 @@ defmodule NPM.Linker do
       fn {name, entry} ->
         optional? = optional_dependency?(name, lockfile)
 
-        case NPM.Cache.ensure(name, entry.version, entry.tarball, entry.integrity, optional?: optional?) do
+        case NPM.Cache.ensure(name, entry.version, entry.tarball, entry.integrity,
+               optional?: optional?
+             ) do
           {:ok, :missing_optional} -> {:skip, name}
           other -> other
         end
@@ -94,9 +96,7 @@ defmodule NPM.Linker do
   end
 
   defp link_package(source, target, :symlink) do
-    case Path.dirname(target) |> File.mkdir_p() do
-      :ok -> :ok
-    end
+    File.mkdir_p!(Path.dirname(target))
 
     File.rm_rf!(target)
     File.ln_s!(source, target)
@@ -263,20 +263,19 @@ defmodule NPM.Linker do
   defp version_matches?(version, range) do
     NPMSemver.matches?(version, range)
   rescue
-    _ -> false
+    ArgumentError -> false
   end
 
   defp version_gt?(a, b) do
-    case Version.compare(Version.parse!(a), Version.parse!(b)) do
-      :gt -> true
-      _ -> false
-    end
+    Version.compare(Version.parse!(a), Version.parse!(b)) == :gt
   end
 
   defp platform_incompatible_packages(lockfile) do
     optional_names =
       lockfile
-      |> Enum.flat_map(fn {_pkg, entry} -> Map.keys(Map.get(entry, :optional_dependencies, %{})) end)
+      |> Enum.flat_map(fn {_pkg, entry} ->
+        Map.keys(Map.get(entry, :optional_dependencies, %{}))
+      end)
       |> MapSet.new()
 
     lockfile
@@ -285,8 +284,11 @@ defmodule NPM.Linker do
       case NPM.Registry.get_packument(name) do
         {:ok, packument} ->
           case Map.get(packument.versions, entry.version) do
-            nil -> false
-            info -> NPM.Platform.os_compatible?(info.os) and NPM.Platform.cpu_compatible?(info.cpu)
+            nil ->
+              false
+
+            info ->
+              NPM.Platform.os_compatible?(info.os) and NPM.Platform.cpu_compatible?(info.cpu)
           end
 
         _ ->

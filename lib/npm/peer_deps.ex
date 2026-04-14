@@ -122,11 +122,8 @@ defmodule NPM.PeerDeps do
   end
 
   defp version_satisfies?(version, range) do
-    case NPMSemver.matches?(version, range) do
-      result when is_boolean(result) -> result
-      _ -> false
-    end
+    NPMSemver.matches?(version, range)
   rescue
-    _ -> false
+    ArgumentError -> false
   end
 end

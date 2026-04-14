@@ -4,7 +4,9 @@ defmodule NPM.LinkerOptionalRuntimeTest do
   import ExUnit.CaptureLog
 
   @tag :tmp_dir
-  test "populate_cache tolerates missing optional package tarballs when package is optional", %{tmp_dir: dir} do
+  test "populate_cache tolerates missing optional package tarballs when package is optional", %{
+    tmp_dir: dir
+  } do
     lockfile = %{
       "oxlint" => %{
         version: "1.56.0",

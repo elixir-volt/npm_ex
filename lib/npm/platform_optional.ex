@@ -32,13 +32,15 @@ defmodule NPM.PlatformOptional do
   defp select_group(deps) do
     exact_matches = Enum.filter(deps, fn {name, _range} -> current_match(name) end)
 
-    cond do
-      exact_matches != [] ->
-        [List.first(exact_matches)]
+    case exact_matches do
+      [first | _] ->
+        [first]
 
-      true ->
-        matches = Enum.filter(deps, fn {name, _range} -> package_matches_platform?(name) end)
-        if matches == [], do: [], else: [Enum.max_by(matches, fn {name, _range} -> platform_score(name) end)]
+      [] ->
+        case Enum.filter(deps, fn {name, _range} -> package_matches_platform?(name) end) do
+          [] -> []
+          matches -> [Enum.max_by(matches, fn {name, _range} -> platform_score(name) end)]
+        end
     end
   end
 
@@ -68,7 +70,9 @@ defmodule NPM.PlatformOptional do
   defp package_family(name) do
     if platform_binding?(name) do
       case Regex.run(~r/^(@[^\/]+\/)/, name) do
-        [scope | _] -> scope
+        [scope | _] ->
+          scope
+
         nil ->
           case String.split(name, "-", parts: 2) do
             [prefix, _] -> prefix

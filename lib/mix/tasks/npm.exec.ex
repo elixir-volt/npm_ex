@@ -53,11 +53,12 @@ defmodule Mix.Tasks.Npm.Exec do
     if output != "", do: IO.write(output)
 
     case status do
-      0 -> :ok
+      0 ->
+        :ok
+
       code ->
         Mix.shell().error("Exited with code #{code}")
         {:error, {:exit, code}}
     end
   end
-
 end

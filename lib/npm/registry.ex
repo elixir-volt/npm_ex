@@ -74,8 +74,6 @@ defmodule NPM.Registry do
     end
   end
 
-
-
   defp classify_result({:ok, %{status: 200, body: body}}), do: {:ok, body}
   defp classify_result({:ok, %{status: 404}}), do: {:error, {:error, :not_found}}
   defp classify_result({:ok, %{status: 401}}), do: {:error, {:error, :unauthorized}}

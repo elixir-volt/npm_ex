@@ -76,7 +76,7 @@ defmodule NPM.SemverUtil do
   defp matches?(version, range) do
     NPMSemver.matches?(version, range)
   rescue
-    _ -> false
+    ArgumentError -> false
   end
 
   defp sort_desc(versions) do

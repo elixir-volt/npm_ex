@@ -67,7 +67,11 @@ defmodule NPM.NodeRunner do
   end
 
   defp write_loader(node_modules_dir, entrypoint) do
-    path = Path.join(Path.dirname(node_modules_dir), ".npm-node-runner-#{System.unique_integer([:positive])}.mjs")
+    path =
+      Path.join(
+        Path.dirname(node_modules_dir),
+        ".npm-node-runner-#{System.unique_integer([:positive])}.mjs"
+      )
 
     File.write!(path, """
     import { createRequire } from 'node:module'

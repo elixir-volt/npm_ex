@@ -34,7 +34,7 @@ defmodule NPM.Cache do
   Returns `{:ok, cache_path}` or `{:error, reason}`.
   """
   @spec ensure(String.t(), String.t(), String.t(), String.t(), keyword()) ::
-          {:ok, String.t()} | {:error, term()}
+          {:ok, String.t()} | {:ok, :missing_optional} | {:error, term()}
   def ensure(name, version, tarball_url, integrity, opts \\ []) do
     dest = package_dir(name, version)
 
@@ -42,7 +42,9 @@ defmodule NPM.Cache do
       {:ok, dest}
     else
       case NPM.Tarball.fetch_and_extract(tarball_url, integrity, dest) do
-        {:ok, _count} -> {:ok, dest}
+        {:ok, _count} ->
+          {:ok, dest}
+
         {:error, reason} ->
           if Keyword.get(opts, :optional?, false) do
             File.rm_rf(dest)

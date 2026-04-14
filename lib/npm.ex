@@ -251,7 +251,8 @@ defmodule NPM do
   defp full_install(deps) do
     {:ok, old_lockfile} = NPM.Lockfile.read()
 
-    if old_lockfile != %{} and lockfile_matches?(old_lockfile, deps) and node_modules_intact?(old_lockfile) do
+    if old_lockfile != %{} and lockfile_matches?(old_lockfile, deps) and
+         node_modules_intact?(old_lockfile) do
       Mix.shell().info("Already up to date.")
       :ok
     else
@@ -347,33 +348,37 @@ defmodule NPM do
 
   defp expand_all_optional_deps(lockfile) do
     Enum.reduce(lockfile, lockfile, fn {_name, entry}, acc ->
-      Enum.reduce(Map.get(entry, :optional_dependencies, %{}), acc, fn {opt_name, opt_range}, inner ->
-        if Map.has_key?(inner, opt_name) do
-          inner
-        else
-          case resolve_version(opt_name, opt_range) do
-            {:ok, version_str, info} ->
-              Map.put(inner, opt_name, %{
-                version: version_str,
-                integrity: info.dist.integrity,
-                tarball: info.dist.tarball,
-                dependencies: info.dependencies,
-                optional_dependencies: Map.get(info, :optional_dependencies, %{})
-              })
-
-            :error ->
-              inner
-          end
-        end
-      end)
+      entry
+      |> Map.get(:optional_dependencies, %{})
+      |> Enum.reduce(acc, &maybe_add_optional_dep/2)
     end)
+  end
+
+  defp maybe_add_optional_dep({name, _range}, acc) when is_map_key(acc, name), do: acc
+
+  defp maybe_add_optional_dep({name, range}, acc) do
+    case resolve_version(name, range) do
+      {:ok, version_str, info} ->
+        Map.put(acc, name, %{
+          version: version_str,
+          integrity: info.dist.integrity,
+          tarball: info.dist.tarball,
+          dependencies: info.dependencies,
+          optional_dependencies: Map.get(info, :optional_dependencies, %{})
+        })
+
+      :error ->
+        acc
+    end
   end
 
   defp resolve_version(name, range) do
     case NPM.Registry.get_packument(name) do
       {:ok, packument} ->
         packument.versions
-        |> Enum.filter(fn {v, _} -> NPMSemver.matches?(v, range) end)
+        |> Enum.filter(fn {v, _} ->
+          NPMSemver.matches?(v, range) and match?({:ok, _}, Version.parse(v))
+        end)
         |> Enum.sort_by(fn {v, _} -> Version.parse!(v) end, {:desc, Version})
         |> case do
           [{version_str, info} | _] -> {:ok, version_str, info}
@@ -383,8 +388,6 @@ defmodule NPM do
       _ ->
         :error
     end
-  rescue
-    _ -> :error
   end
 
   defp warn_unmet_peers(resolved) do
