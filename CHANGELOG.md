@@ -5,10 +5,10 @@
 - Add `NPM.PackageResolver` — Node.js module resolution algorithm (specifier parsing, `node_modules` traversal, `package.json` entry points, extension probing)
 - Fix ETS race condition in `NPM.Resolver` cache initialization
 - Fix `NPM.Cache.ensure/5` spec and docs to include `{:ok, :missing_optional}` return
-- Fix `NPM.PeerDeps.version_satisfies?/2` dead code (redundant boolean case)
+- Fix dead code in `NPM.PeerDeps` version matching (redundant boolean case)
 - Fix `NPM.FileSize.by_extension/1` dead `||` branch (`Path.extname` never returns nil)
 - Fix `NPM.DepSort.install_order/1` dead `{:error, :cycle}` branch
-- Fix `NPM.Linker.resolve_nested_version/2` crash on unparseable versions
+- Fix crash in `NPM.Linker` nested version resolution on unparseable versions
 - Replace blanket `rescue _` with specific exception types across the codebase
 - Flatten nesting in `expand_all_optional_deps`, `solver_dependencies`, `select_group`
 - Bump ex_dna `~> 1.1` → `~> 1.3`
