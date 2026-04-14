@@ -463,6 +463,52 @@ defmodule NPM.PackageResolverTest do
   # Helpers
   # ---------------------------------------------------------------------------
 
+  # ---------------------------------------------------------------------------
+  # relative_import_path/3
+  # ---------------------------------------------------------------------------
+
+  describe "relative_import_path/3" do
+    test "sibling file gets ./ prefix" do
+      assert PackageResolver.relative_import_path(
+               "/app/src/index.js",
+               "/app/src/app.js",
+               "/app"
+             ) == "./app.js"
+    end
+
+    test "file in subdirectory" do
+      assert PackageResolver.relative_import_path(
+               "/app/src/index.js",
+               "/app/src/utils/format.js",
+               "/app"
+             ) == "./utils/format.js"
+    end
+
+    test "file in parent directory" do
+      assert PackageResolver.relative_import_path(
+               "/app/src/pages/home.js",
+               "/app/src/utils/format.js",
+               "/app"
+             ) == "../utils/format.js"
+    end
+
+    test "deeply nested upward traversal" do
+      assert PackageResolver.relative_import_path(
+               "/app/src/a/b/c/deep.js",
+               "/app/src/lib/helper.js",
+               "/app"
+             ) == "../../../lib/helper.js"
+    end
+
+    test "same directory different extensions" do
+      assert PackageResolver.relative_import_path(
+               "/app/components/button.tsx",
+               "/app/components/button.module.css",
+               "/app"
+             ) == "./button.module.css"
+    end
+  end
+
   defp write_pkg_json(dir, data) do
     File.write!(Path.join(dir, "package.json"), :json.encode(data))
   end

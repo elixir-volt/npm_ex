@@ -204,6 +204,44 @@ defmodule NPM.PackageResolver do
   end
 
   # ---------------------------------------------------------------------------
+  # Relative import paths
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Compute a relative import path from `importer` to `target` within `project_root`.
+
+  Both paths must be absolute. Returns a POSIX-style relative path with
+  a guaranteed `./` or `../` prefix, suitable for use as an import specifier.
+
+  ## Examples
+
+      iex> NPM.PackageResolver.relative_import_path(
+      ...>   "/app/src/pages/home.js",
+      ...>   "/app/src/utils/format.js",
+      ...>   "/app"
+      ...> )
+      "../utils/format.js"
+
+      iex> NPM.PackageResolver.relative_import_path(
+      ...>   "/app/src/index.js",
+      ...>   "/app/src/app.js",
+      ...>   "/app"
+      ...> )
+      "./app.js"
+  """
+  @spec relative_import_path(String.t(), String.t(), String.t()) :: String.t()
+  def relative_import_path(importer, target, project_root) do
+    importer_dir = importer |> Path.relative_to(project_root) |> Path.dirname()
+    target_label = Path.relative_to(target, project_root)
+    relative = Path.relative_to(target_label, importer_dir)
+    ensure_relative_prefix(relative)
+  end
+
+  defp ensure_relative_prefix("./" <> _ = path), do: path
+  defp ensure_relative_prefix("../" <> _ = path), do: path
+  defp ensure_relative_prefix(path), do: "./" <> path
+
+  # ---------------------------------------------------------------------------
   # Private
   # ---------------------------------------------------------------------------
 
