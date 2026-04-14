@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.3
+
+- Add `NPM.PackageResolver.relative_import_path/3` — compute relative import paths between files within a project root, with guaranteed `./`/`../` prefix
+
 ## 0.5.2
 
 - Add `NPM.PackageResolver` — Node.js module resolution algorithm (specifier parsing, `node_modules` traversal, `package.json` entry points, extension probing)
