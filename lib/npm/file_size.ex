@@ -37,7 +37,12 @@ defmodule NPM.FileSize do
   @spec by_extension(String.t()) :: %{String.t() => non_neg_integer()}
   def by_extension(package_dir) do
     analyze(package_dir)
-    |> Enum.group_by(fn %{path: path} -> Path.extname(path) || "(none)" end)
+    |> Enum.group_by(fn %{path: path} ->
+      case Path.extname(path) do
+        "" -> "(none)"
+        ext -> ext
+      end
+    end)
     |> Map.new(fn {ext, files} ->
       {ext, files |> Enum.map(& &1.size) |> Enum.sum()}
     end)

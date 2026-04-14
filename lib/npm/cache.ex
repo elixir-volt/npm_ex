@@ -31,7 +31,8 @@ defmodule NPM.Cache do
   Ensure a package version is in the cache.
 
   Downloads and extracts the tarball if not already cached.
-  Returns `{:ok, cache_path}` or `{:error, reason}`.
+  Returns `{:ok, cache_path}`, `{:ok, :missing_optional}` when an
+  optional package fails to fetch, or `{:error, reason}`.
   """
   @spec ensure(String.t(), String.t(), String.t(), String.t(), keyword()) ::
           {:ok, String.t()} | {:ok, :missing_optional} | {:error, term()}

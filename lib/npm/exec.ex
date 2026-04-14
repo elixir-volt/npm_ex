@@ -98,7 +98,8 @@ defmodule NPM.Exec do
         {:error, :not_found}
     end
   rescue
-    ErlangError -> {:error, :not_found}
+    # JSON decode, missing keys, or unexpected package.json shape
+    _ -> {:error, :not_found}
   end
 
   defp resolve_bin(%{"bin" => bin}, _command, nm_dir) when is_binary(bin) do

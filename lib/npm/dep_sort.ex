@@ -21,10 +21,8 @@ defmodule NPM.DepSort do
   """
   @spec install_order(map()) :: [String.t()]
   def install_order(adj) do
-    case sort(adj) do
-      {:ok, order} -> Enum.reverse(order)
-      {:error, :cycle} -> Map.keys(adj) |> Enum.sort()
-    end
+    {:ok, order} = sort(adj)
+    Enum.reverse(order)
   end
 
   @doc """

@@ -251,7 +251,9 @@ defmodule NPM.Linker do
       {:ok, packument} ->
         packument.versions
         |> Map.keys()
-        |> Enum.filter(&version_matches?(&1, range))
+        |> Enum.filter(fn v ->
+          version_matches?(v, range) and match?({:ok, _}, Version.parse(v))
+        end)
         |> Enum.sort(&version_gt?/2)
         |> List.first()
 
