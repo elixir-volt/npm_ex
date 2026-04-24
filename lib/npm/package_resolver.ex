@@ -179,6 +179,7 @@ defmodule NPM.PackageResolver do
   Handles bare, relative, and built-in specifiers:
 
     * **Relative** (`./foo`) — resolved against `from_dir` with extension probing
+    * **Package imports** (`#internal`) — resolved from the nearest package.json `imports` map
     * **Built-in** (`node:fs`) — returns `{:builtin, name}`
     * **Bare** (`lodash/fp`) — locates `node_modules`, then resolves the entry point
 
@@ -193,6 +194,9 @@ defmodule NPM.PackageResolver do
     cond do
       node_builtin?(specifier) ->
         {:builtin, specifier}
+
+      String.starts_with?(specifier, "#") ->
+        resolve_package_import(specifier, from_dir, opts)
 
       relative?(specifier) ->
         base = Path.expand(specifier, from_dir)
@@ -245,25 +249,60 @@ defmodule NPM.PackageResolver do
   # Private
   # ---------------------------------------------------------------------------
 
-  defp resolve_bare(specifier, from_dir, opts) do
-    {package_name, subpath} = split_specifier(specifier)
+  @doc "Find the nearest package root from `dir` by walking up to package.json."
+  @spec nearest_package(String.t()) :: {:ok, String.t(), map()} | :error
+  def nearest_package(dir) do
+    dir = Path.expand(dir)
+    package_json_path = Path.join(dir, "package.json")
 
+    cond do
+      File.regular?(package_json_path) ->
+        with {:ok, package} <- read_package_json(package_json_path), do: {:ok, dir, package}
+
+      dir == "/" or Path.basename(dir) == "node_modules" ->
+        :error
+
+      true ->
+        nearest_package(Path.dirname(dir))
+    end
+  end
+
+  @doc "Find an installed package root visible from `from_dir`."
+  @spec package_root(String.t(), String.t()) :: {:ok, String.t()} | :error
+  def package_root(package_name, from_dir) do
     case find_node_modules(from_dir) do
       nil ->
         :error
 
-      nm_dir ->
-        package_dir = Path.join(nm_dir, package_name)
+      node_modules ->
+        package_dir = Path.join(node_modules, package_name)
+        if File.dir?(package_dir), do: {:ok, package_dir}, else: :error
+    end
+  end
 
-        if File.dir?(package_dir) do
-          entry_opts =
-            opts
-            |> Keyword.put(:subpath, subpath || ".")
+  defp resolve_package_import(specifier, from_dir, opts) do
+    conditions = Keyword.get(opts, :conditions, ["import", "default"])
+    extensions = Keyword.get(opts, :extensions, @default_extensions)
 
-          resolve_entry(package_dir, entry_opts)
-        else
-          :error
-        end
+    with {:ok, package_dir, %{"imports" => imports}} <- nearest_package(from_dir),
+         {:ok, target} <- NPM.Exports.resolve(imports, specifier, conditions) do
+      package_dir
+      |> expand_target(target)
+      |> try_resolve(extensions: extensions)
+    else
+      _ -> :error
+    end
+  end
+
+  defp resolve_bare(specifier, from_dir, opts) do
+    {package_name, subpath} = split_specifier(specifier)
+
+    with {:ok, package_dir} <- package_root(package_name, from_dir) do
+      entry_opts =
+        opts
+        |> Keyword.put(:subpath, subpath || ".")
+
+      resolve_entry(package_dir, entry_opts)
     end
   end
 
@@ -319,8 +358,9 @@ defmodule NPM.PackageResolver do
   end
 
   defp ensure_file(package_dir, target) do
-    path = expand_target(package_dir, target)
-    if File.regular?(path), do: {:ok, path}, else: :error
+    package_dir
+    |> expand_target(target)
+    |> try_resolve(extensions: [""])
   end
 
   defp expand_target(package_dir, "./" <> rest), do: Path.join(package_dir, rest)

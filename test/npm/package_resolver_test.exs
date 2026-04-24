@@ -409,6 +409,47 @@ defmodule NPM.PackageResolverTest do
     end
 
     @tag :tmp_dir
+    test "package imports specifier", %{tmp_dir: dir} do
+      pkg_dir = Path.join([dir, "node_modules", "pkg"])
+      File.mkdir_p!(Path.join(pkg_dir, "src/internal"))
+      internal = Path.join(pkg_dir, "src/internal/builders.js")
+      File.write!(internal, "")
+
+      write_pkg_json(pkg_dir, %{
+        "name" => "pkg",
+        "imports" => %{
+          "#compiler/*" => "./src/internal/*.js"
+        }
+      })
+
+      from_dir = Path.join(pkg_dir, "src")
+      assert {:ok, ^internal} = PackageResolver.resolve("#compiler/builders", from_dir)
+    end
+
+    @tag :tmp_dir
+    test "bare specifier with nested conditional exports", %{tmp_dir: dir} do
+      pkg_dir = Path.join([dir, "node_modules", "codec"])
+      File.mkdir_p!(Path.join(pkg_dir, "dist"))
+      esm = Path.join(pkg_dir, "dist/codec.mjs")
+      File.write!(esm, "")
+
+      write_pkg_json(pkg_dir, %{
+        "name" => "codec",
+        "exports" => %{
+          "." => [
+            %{
+              "default" => %{"types" => "./types/codec.d.cts", "default" => "./dist/codec.umd.js"},
+              "import" => %{"types" => "./types/codec.d.mts", "default" => "./dist/codec.mjs"}
+            },
+            "./dist/codec.umd.js"
+          ]
+        }
+      })
+
+      assert {:ok, ^esm} = PackageResolver.resolve("codec", dir)
+    end
+
+    @tag :tmp_dir
     test "bare specifier with subpath", %{tmp_dir: dir} do
       pkg_dir = Path.join([dir, "node_modules", "lodash"])
       File.mkdir_p!(Path.join(pkg_dir, "dist"))

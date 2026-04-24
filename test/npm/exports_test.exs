@@ -91,6 +91,30 @@ defmodule NPM.ExportsExtraTest do
 
       assert {:ok, "./esm/feature.js"} = NPM.Exports.resolve(exports, "./feature", ["import"])
     end
+
+    test "resolves arrays and nested condition maps" do
+      exports = %{
+        "." => [
+          %{
+            "types" => "./types/index.d.ts",
+            "import" => %{"types" => "./types/index.d.mts", "default" => "./dist/index.mjs"},
+            "default" => %{"types" => "./types/index.d.cts", "default" => "./dist/index.cjs"}
+          },
+          "./fallback.js"
+        ]
+      }
+
+      assert {:ok, "./dist/index.mjs"} =
+               NPM.Exports.resolve(exports, ".", ["import", "default"])
+
+      assert {:ok, "./dist/index.cjs"} =
+               NPM.Exports.resolve(exports, ".", ["require", "default"])
+    end
+
+    test "resolves wildcard targets" do
+      assert {:ok, "./dist/button.mjs"} =
+               NPM.Exports.resolve(@wildcard_exports, "./button", ["import"])
+    end
   end
 
   describe "subpaths" do
