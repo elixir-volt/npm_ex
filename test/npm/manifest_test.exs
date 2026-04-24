@@ -7,8 +7,8 @@ defmodule NPM.ManifestTest do
       manifest = NPM.Manifest.from_json(json)
       exports = manifest.exports
 
-      assert {:ok, "./esm.js"} = NPM.Exports.resolve(exports, ".", ["import"])
-      assert {:ok, "./utils.js"} = NPM.Exports.resolve(exports, "./utils")
+      assert {:ok, "./esm.js"} = NPM.Resolution.Exports.resolve(exports, ".", ["import"])
+      assert {:ok, "./utils.js"} = NPM.Resolution.Exports.resolve(exports, "./utils")
     end
   end
 

@@ -1,4 +1,4 @@
-defmodule NPM.PackageResolver do
+defmodule NPM.Resolution.PackageResolver do
   @moduledoc """
   Resolve bare and relative import specifiers to files on disk.
 
@@ -12,16 +12,16 @@ defmodule NPM.PackageResolver do
 
   ## Examples
 
-      iex> NPM.PackageResolver.split_specifier("@babel/core/lib/parse")
+      iex> NPM.Resolution.PackageResolver.split_specifier("@babel/core/lib/parse")
       {"@babel/core", "./lib/parse"}
 
-      iex> NPM.PackageResolver.relative?("./utils")
+      iex> NPM.Resolution.PackageResolver.relative?("./utils")
       true
 
-      iex> NPM.PackageResolver.node_builtin?("node:fs")
+      iex> NPM.Resolution.PackageResolver.node_builtin?("node:fs")
       true
 
-      iex> NPM.PackageResolver.find_node_modules("/app/src")
+      iex> NPM.Resolution.PackageResolver.find_node_modules("/app/src")
       "/app/node_modules"
   """
 
@@ -146,7 +146,7 @@ defmodule NPM.PackageResolver do
 
   Reads `package.json` and checks (in order):
 
-    1. `exports` field (via `NPM.Exports`) with the given subpath and conditions
+    1. `exports` field (via `NPM.Resolution.Exports`) with the given subpath and conditions
     2. `browser` field (when `"browser"` is in conditions and value is a string)
     3. `module` field
     4. `main` field
@@ -219,14 +219,14 @@ defmodule NPM.PackageResolver do
 
   ## Examples
 
-      iex> NPM.PackageResolver.relative_import_path(
+      iex> NPM.Resolution.PackageResolver.relative_import_path(
       ...>   "/app/src/pages/home.js",
       ...>   "/app/src/utils/format.js",
       ...>   "/app"
       ...> )
       "../utils/format.js"
 
-      iex> NPM.PackageResolver.relative_import_path(
+      iex> NPM.Resolution.PackageResolver.relative_import_path(
       ...>   "/app/src/index.js",
       ...>   "/app/src/app.js",
       ...>   "/app"
@@ -285,7 +285,7 @@ defmodule NPM.PackageResolver do
     extensions = Keyword.get(opts, :extensions, @default_extensions)
 
     with {:ok, package_dir, %{"imports" => imports}} <- nearest_package(from_dir),
-         {:ok, target} <- NPM.Exports.resolve(imports, specifier, conditions) do
+         {:ok, target} <- NPM.Resolution.Exports.resolve(imports, specifier, conditions) do
       package_dir
       |> expand_target(target)
       |> try_resolve(extensions: extensions)
@@ -314,12 +314,12 @@ defmodule NPM.PackageResolver do
   end
 
   defp resolve_via_exports(pkg, package_dir, subpath, conditions) do
-    case NPM.Exports.parse(pkg) do
+    case NPM.Resolution.Exports.parse(pkg) do
       nil ->
         :error
 
       export_map ->
-        case NPM.Exports.resolve(export_map, subpath, conditions) do
+        case NPM.Resolution.Exports.resolve(export_map, subpath, conditions) do
           {:ok, target} -> ensure_file(package_dir, target)
           :error -> :error
         end

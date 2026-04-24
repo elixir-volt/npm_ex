@@ -69,7 +69,7 @@ defmodule NPM.EdgeCases6Test do
 
   describe "Conditional + Exports" do
     test "resolve string export directly" do
-      assert "./index.js" = NPM.Conditional.resolve("./index.js", ["import"])
+      assert "./index.js" = NPM.Resolution.Conditional.resolve("./index.js", ["import"])
     end
   end
 

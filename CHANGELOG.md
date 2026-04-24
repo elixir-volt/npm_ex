@@ -1,11 +1,13 @@
 # Changelog
 
-## 0.5.4
+## 0.6.0
 
-- Support nested conditional package exports, array targets, and wildcard export patterns in `NPM.Exports`
+- Move resolution modules under `NPM.Resolution`: `PackageResolver`, `Exports`, and `Conditional`
+- Support nested conditional package exports, array targets, and wildcard export patterns in `NPM.Resolution.Exports`
 - Add package `imports` resolution for internal specifiers such as `#compiler/builders`
-- Add `NPM.PackageResolver.nearest_package/1` and `NPM.PackageResolver.package_root/2`
+- Add `NPM.Resolution.PackageResolver.nearest_package/1` and `NPM.Resolution.PackageResolver.package_root/2`
 - Harden package resolution for modern packages such as Svelte and `@jridgewell/*`
+- Fix optional tarball linker test isolation
 
 ## 0.5.3
 

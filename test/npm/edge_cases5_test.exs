@@ -68,7 +68,7 @@ defmodule NPM.EdgeCases5Test do
 
   describe "Conditional edge cases" do
     test "resolve nil exports" do
-      assert nil == NPM.Conditional.resolve(nil, ["import"])
+      assert nil == NPM.Resolution.Conditional.resolve(nil, ["import"])
     end
 
     test "conditions from nested exports" do
@@ -79,7 +79,7 @@ defmodule NPM.EdgeCases5Test do
         }
       }
 
-      conds = NPM.Conditional.conditions(exports)
+      conds = NPM.Resolution.Conditional.conditions(exports)
       assert "node" in conds
       assert "import" in conds
     end

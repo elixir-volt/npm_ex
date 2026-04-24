@@ -139,7 +139,7 @@ defmodule NPM.Milestone2500Test do
 
       assert NPM.TypeField.esm?(data)
       entry = data["exports"]["."]
-      assert "./dist/index.mjs" = NPM.Conditional.resolve(entry, ["import"])
+      assert "./dist/index.mjs" = NPM.Resolution.Conditional.resolve(entry, ["import"])
     end
   end
 end

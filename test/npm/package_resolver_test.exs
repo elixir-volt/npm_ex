@@ -1,7 +1,7 @@
-defmodule NPM.PackageResolverTest do
+defmodule NPM.Resolution.PackageResolverTest do
   use ExUnit.Case, async: true
 
-  alias NPM.PackageResolver
+  alias NPM.Resolution.PackageResolver
 
   # ---------------------------------------------------------------------------
   # split_specifier/1

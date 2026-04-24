@@ -1,4 +1,4 @@
-defmodule NPM.Conditional do
+defmodule NPM.Resolution.Conditional do
   @moduledoc """
   Resolves conditional exports/imports from package.json.
 

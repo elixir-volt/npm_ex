@@ -1,4 +1,4 @@
-defmodule NPM.Exports do
+defmodule NPM.Resolution.Exports do
   @moduledoc """
   Parse and resolve the `exports` field from `package.json`.
 

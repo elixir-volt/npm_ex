@@ -111,9 +111,9 @@ defmodule NPM.Milestone2000Test do
         "exports" => %{"." => "./dist/index.js", "./utils" => "./dist/utils.js"}
       }
 
-      exports = NPM.Exports.parse(data)
-      assert NPM.Exports.exported?("./utils", exports)
-      paths = NPM.Exports.subpaths(exports)
+      exports = NPM.Resolution.Exports.parse(data)
+      assert NPM.Resolution.Exports.exported?("./utils", exports)
+      paths = NPM.Resolution.Exports.subpaths(exports)
       assert length(paths) == 2
     end
   end
