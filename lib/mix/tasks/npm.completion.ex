@@ -29,17 +29,19 @@ defmodule Mix.Tasks.Npm.Completion do
   def run(args) do
     {opts, _, _} = OptionParser.parse(args, strict: [tasks: :boolean, packages: :boolean])
 
+    shell = Mix.shell()
+
     cond do
-      opts[:tasks] -> Enum.each(@npm_tasks, &Mix.shell().info/1)
-      opts[:packages] -> list_packages()
-      true -> Enum.each(@npm_tasks, &Mix.shell().info("npm.#{&1}"))
+      opts[:tasks] -> Enum.each(@npm_tasks, &shell.info/1)
+      opts[:packages] -> list_packages(shell)
+      true -> Enum.each(@npm_tasks, &shell.info("npm.#{&1}"))
     end
   end
 
-  defp list_packages do
+  defp list_packages(shell) do
     case NPM.Lockfile.read() do
       {:ok, lockfile} ->
-        lockfile |> Map.keys() |> Enum.sort() |> Enum.each(&Mix.shell().info/1)
+        lockfile |> Map.keys() |> Enum.sort() |> Enum.each(&shell.info/1)
 
       _ ->
         :ok
