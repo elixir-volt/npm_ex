@@ -1,7 +1,8 @@
 defmodule NPM.LinkerOptionalRuntimeTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog
+  import NPM.TestHelpers
 
   @tag :tmp_dir
   test "populate_cache tolerates missing optional package tarballs when package is optional", %{
@@ -25,10 +26,13 @@ defmodule NPM.LinkerOptionalRuntimeTest do
     }
 
     cache_dir = Path.join(dir, "cache")
-    File.mkdir_p!(cache_dir)
 
-    original = Application.get_env(:npm, :cache_dir)
-    Application.put_env(:npm, :cache_dir, cache_dir)
+    setup_cached_package(cache_dir, "oxlint", "1.56.0", %{
+      "package.json" => ~s({"name":"oxlint","version":"1.56.0"})
+    })
+
+    original = System.get_env("NPM_EX_CACHE_DIR")
+    System.put_env("NPM_EX_CACHE_DIR", cache_dir)
 
     try do
       log =
@@ -37,12 +41,13 @@ defmodule NPM.LinkerOptionalRuntimeTest do
         end)
 
       assert File.exists?(Path.join(dir, "node_modules/oxlint"))
+      refute File.exists?(Path.join(dir, "node_modules/@oxlint/binding-darwin-arm64"))
       assert log == ""
     after
       if original do
-        Application.put_env(:npm, :cache_dir, original)
+        System.put_env("NPM_EX_CACHE_DIR", original)
       else
-        Application.delete_env(:npm, :cache_dir)
+        System.delete_env("NPM_EX_CACHE_DIR")
       end
     end
   end
