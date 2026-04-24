@@ -46,8 +46,8 @@ defmodule NPM.MixProject do
       {:req, "~> 0.5"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_slop, "~> 0.2", only: [:dev, :test], runtime: false},
-      {:ex_dna, "~> 1.3", only: [:dev, :test], runtime: false},
+      {:ex_slop, "~> 0.3", only: [:dev, :test], runtime: false},
+      {:ex_dna, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.35", only: :dev, runtime: false}
     ]
   end
