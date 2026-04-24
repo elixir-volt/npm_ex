@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.4
+
+- Support nested conditional package exports, array targets, and wildcard export patterns in `NPM.Exports`
+- Add package `imports` resolution for internal specifiers such as `#compiler/builders`
+- Add `NPM.PackageResolver.nearest_package/1` and `NPM.PackageResolver.package_root/2`
+- Harden package resolution for modern packages such as Svelte and `@jridgewell/*`
+
 ## 0.5.3
 
 - Add `NPM.PackageResolver.relative_import_path/3` — compute relative import paths between files within a project root, with guaranteed `./`/`../` prefix
