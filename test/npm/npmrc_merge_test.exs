@@ -5,7 +5,7 @@ defmodule NPM.NpmrcMergeTest do
     test "returns three paths in order" do
       paths = NPM.NpmrcMerge.layers("/my/project")
       assert length(paths) == 3
-      assert List.last(paths) == "/my/project/.npmrc"
+      assert paths |> Enum.reverse() |> hd() == "/my/project/.npmrc"
     end
   end
 

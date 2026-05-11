@@ -50,13 +50,8 @@ defmodule NPM.DepConflict do
 
     all_entries
     |> Enum.group_by(& &1.name)
-    |> Enum.flat_map(fn {name, entries} ->
-      if length(entries) > 1 do
-        [%{name: name, groups: Enum.map(entries, & &1.group)}]
-      else
-        []
-      end
-    end)
+    |> Enum.filter(fn {_name, entries} -> match?([_, _ | _], entries) end)
+    |> Enum.map(fn {name, entries} -> %{name: name, groups: Enum.map(entries, & &1.group)} end)
     |> Enum.sort_by(& &1.name)
   end
 

@@ -231,7 +231,7 @@ defmodule NPM.VersionUtilTest do
       versions = ["3.0.0", "1.0.0", "2.0.0", "1.5.0", "0.1.0", "2.1.0"]
       sorted = NPM.VersionUtil.sort(versions)
       assert List.first(sorted) == "0.1.0"
-      assert List.last(sorted) == "3.0.0"
+      assert sorted |> Enum.reverse() |> hd() == "3.0.0"
     end
   end
 

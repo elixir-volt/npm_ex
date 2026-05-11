@@ -106,6 +106,7 @@ defmodule NPM.Why do
 
   defp format_reason(%{path: path, range: range}) do
     chain = Enum.join(path, " → ")
-    "#{chain} (requires #{List.last(path)}@#{range})"
+    last = path |> Enum.reverse() |> hd()
+    "#{chain} (requires #{last}@#{range})"
   end
 end

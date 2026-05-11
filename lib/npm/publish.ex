@@ -43,9 +43,8 @@ defmodule NPM.Publish do
   """
   @spec check_recommended(map()) :: [String.t()]
   def check_recommended(pkg_data) do
-    Enum.flat_map(@recommended_fields, fn field ->
-      if pkg_data[field], do: [], else: ["Missing recommended field: #{field}"]
-    end)
+    Enum.reject(@recommended_fields, &pkg_data[&1])
+    |> Enum.map(&"Missing recommended field: #{&1}")
   end
 
   @doc """

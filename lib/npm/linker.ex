@@ -282,22 +282,18 @@ defmodule NPM.Linker do
 
     lockfile
     |> Enum.filter(fn {name, _} -> MapSet.member?(optional_names, name) end)
-    |> Enum.reject(fn {name, entry} ->
-      case NPM.Registry.get_packument(name) do
-        {:ok, packument} ->
-          case Map.get(packument.versions, entry.version) do
-            nil ->
-              false
-
-            info ->
-              NPM.Platform.os_compatible?(info.os) and NPM.Platform.cpu_compatible?(info.cpu)
-          end
-
-        _ ->
-          true
-      end
-    end)
+    |> Enum.reject(fn {name, entry} -> platform_compatible?(name, entry.version) end)
     |> MapSet.new(fn {name, _} -> name end)
+  end
+
+  defp platform_compatible?(name, version) do
+    with {:ok, packument} <- NPM.Registry.get_packument(name),
+         %{} = info <- Map.get(packument.versions, version) do
+      NPM.Platform.os_compatible?(info.os) and NPM.Platform.cpu_compatible?(info.cpu)
+    else
+      nil -> false
+      _ -> true
+    end
   end
 
   defp optional_dependency?(name, lockfile) do

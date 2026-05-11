@@ -47,13 +47,17 @@ defmodule NPM.Cache do
           {:ok, dest}
 
         {:error, reason} ->
-          if Keyword.get(opts, :optional?, false) do
-            File.rm_rf(dest)
-            {:ok, :missing_optional}
-          else
-            {:error, reason}
-          end
+          handle_fetch_error(reason, dest, opts)
       end
+    end
+  end
+
+  defp handle_fetch_error(reason, dest, opts) do
+    if Keyword.get(opts, :optional?, false) do
+      File.rm_rf(dest)
+      {:ok, :missing_optional}
+    else
+      {:error, reason}
     end
   end
 end

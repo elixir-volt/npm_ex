@@ -19,9 +19,10 @@ defmodule NPM.Import do
       {:npm_ex, "npm.lock"}
     ]
 
-    Enum.flat_map(checks, fn {manager, file} ->
-      if File.exists?(Path.join(project_dir, file)), do: [manager], else: []
+    Enum.filter(checks, fn {_manager, file} ->
+      File.exists?(Path.join(project_dir, file))
     end)
+    |> Enum.map(fn {manager, _file} -> manager end)
   end
 
   @doc """

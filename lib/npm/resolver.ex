@@ -155,7 +155,7 @@ defmodule NPM.Resolver do
   defp extract_conflict_package(message) do
     # Look for patterns like: "ms 2.0.0" and "ms 2.1.3" in the error
     case Regex.scan(~r/"(\S+) (\d+\.\d+\.\d+)"/, message) do
-      matches when length(matches) >= 2 ->
+      [_, _ | _] = matches ->
         names = Enum.map(matches, fn [_, name, _] -> name end)
 
         names

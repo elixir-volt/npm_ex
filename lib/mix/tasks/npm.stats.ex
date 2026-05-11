@@ -12,6 +12,8 @@ defmodule Mix.Tasks.Npm.Stats do
 
   use Mix.Task
 
+  alias NPM.DepGraph
+
   @impl true
   def run([]) do
     Application.ensure_all_started(:req)
@@ -19,15 +21,15 @@ defmodule Mix.Tasks.Npm.Stats do
     with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.PackageJSON.read_all(),
          {:ok, lockfile} when lockfile != %{} <- NPM.Lockfile.read() do
       all_deps = Map.merge(deps, dev_deps)
-      adj = NPM.DepGraph.adjacency_list(lockfile)
-      fin = NPM.DepGraph.fan_in(adj)
-      fout = NPM.DepGraph.fan_out(adj)
+      adj = DepGraph.adjacency_list(lockfile)
+      fin = DepGraph.fan_in(adj)
+      fout = DepGraph.fan_out(adj)
 
       Mix.shell().info("NPM dependency statistics:")
       Mix.shell().info("  Total packages:   #{map_size(lockfile)}")
       Mix.shell().info("  Direct deps:      #{map_size(all_deps)}")
       Mix.shell().info("  Transitive deps:  #{map_size(lockfile) - map_size(all_deps)}")
-      Mix.shell().info("  Leaf packages:    #{length(NPM.DepGraph.leaves(adj))}")
+      Mix.shell().info("  Leaf packages:    #{length(DepGraph.leaves(adj))}")
 
       print_top("Most depended on", fin)
       print_top("Most dependencies", fout)

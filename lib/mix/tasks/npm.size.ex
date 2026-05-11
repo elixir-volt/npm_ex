@@ -16,20 +16,22 @@ defmodule Mix.Tasks.Npm.Size do
 
   use Mix.Task
 
+  alias NPM.NodeModules
+
   @impl true
   def run(args) do
     {opts, _, _} = OptionParser.parse(args, strict: [top: :integer])
     top_n = Keyword.get(opts, :top, 10)
     dir = "node_modules"
 
-    total_size = NPM.NodeModules.disk_size(dir)
-    total_files = NPM.NodeModules.file_count(dir)
+    total_size = NodeModules.disk_size(dir)
+    total_files = NodeModules.file_count(dir)
 
     Mix.shell().info("node_modules analysis:")
     Mix.shell().info("  Total size:  #{NPM.FormatUtil.format_size(total_size)}")
     Mix.shell().info("  Total files: #{total_files}")
 
-    packages = NPM.NodeModules.installed(dir)
+    packages = NodeModules.installed(dir)
     Mix.shell().info("  Packages:    #{length(packages)}")
 
     if packages != [] do
@@ -42,7 +44,7 @@ defmodule Mix.Tasks.Npm.Size do
     packages
     |> Enum.map(fn name ->
       pkg_dir = Path.join(dir, name)
-      size = NPM.NodeModules.disk_size(pkg_dir)
+      size = NodeModules.disk_size(pkg_dir)
       {name, size}
     end)
     |> Enum.sort_by(fn {_, size} -> -size end)
