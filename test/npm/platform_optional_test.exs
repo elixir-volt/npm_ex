@@ -45,15 +45,24 @@ defmodule NPM.PlatformOptionalTest do
     :ets.insert(:npm_resolver_cache, {"@oxfmt/binding-darwin-arm64", darwin})
     :ets.insert(:npm_resolver_cache, {"@oxfmt/binding-linux-x64-gnu", linux})
 
+    {expected_name, other_name} =
+      case :os.type() do
+        {:unix, :darwin} ->
+          {"@oxfmt/binding-darwin-arm64", "@oxfmt/binding-linux-x64-gnu"}
+
+        {:unix, :linux} ->
+          {"@oxfmt/binding-linux-x64-gnu", "@oxfmt/binding-darwin-arm64"}
+      end
+
     selected =
       NPM.PlatformOptional.select(%{
         "@oxfmt/binding-darwin-arm64" => "0.37.0",
         "@oxfmt/binding-linux-x64-gnu" => "0.37.0"
       })
 
-    assert selected == %{"@oxfmt/binding-darwin-arm64" => "0.37.0"}
-    assert NPM.PlatformOptional.current_match("@oxfmt/binding-darwin-arm64")
-    refute NPM.PlatformOptional.current_match("@oxfmt/binding-linux-x64-gnu")
+    assert selected == %{expected_name => "0.37.0"}
+    assert NPM.PlatformOptional.current_match(expected_name)
+    refute NPM.PlatformOptional.current_match(other_name)
   after
     NPM.Resolver.clear_cache()
   end
