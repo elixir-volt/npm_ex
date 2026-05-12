@@ -151,7 +151,15 @@ See `CHANGELOG.md` for the 0.7 migration map from older pre-namespace module nam
 
 ## Documentation
 
-Full API documentation is available on [HexDocs](https://hexdocs.pm/npm).
+Full guides and API documentation are available on [HexDocs](https://hexdocs.pm/npm):
+
+- Getting Started
+- Dependency Workflows
+- CI and Reproducibility
+- Supply-Chain Safety
+- Malicious Package Audits
+- Configuration
+- CLI and configuration cheatsheets
 
 ## License
 
