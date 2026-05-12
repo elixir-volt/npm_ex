@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
+
+### Breaking changes
+
+- Reorganize supporting modules under domain namespaces. Compatibility wrapper modules were not retained because `npm_ex` is still pre-1.0.
+- Direct exotic dependencies such as `git:`, GitHub shorthands, URLs, and `file:` specs now require an explicit `exotic_deps` allowlist entry.
+- Transitive exotic dependencies from published package metadata are blocked by default.
+- Lockfiles written without the current dependency security policy are treated as stale.
+
+### Security hardening
 
 - Block transitive git, file, and URL dependency specs from published package metadata by default
 - Add `config :npm` support for registry, token, mirror, cache dir, install dir, registry policy, package age warnings, and exotic dependency policy
@@ -18,6 +27,72 @@
 - Warn when registry metadata shows newly created packages or freshly published versions
 - Add `NPM.Security.Compromised` and `mix npm.audit --osv/--compromised` for OSV-backed malicious package checks
 - Merge OSV advisory writes into the shared compromised-package cache and fail online audit on OSV query errors
+
+### Migration map
+
+| Before | After |
+| --- | --- |
+| `NPM.Audit` | `NPM.Security.Audit` |
+| `NPM.CVE` | `NPM.Security.CVE` |
+| `NPM.ExoticDeps` | `NPM.Security.ExoticDeps` |
+| `NPM.Provenance` | `NPM.Security.Provenance` |
+| `NPM.SupplyChain` | `NPM.Security.SupplyChain` |
+| `NPM.PackageJSON` | `NPM.Package.JSON` |
+| `NPM.Manifest` | `NPM.Package.Manifest` |
+| `NPM.ManifestDiff` | `NPM.Package.Manifest.Diff` |
+| `NPM.PackageFiles` | `NPM.Package.Files` |
+| `NPM.PackageQuality` | `NPM.Package.Quality` |
+| `NPM.PackageSpec` | `NPM.Package.Spec` |
+| `NPM.PublishConfig` | `NPM.Package.PublishConfig` |
+| `NPM.Repository` | `NPM.Package.Repository` |
+| `NPM.People` | `NPM.Package.People` |
+| `NPM.Keywords` | `NPM.Package.Keywords` |
+| `NPM.License` | `NPM.Package.License` |
+| `NPM.Funding` | `NPM.Package.Funding` |
+| `NPM.Fund` | `NPM.Package.Fund` |
+| `NPM.DepGraph` | `NPM.Dependency.Graph` |
+| `NPM.GraphOps` | merged into `NPM.Dependency.Graph` |
+| `NPM.DepTree` | `NPM.Dependency.Tree` |
+| `NPM.DepSort` | `NPM.Dependency.Sort` |
+| `NPM.DepRange` | `NPM.Dependency.Range` |
+| `NPM.DepConflict` | `NPM.Dependency.Conflict` |
+| `NPM.DepFreshness` | `NPM.Dependency.Freshness` |
+| `NPM.DepStats` | `NPM.Dependency.Stats` |
+| `NPM.DepCheck` | `NPM.Dependency.UsageCheck` |
+| `NPM.DepPath` | `NPM.NodeModules.Path` |
+| `NPM.PhantomDep` | `NPM.Dependency.Phantom` |
+| `NPM.PeerDep` / `NPM.PeerDeps` | `NPM.Dependency.Peer` |
+| `NPM.PeerDepsCheck` | `NPM.Dependency.Peer.Check` |
+| `NPM.PackageDuplicate` / `NPM.Dependency.Duplicate` | merged into `NPM.Dependency.Dedupe` |
+| `NPM.PackageUpdate` / `NPM.Dependency.Update` | merged into `NPM.Dependency.Outdated` |
+| `NPM.LockfileCheck` | `NPM.Lockfile.Check` |
+| `NPM.LockfileStats` | `NPM.Lockfile.Stats` |
+| `NPM.LockMerge` | `NPM.Lockfile.Merge` |
+| `NPM.PackageLock` | `NPM.Lockfile.PackageLock` |
+| `NPM.Shrinkwrap` | `NPM.Lockfile.Shrinkwrap` |
+| `NPM.Health` | `NPM.Diagnostics.Health` |
+| `NPM.Doctor` | `NPM.Diagnostics.Doctor` |
+| `NPM.EnvCheck` | `NPM.Diagnostics.EnvCheck` |
+| `NPM.EngineCheck` | `NPM.Diagnostics.EngineCheck` |
+| `NPM.RegistryUrl` | `NPM.Registry.URL` |
+| `NPM.RegistryMirror` | `NPM.Registry.Mirror` |
+| `NPM.ScopeRegistry` | `NPM.Registry.Scope` |
+| `NPM.Token` | `NPM.Registry.Token` |
+| `NPM.Npmrc` | `NPM.Config.Npmrc` |
+| `NPM.NpmrcMerge` | `NPM.Config.Npmrc.Merge` |
+| `NPM.Linker` | `NPM.Install.Linker` |
+| `NPM.Link` | `NPM.Install.Link` |
+| `NPM.Prune` | `NPM.Install.Prune` |
+| `NPM.Rebuild` | `NPM.Install.Rebuild` |
+| `NPM.CI` | `NPM.Install.CI` |
+| `NPM.ScriptInstall` | `NPM.Install.ScriptInstall` |
+| `NPM.ScriptRunner` | `NPM.Install.ScriptRunner` |
+| `NPM.Lifecycle` | `NPM.Install.Lifecycle` |
+| `NPM.Hooks` | `NPM.Install.Hooks` |
+| `NPM.NodeRunner` | `NPM.Node.Runner` |
+| `NPM.Exec` | `NPM.Node.Exec` |
+| `NPM.Bin` | `NPM.Node.Bin` |
+| `NPM.BinResolver` | `NPM.Node.BinResolver` |
 
 ## 0.6.1
 
