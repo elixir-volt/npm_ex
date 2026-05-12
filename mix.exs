@@ -43,6 +43,7 @@ defmodule NPM.MixProject do
     [
       {:npm_semver, "~> 0.1.0"},
       {:hex_solver, "~> 0.2"},
+      {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

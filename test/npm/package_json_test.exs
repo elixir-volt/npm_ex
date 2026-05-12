@@ -576,13 +576,11 @@ defmodule NPM.PackageJsonTest do
 
   describe "PackageJSON error handling" do
     @tag :tmp_dir
-    test "read raises for invalid JSON", %{tmp_dir: dir} do
+    test "read returns decode errors for invalid JSON", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, "not json{{{")
 
-      assert_raise ErlangError, fn ->
-        NPM.PackageJSON.read(path)
-      end
+      assert {:error, %Jason.DecodeError{}} = NPM.PackageJSON.read(path)
     end
   end
 

@@ -1,53 +1,47 @@
 defmodule NPM.JSON do
   @moduledoc """
-  Deterministic JSON encoding helpers used for generated npm files.
+  JSON helpers for npm manifest and lock files.
 
-  Elixir's built-in JSON encoder does not guarantee object key ordering. This
-  module writes maps with sorted keys so files such as `npm.lock` remain stable
-  across repeated writes, which keeps diffs small and reproducible.
+  `npm_ex` writes generated JSON files such as `package.json`, `npm.lock`, and
+  shrinkwrap files. Those files should be stable across repeated writes, so maps
+  are recursively converted to `Jason.OrderedObject` values sorted by key before
+  encoding. Jason handles the actual JSON encoding, escaping, duplicate-key
+  checks, and pretty formatting.
   """
 
-  @doc "Encode a term as pretty-printed JSON with sorted keys."
+  @doc "Encode a term as pretty-printed JSON with recursively sorted object keys."
   @spec encode_pretty(term()) :: String.t()
   def encode_pretty(data) do
-    do_encode(data, 0)
-    |> IO.iodata_to_binary()
+    data
+    |> sort_objects()
+    |> Jason.encode!(pretty: true, maps: :strict)
     |> Kernel.<>("\n")
   end
 
-  defp do_encode(map, indent) when is_map(map) do
-    if map_size(map) == 0 do
-      "{}"
-    else
-      entries =
-        map
-        |> Enum.sort_by(&elem(&1, 0))
-        |> Enum.map_join(",\n", fn {k, v} ->
-          "#{pad(indent + 1)}#{encode_scalar(k)}: #{do_encode(v, indent + 1)}"
-        end)
+  @doc "Decode JSON into maps with string keys."
+  @spec decode(iodata()) :: {:ok, term()} | {:error, Jason.DecodeError.t()}
+  def decode(data), do: Jason.decode(data)
 
-      "{\n#{entries}\n#{pad(indent)}}"
+  @doc "Decode JSON into maps with string keys, raising on invalid input."
+  @spec decode!(iodata()) :: term()
+  def decode!(data), do: Jason.decode!(data)
+
+  @doc "Read and decode a JSON file."
+  @spec read_file(String.t()) :: {:ok, term()} | {:error, term()}
+  def read_file(path) do
+    with {:ok, content} <- File.read(path),
+         {:ok, data} <- decode(content) do
+      {:ok, data}
     end
   end
 
-  defp do_encode(list, indent) when is_list(list) do
-    if list == [] do
-      "[]"
-    else
-      entries =
-        Enum.map_join(list, ",\n", fn v ->
-          "#{pad(indent + 1)}#{do_encode(v, indent + 1)}"
-        end)
-
-      "[\n#{entries}\n#{pad(indent)}]"
-    end
+  defp sort_objects(map) when is_map(map) do
+    map
+    |> Enum.map(fn {key, value} -> {key, sort_objects(value)} end)
+    |> Enum.sort_by(fn {key, _value} -> to_string(key) end)
+    |> Jason.OrderedObject.new()
   end
 
-  defp do_encode(value, _indent), do: encode_scalar(value)
-
-  defp encode_scalar(value) do
-    :json.encode(value) |> IO.iodata_to_binary()
-  end
-
-  defp pad(level), do: String.duplicate("  ", level)
+  defp sort_objects(list) when is_list(list), do: Enum.map(list, &sort_objects/1)
+  defp sort_objects(value), do: value
 end

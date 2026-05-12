@@ -8,17 +8,7 @@ defmodule NPM.PackageJSON do
   @doc "Read dependencies from `package.json`."
   @spec read(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, term()}
   def read(path \\ @default_path) do
-    case File.read(path) do
-      {:ok, content} ->
-        data = :json.decode(content)
-        {:ok, Map.get(data, "dependencies", %{})}
-
-      {:error, :enoent} ->
-        {:ok, %{}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    read_field(path, "dependencies")
   end
 
   @doc "Read all dependency groups from `package.json`."
@@ -26,10 +16,8 @@ defmodule NPM.PackageJSON do
           {:ok, %{dependencies: map(), dev_dependencies: map(), optional_dependencies: map()}}
           | {:error, term()}
   def read_all(path \\ @default_path) do
-    case File.read(path) do
-      {:ok, content} ->
-        data = :json.decode(content)
-
+    case read_raw(path) do
+      {:ok, data} ->
         {:ok,
          %{
            dependencies: Map.get(data, "dependencies", %{}),
@@ -48,26 +36,14 @@ defmodule NPM.PackageJSON do
   @doc "Read scripts from `package.json`."
   @spec read_scripts(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, term()}
   def read_scripts(path \\ @default_path) do
-    case File.read(path) do
-      {:ok, content} ->
-        data = :json.decode(content)
-        {:ok, Map.get(data, "scripts", %{})}
-
-      {:error, :enoent} ->
-        {:ok, %{}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    read_field(path, "scripts")
   end
 
   @doc "Read workspace patterns from `package.json`."
   @spec read_workspaces(String.t()) :: {:ok, [String.t()]} | {:error, term()}
   def read_workspaces(path \\ @default_path) do
-    case File.read(path) do
-      {:ok, content} ->
-        data = :json.decode(content)
-
+    case read_raw(path) do
+      {:ok, data} ->
         case Map.get(data, "workspaces") do
           nil -> {:ok, []}
           patterns when is_list(patterns) -> {:ok, patterns}
@@ -160,10 +136,8 @@ defmodule NPM.PackageJSON do
   """
   @spec read_bundle_deps(String.t()) :: {:ok, [String.t()]} | {:error, term()}
   def read_bundle_deps(path \\ @default_path) do
-    case File.read(path) do
-      {:ok, content} ->
-        data = :json.decode(content)
-
+    case read_raw(path) do
+      {:ok, data} ->
         bundle =
           Map.get(data, "bundleDependencies") ||
             Map.get(data, "bundledDependencies", [])
@@ -183,16 +157,10 @@ defmodule NPM.PackageJSON do
   end
 
   defp read_field(path, field) do
-    case File.read(path) do
-      {:ok, content} ->
-        data = :json.decode(content)
-        {:ok, Map.get(data, field, %{})}
-
-      {:error, :enoent} ->
-        {:ok, %{}}
-
-      {:error, reason} ->
-        {:error, reason}
+    case read_raw(path) do
+      {:ok, data} -> {:ok, Map.get(data, field, %{})}
+      {:error, :enoent} -> {:ok, %{}}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -205,7 +173,7 @@ defmodule NPM.PackageJSON do
   """
   @spec add_dep(String.t(), String.t(), String.t(), keyword()) :: :ok | {:error, term()}
   def add_dep(name, range, path \\ @default_path, opts \\ []) do
-    data = read_raw(path)
+    data = read_raw!(path)
 
     field =
       cond do
@@ -223,7 +191,7 @@ defmodule NPM.PackageJSON do
   @doc "Remove a dependency from `package.json`."
   @spec remove_dep(String.t(), String.t()) :: :ok | {:error, term()}
   def remove_dep(name, path \\ @default_path) do
-    data = read_raw(path)
+    data = read_raw!(path)
 
     field =
       ["dependencies", "devDependencies", "optionalDependencies"]
@@ -241,9 +209,18 @@ defmodule NPM.PackageJSON do
   end
 
   defp read_raw(path) do
-    case File.read(path) do
-      {:ok, content} -> :json.decode(content)
+    case NPM.JSON.read_file(path) do
+      {:ok, data} -> {:ok, data}
+      {:error, :enoent} -> {:error, :enoent}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp read_raw!(path) do
+    case read_raw(path) do
+      {:ok, data} -> data
       {:error, :enoent} -> %{}
+      {:error, reason} -> raise reason
     end
   end
 end
