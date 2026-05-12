@@ -59,12 +59,12 @@ defmodule NPM.Security.CompromisedTest do
     assert finding.advisory["summary"] == "malicious npm package"
   end
 
-  test "ignores missing local database" do
-    assert [] =
-             Compromised.check_package("evil", "1.0.0",
-               sources: [:local],
-               db_path: "tmp/no-such-db.json"
-             )
+  test "falls back to bundled database when cache database is missing" do
+    assert {:ok, []} = Compromised.read_database("tmp/no-such-db.json")
+  end
+
+  test "exposes shared cache path" do
+    assert Compromised.cache_path() =~ "security/compromised_packages.json"
   end
 
   test "online OSV source is opt-in" do

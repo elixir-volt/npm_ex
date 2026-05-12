@@ -95,6 +95,7 @@ defmodule NPM.ConfigTest do
       assert NPM.Config.install_dir("abc") == "/tmp/npm-installs/abc"
       assert NPM.Config.mirror_url() == "https://mirror.example"
       assert NPM.Config.compromised_db_path() == "/tmp/npm-compromised.json"
+      assert NPM.Config.bundled_compromised_db_path() =~ "priv/security/compromised_packages.json"
       assert NPM.Config.compromised_sources() == [:local, :osv]
       assert NPM.Config.compromised_policy() == :warn
       refute NPM.Config.block_exotic_subdeps?()

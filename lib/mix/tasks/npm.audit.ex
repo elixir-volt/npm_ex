@@ -7,7 +7,9 @@ defmodule Mix.Tasks.Npm.Audit do
       mix npm.audit
       mix npm.audit --compromised
       mix npm.audit --osv
+      mix npm.audit --osv --write-cache
       mix npm.audit --osv --write priv/security/compromised_packages.json
+      mix npm.audit --compromised
       mix npm.audit --compromised --db priv/security/compromised_packages.json
       mix npm.audit --compromised --format json
 
@@ -34,7 +36,8 @@ defmodule Mix.Tasks.Npm.Audit do
     lockfile: :string,
     format: :string,
     policy: :string,
-    write: :string
+    write: :string,
+    write_cache: :boolean
   ]
 
   @impl true
@@ -84,7 +87,7 @@ defmodule Mix.Tasks.Npm.Audit do
       "Found #{length(findings)} malicious OSV advisory matches:"
     )
 
-    maybe_write(opts[:write], advisories)
+    maybe_write(write_path(opts), advisories)
     TaskReporter.enforce(findings, policy)
   end
 
@@ -103,6 +106,14 @@ defmodule Mix.Tasks.Npm.Audit do
     )
 
     TaskReporter.enforce(findings, policy)
+  end
+
+  defp write_path(opts) do
+    cond do
+      opts[:write_cache] -> Compromised.cache_path()
+      opts[:write] -> opts[:write]
+      true -> nil
+    end
   end
 
   defp maybe_write(nil, _advisories), do: :ok
@@ -196,6 +207,6 @@ defmodule Mix.Tasks.Npm.Audit do
   end
 
   defp usage do
-    "Usage: mix npm.audit [--compromised | --osv] [--lockfile path] [--db path] [--format text|json] [--policy error|warn|off] [--write path]"
+    "Usage: mix npm.audit [--compromised | --osv] [--lockfile path] [--db path] [--format text|json] [--policy error|warn|off] [--write path] [--write-cache]"
   end
 end

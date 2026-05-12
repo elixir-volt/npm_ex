@@ -41,11 +41,17 @@ defmodule NPM.Security.Compromised do
     check(%{name => %{version: version}}, opts)
   end
 
+  @doc "Return the shared global cache path for OSV-format compromised-package reports."
+  @spec cache_path :: String.t()
+  def cache_path, do: Config.compromised_db_path()
+
   @doc "Read OSV advisory reports from a local JSON database."
   @spec read_database(String.t()) :: {:ok, [map()]} | {:error, term()}
-  def read_database(path \\ Config.compromised_db_path()) do
-    with {:ok, data} <- JSON.read_file(path) do
-      normalize_database(data)
+  def read_database(path \\ cache_path()) do
+    case JSON.read_file(path) do
+      {:ok, data} -> normalize_database(data)
+      {:error, :enoent} -> read_bundled_database(path)
+      error -> error
     end
   end
 
@@ -105,6 +111,16 @@ defmodule NPM.Security.Compromised do
 
       {:error, _reason} ->
         []
+    end
+  end
+
+  defp read_bundled_database(path) do
+    bundled_path = Config.bundled_compromised_db_path()
+
+    if path == bundled_path do
+      {:error, :enoent}
+    else
+      read_database(bundled_path)
     end
   end
 

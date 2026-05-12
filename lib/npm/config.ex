@@ -110,7 +110,13 @@ defmodule NPM.Config do
   def compromised_db_path do
     System.get_env("NPM_EX_COMPROMISED_DB_PATH") ||
       Application.get_env(:npm, :compromised_db_path) ||
-      Application.app_dir(:npm, "priv/security/compromised_packages.json")
+      Path.join([cache_dir(), "security", "compromised_packages.json"])
+  end
+
+  @doc "Path to the bundled seed database of known malicious package reports."
+  @spec bundled_compromised_db_path :: String.t()
+  def bundled_compromised_db_path do
+    Application.app_dir(:npm, "priv/security/compromised_packages.json")
   end
 
   @doc "Known-compromised package intelligence sources to use."

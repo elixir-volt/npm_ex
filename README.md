@@ -118,11 +118,13 @@ Known-malicious package checks can be run through `mix npm.audit` against OSV.de
 ```sh
 mix npm.audit --osv
 mix npm.audit --osv --lockfile npm.lock --format json
+mix npm.audit --osv --write-cache
 mix npm.audit --osv --write priv/security/compromised_packages.json
+mix npm.audit --compromised
 mix npm.audit --compromised --db priv/security/compromised_packages.json
 ```
 
-The optional OSV `--write` flag stores matching malicious-package advisories in a local database that `mix npm.audit --compromised` and `NPM.Security.Compromised` can use offline. Compromised-package audit modes exit non-zero when matches are found unless the compromised-package policy is set to `warn` or `off`.
+The optional OSV `--write-cache` flag stores matching malicious-package advisories in the shared global npm_ex security cache (`~/.npm_ex/security/compromised_packages.json` by default) that `mix npm.audit --compromised` and `NPM.Security.Compromised` can use offline. `--write path` can still write a project-local database. Compromised-package audit modes exit non-zero when matches are found unless the compromised-package policy is set to `warn` or `off`.
 
 OpenSSF/OSV is the default-compatible open data source because OpenSSF malicious-package reports are published in OSV format and available through OSV.dev. Socket, Snyk, and Phylum provide valuable proprietary intelligence or install-time firewall workflows; they fit best as external scanners/proxies or future optional integrations rather than default `npm_ex` install dependencies.
 
@@ -160,7 +162,7 @@ Set environment variables to customize behavior:
 - `NPM_EX_ALLOW_REGISTRY_REDIRECTS` — allow registry HTTP redirects (default: `false`)
 - `NPM_EX_PACKAGE_AGE_WARNING_DAYS` — warn for packages created more recently than this many days (default: `7`)
 - `NPM_EX_VERSION_AGE_WARNING_DAYS` — warn for versions published more recently than this many days (default: `3`)
-- `NPM_EX_COMPROMISED_DB_PATH` — local OSV-format compromised-package database path
+- `NPM_EX_COMPROMISED_DB_PATH` — local OSV-format compromised-package database path (default: `~/.npm_ex/security/compromised_packages.json`)
 - `NPM_EX_COMPROMISED_SOURCES` — comma-separated compromised-package sources (default: `local`; online OSV checks are explicit)
 - `NPM_EX_COMPROMISED_POLICY` — `error`, `warn`, or `off` for security task findings (default: `error`)
 
@@ -179,7 +181,7 @@ config :npm,
   allow_registry_redirects: false,
   package_age_warning_days: 7,
   version_age_warning_days: 3,
-  compromised_db_path: "priv/security/compromised_packages.json",
+  compromised_db_path: Path.expand("~/.npm_ex/security/compromised_packages.json"),
   compromised_sources: [:local],
   compromised_policy: :error
 ```
