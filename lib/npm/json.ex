@@ -1,5 +1,11 @@
 defmodule NPM.JSON do
-  @moduledoc false
+  @moduledoc """
+  Deterministic JSON encoding helpers used for generated npm files.
+
+  Elixir's built-in JSON encoder does not guarantee object key ordering. This
+  module writes maps with sorted keys so files such as `npm.lock` remain stable
+  across repeated writes, which keeps diffs small and reproducible.
+  """
 
   @doc "Encode a term as pretty-printed JSON with sorted keys."
   @spec encode_pretty(term()) :: String.t()

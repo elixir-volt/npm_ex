@@ -1,5 +1,8 @@
 defmodule NPM.TopLevelAPITest do
-  @moduledoc false
+  @moduledoc """
+  Tests for the public functions exposed by the top-level `NPM` module.
+  """
+
   use ExUnit.Case, async: true
 
   describe "NPM module public API" do

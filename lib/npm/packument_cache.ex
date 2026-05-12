@@ -1,5 +1,15 @@
 defmodule NPM.PackumentCache do
-  @moduledoc false
+  @moduledoc """
+  Disk cache for npm registry packuments.
+
+  Registry packuments are fetched frequently during dependency resolution.
+  Caching them under `NPM.Cache.dir()/packuments` reduces repeat network
+  requests while keeping the cache short-lived enough to pick up newly published
+  versions during normal development.
+
+  The TTL defaults to one hour and can be configured with
+  `config :npm, :packument_cache_ttl`.
+  """
 
   @default_ttl_seconds 3600
 

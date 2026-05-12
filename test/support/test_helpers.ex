@@ -1,5 +1,8 @@
 defmodule NPM.TestHelpers do
-  @moduledoc false
+  @moduledoc """
+  Shared helpers for npm_ex tests.
+  """
+
   def mask_token(token) when byte_size(token) <= 8, do: "****"
 
   def mask_token(token) do

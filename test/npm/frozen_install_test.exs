@@ -1,5 +1,8 @@
 defmodule NPM.FrozenInstallTest do
-  @moduledoc false
+  @moduledoc """
+  Regression tests for frozen lockfile install behavior.
+  """
+
   use ExUnit.Case, async: true
 
   describe "frozen install: lockfile_matches?" do

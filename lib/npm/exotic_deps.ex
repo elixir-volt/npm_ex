@@ -1,7 +1,24 @@
 defmodule NPM.ExoticDeps do
-  @moduledoc false
+  @moduledoc """
+  Detects and blocks exotic dependency specs in published package metadata.
+
+  Registry packages can declare dependencies that resolve from outside the
+  configured registry, such as Git repositories, direct tarball URLs, local
+  files, or GitHub shorthand specs. Those sources bypass the normal registry
+  integrity and metadata flow and have been used by supply-chain malware to
+  trigger hidden build steps through transitive `optionalDependencies`.
+
+  `npm_ex` blocks these transitive specs by default. Direct project dependencies
+  are still controlled by the root manifest; this module protects against a
+  package from the registry unexpectedly introducing an external source deeper
+  in the dependency graph.
+  """
 
   defmodule Error do
+    @moduledoc """
+    Raised when a transitive dependency points at an exotic source.
+    """
+
     defexception [:package, :version, :field, :dependency, :spec]
 
     @impl true

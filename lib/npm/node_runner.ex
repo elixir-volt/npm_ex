@@ -1,5 +1,15 @@
 defmodule NPM.NodeRunner do
-  @moduledoc false
+  @moduledoc """
+  Runs JavaScript entrypoints with Node.js using project `node_modules` resolution.
+
+  npm package binaries are often symlinks into package directories and expect
+  Node's module resolver to see the project's `node_modules`. This module writes
+  a short temporary ESM loader that configures `require`, `NODE_PATH`, and module
+  lookup paths before importing the target entrypoint.
+
+  It is used by `mix npm.exec` and related helpers when an installed package
+  binary needs to execute through Node rather than through a shell script.
+  """
 
   @spec run(String.t(), [String.t()], keyword()) :: {String.t(), non_neg_integer()}
   def run(entrypoint, args, opts \\ []) do

@@ -1,5 +1,15 @@
 defmodule NPM.PlatformOptional do
-  @moduledoc false
+  @moduledoc """
+  Selects optional dependencies that match the current platform.
+
+  Many npm packages publish one optional package per operating system and CPU,
+  for example native bindings for Linux, macOS, Windows, x64, or arm64. The
+  lockfile can contain all of those packages for portability, but linking should
+  only install the package that can run on the current machine.
+
+  This module groups platform-specific package families and keeps the best match
+  for the current OS/CPU while leaving ordinary optional dependencies untouched.
+  """
 
   @spec select(map()) :: map()
   def select(optional_dependencies) when map_size(optional_dependencies) == 0, do: %{}

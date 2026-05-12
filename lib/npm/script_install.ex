@@ -1,5 +1,15 @@
 defmodule NPM.ScriptInstall do
-  @moduledoc false
+  @moduledoc """
+  Implements `NPM.install/2` for script-style usage outside Mix projects.
+
+  The public `NPM.install/2` API works like `Mix.install/2`: dependencies are
+  resolved once per BEAM VM, installed into a content-addressed directory, and
+  exposed through `NPM.install_dir!/0` and `NPM.node_modules_dir!/0`.
+
+  Installs are cached by dependency map and guarded with `:persistent_term` so a
+  running VM cannot accidentally switch to a different npm dependency set after
+  code has already loaded packages from the first install.
+  """
 
   @state_key :npm_script_installed
 
