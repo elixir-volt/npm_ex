@@ -9,6 +9,7 @@
 - Move lockfile helper modules under `NPM.Lockfile.*`
 - Move package metadata helpers under `NPM.Package.*`
 - Route JSON decoding through `NPM.JSON` across library modules
+- Move health, doctor, environment, and engine checks under `NPM.Diagnostics.*`
 
 ## 0.6.1
 

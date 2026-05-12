@@ -1,4 +1,4 @@
-defmodule NPM.Doctor do
+defmodule NPM.Diagnostics.Doctor do
   @moduledoc """
   Health check for the npm installation.
 

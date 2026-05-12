@@ -121,7 +121,7 @@ defmodule NPM.EdgeCasesTest do
         "engines" => %{"node" => ">=14", "npm" => ">=7"}
       }
 
-      issues = NPM.EngineCheck.check_package(data, "20.0.0")
+      issues = NPM.Diagnostics.EngineCheck.check_package(data, "20.0.0")
       assert length(issues) == 2
     end
   end
@@ -157,15 +157,15 @@ defmodule NPM.EdgeCasesTest do
 
   describe "Health edge cases" do
     test "grade boundary at 90" do
-      assert "A" = NPM.Health.grade(90)
+      assert "A" = NPM.Diagnostics.Health.grade(90)
     end
 
     test "grade boundary at 80" do
-      assert "B" = NPM.Health.grade(80)
+      assert "B" = NPM.Diagnostics.Health.grade(80)
     end
 
     test "grade boundary at 0" do
-      assert "F" = NPM.Health.grade(0)
+      assert "F" = NPM.Diagnostics.Health.grade(0)
     end
   end
 end

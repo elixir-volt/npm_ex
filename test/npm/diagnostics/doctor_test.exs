@@ -1,4 +1,4 @@
-defmodule NPM.DoctorTest do
+defmodule NPM.Diagnostics.DoctorTest do
   use ExUnit.Case, async: true
 
   describe "diagnose" do
@@ -9,13 +9,13 @@ defmodule NPM.DoctorTest do
       File.mkdir_p!(Path.join(dir, "node_modules"))
       File.write!(Path.join(dir, ".gitignore"), "node_modules\n")
 
-      results = NPM.Doctor.diagnose(dir)
+      results = NPM.Diagnostics.Doctor.diagnose(dir)
       assert Enum.all?(results, &(&1.status == :ok))
     end
 
     @tag :tmp_dir
     test "missing package.json is an error", %{tmp_dir: dir} do
-      results = NPM.Doctor.diagnose(dir)
+      results = NPM.Diagnostics.Doctor.diagnose(dir)
       pkg_check = Enum.find(results, &(&1.name == "package.json"))
       assert pkg_check.status == :error
     end
@@ -23,7 +23,7 @@ defmodule NPM.DoctorTest do
     @tag :tmp_dir
     test "missing lockfile is a warning", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "package.json"), ~s({"name":"test"}))
-      results = NPM.Doctor.diagnose(dir)
+      results = NPM.Diagnostics.Doctor.diagnose(dir)
       lock_check = Enum.find(results, &(&1.name == "lockfile"))
       assert lock_check.status == :warn
     end
@@ -31,7 +31,7 @@ defmodule NPM.DoctorTest do
     @tag :tmp_dir
     test "missing node_modules is a warning", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "package.json"), ~s({"name":"test"}))
-      results = NPM.Doctor.diagnose(dir)
+      results = NPM.Diagnostics.Doctor.diagnose(dir)
       nm_check = Enum.find(results, &(&1.name == "node_modules"))
       assert nm_check.status == :warn
     end
@@ -39,7 +39,7 @@ defmodule NPM.DoctorTest do
     @tag :tmp_dir
     test "missing gitignore is a warning", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "package.json"), ~s({"name":"test"}))
-      results = NPM.Doctor.diagnose(dir)
+      results = NPM.Diagnostics.Doctor.diagnose(dir)
       gi_check = Enum.find(results, &(&1.name == "gitignore"))
       assert gi_check.status == :warn
     end
@@ -53,12 +53,12 @@ defmodule NPM.DoctorTest do
       File.mkdir_p!(Path.join(dir, "node_modules"))
       File.write!(Path.join(dir, ".gitignore"), "node_modules")
 
-      assert NPM.Doctor.healthy?(dir)
+      assert NPM.Diagnostics.Doctor.healthy?(dir)
     end
 
     @tag :tmp_dir
     test "false when package.json missing", %{tmp_dir: dir} do
-      refute NPM.Doctor.healthy?(dir)
+      refute NPM.Diagnostics.Doctor.healthy?(dir)
     end
   end
 
@@ -71,7 +71,7 @@ defmodule NPM.DoctorTest do
         %{name: "d", status: :error, message: "bad"}
       ]
 
-      s = NPM.Doctor.summary(results)
+      s = NPM.Diagnostics.Doctor.summary(results)
       assert s.ok == 2
       assert s.warn == 1
       assert s.error == 1
@@ -86,7 +86,7 @@ defmodule NPM.DoctorTest do
         %{name: "nm", status: :error, message: "Broken"}
       ]
 
-      formatted = NPM.Doctor.format_results(results)
+      formatted = NPM.Diagnostics.Doctor.format_results(results)
       assert formatted =~ "✓"
       assert formatted =~ "⚠"
       assert formatted =~ "✗"

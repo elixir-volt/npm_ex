@@ -80,7 +80,7 @@ defmodule NPM.Milestone2000Test do
 
       risk = NPM.Security.Provenance.risk_summary(lockfile)
       health_checks = %{integrity_pct: risk.integrity_pct, vulnerability_count: 0}
-      result = NPM.Health.score(health_checks)
+      result = NPM.Diagnostics.Health.score(health_checks)
       assert result.details[:integrity_coverage] == 15
     end
   end

@@ -1,4 +1,4 @@
-defmodule NPM.EnvCheck do
+defmodule NPM.Diagnostics.EnvCheck do
   @moduledoc """
   Environment checks for npm_ex.
 

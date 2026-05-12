@@ -98,25 +98,25 @@ defmodule NPM.EdgeCases2Test do
   describe "Health edge cases" do
     test "integrity 50% gives 5 points" do
       checks = %{integrity_pct: 50}
-      result = NPM.Health.score(checks)
+      result = NPM.Diagnostics.Health.score(checks)
       assert result.details[:integrity_coverage] == 5
     end
 
     test "integrity below 50% gives 0" do
       checks = %{integrity_pct: 20}
-      result = NPM.Health.score(checks)
+      result = NPM.Diagnostics.Health.score(checks)
       assert result.details[:integrity_coverage] == 0
     end
 
     test "few outdated gives partial points" do
       checks = %{outdated_count: 3}
-      result = NPM.Health.score(checks)
+      result = NPM.Diagnostics.Health.score(checks)
       assert result.details[:up_to_date] == 5
     end
 
     test "many outdated gives 0 points" do
       checks = %{outdated_count: 10}
-      result = NPM.Health.score(checks)
+      result = NPM.Diagnostics.Health.score(checks)
       assert result.details[:up_to_date] == 0
     end
   end

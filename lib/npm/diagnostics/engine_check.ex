@@ -1,4 +1,4 @@
-defmodule NPM.EngineCheck do
+defmodule NPM.Diagnostics.EngineCheck do
   @moduledoc """
   Checks engine compatibility across all installed packages.
 

@@ -1,4 +1,4 @@
-defmodule NPM.Health do
+defmodule NPM.Diagnostics.Health do
   @moduledoc """
   Comprehensive project health scoring.
 
