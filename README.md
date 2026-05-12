@@ -113,6 +113,15 @@ mix npm.config
 
 This blocks install-time credential stealers that rely on postinstall hooks reading files like `.env` and exfiltrating them during dependency installation.
 
+Known-malicious package checks can be run against OSV.dev for packages already recorded in `npm.lock`:
+
+```sh
+mix npm.security.osv
+mix npm.security.osv --write priv/security/compromised_packages.json
+```
+
+The optional `--write` flag stores matching malicious-package OSV advisories in a local database that `NPM.Security.Compromised` can use offline.
+
 ## Why `npm.lock` instead of `package-lock.json`?
 
 `npm_ex` is not npm, so it keeps its own lockfile. `package.json` is the shared manifest; `npm.lock` is the reproducibility file for the `npm_ex` installer.
@@ -124,7 +133,7 @@ The main public API is `NPM`. Supporting APIs are grouped by domain:
 - `NPM.Package.*` — package.json, manifests, package metadata, repository, license, funding, and quality helpers
 - `NPM.Dependency.*` — dependency graphs, ranges, conflicts, peers, outdated checks, dedupe, and usage checks
 - `NPM.Lockfile.*` — lockfile validation, stats, merge, package-lock, and shrinkwrap helpers
-- `NPM.Security.*` — audit, CVE, provenance, supply-chain, and exotic dependency policy helpers
+- `NPM.Security.*` — audit, CVE, compromised-package, provenance, supply-chain, and exotic dependency policy helpers
 - `NPM.Diagnostics.*` — project diagnostics, doctor, environment, engine, and health checks
 - `NPM.Registry.*` — registry URLs, mirrors, scoped registries, and tokens
 - `NPM.Config.*` — `.npmrc` parsing and multi-layer config resolution
@@ -147,6 +156,8 @@ Set environment variables to customize behavior:
 - `NPM_EX_ALLOW_REGISTRY_REDIRECTS` — allow registry HTTP redirects (default: `false`)
 - `NPM_EX_PACKAGE_AGE_WARNING_DAYS` — warn for packages created more recently than this many days (default: `7`)
 - `NPM_EX_VERSION_AGE_WARNING_DAYS` — warn for versions published more recently than this many days (default: `3`)
+- `NPM_EX_COMPROMISED_DB_PATH` — local OSV-format compromised-package database path
+- `NPM_EX_COMPROMISED_SOURCES` — comma-separated compromised-package sources (default: `local`; online OSV checks are explicit)
 
 Elixir application config is also supported:
 
@@ -162,7 +173,9 @@ config :npm,
   allowed_registries: ["https://registry.npmjs.org"],
   allow_registry_redirects: false,
   package_age_warning_days: 7,
-  version_age_warning_days: 3
+  version_age_warning_days: 3,
+  compromised_db_path: "priv/security/compromised_packages.json",
+  compromised_sources: [:local]
 ```
 
 ## License

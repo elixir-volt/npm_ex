@@ -105,6 +105,23 @@ defmodule NPM.Config do
       Application.get_env(:npm, :version_age_warning_days, 3)
   end
 
+  @doc "Path to an OSV-format database of known malicious package reports."
+  @spec compromised_db_path :: String.t()
+  def compromised_db_path do
+    System.get_env("NPM_EX_COMPROMISED_DB_PATH") ||
+      Application.get_env(:npm, :compromised_db_path) ||
+      Application.app_dir(:npm, "priv/security/compromised_packages.json")
+  end
+
+  @doc "Known-compromised package intelligence sources to use."
+  @spec compromised_sources :: [atom()]
+  def compromised_sources do
+    case env_list("NPM_EX_COMPROMISED_SOURCES") do
+      nil -> Application.get_env(:npm, :compromised_sources, [:local])
+      sources -> Enum.flat_map(sources, &parse_compromised_source/1)
+    end
+  end
+
   @doc """
   Read a value from `.npmrc` files.
 
@@ -188,6 +205,10 @@ defmodule NPM.Config do
   defp truthy?(value) when is_binary(value) do
     (value |> String.trim() |> String.downcase()) in ~w(1 true yes on)
   end
+
+  defp parse_compromised_source("local"), do: [:local]
+  defp parse_compromised_source("osv"), do: [:osv]
+  defp parse_compromised_source(_), do: []
 
   defp env_list(name) do
     case System.get_env(name) do
