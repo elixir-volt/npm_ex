@@ -1,6 +1,8 @@
 defmodule NPM.Resolution.ExportsExtraTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Resolution.Exports
+
   @conditional_exports %{
     "." => %{
       "import" => "./dist/index.mjs",
@@ -19,71 +21,71 @@ defmodule NPM.Resolution.ExportsExtraTest do
   describe "parse" do
     test "string shorthand" do
       data = %{"exports" => "./index.js"}
-      assert %{"." => "./index.js"} = NPM.Resolution.Exports.parse(data)
+      assert %{"." => "./index.js"} = Exports.parse(data)
     end
 
     test "subpath exports" do
       data = %{"exports" => %{"." => "./index.js", "./utils" => "./lib/utils.js"}}
-      parsed = NPM.Resolution.Exports.parse(data)
+      parsed = Exports.parse(data)
       assert parsed["."] == "./index.js"
       assert parsed["./utils"] == "./lib/utils.js"
     end
 
     test "conditional without subpaths wraps in dot" do
       data = %{"exports" => %{"import" => "./esm.js", "require" => "./cjs.js"}}
-      parsed = NPM.Resolution.Exports.parse(data)
+      parsed = Exports.parse(data)
       assert parsed["."]["import"] == "./esm.js"
     end
 
     test "nil for no exports field" do
-      assert nil == NPM.Resolution.Exports.parse(%{"name" => "pkg"})
+      assert nil == Exports.parse(%{"name" => "pkg"})
     end
   end
 
   describe "resolve" do
     test "resolves with import condition" do
       assert {:ok, "./dist/index.mjs"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, ".", ["import"])
+               Exports.resolve(@conditional_exports, ".", ["import"])
     end
 
     test "resolves with require condition" do
       assert {:ok, "./dist/index.cjs"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, ".", ["require"])
+               Exports.resolve(@conditional_exports, ".", ["require"])
     end
 
     test "falls back to default" do
       assert {:ok, "./dist/index.js"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, ".", ["browser", "default"])
+               Exports.resolve(@conditional_exports, ".", ["browser", "default"])
     end
 
     test "resolves subpath" do
       assert {:ok, "./dist/utils.mjs"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, "./utils", ["import"])
+               Exports.resolve(@conditional_exports, "./utils", ["import"])
     end
 
     test "string target for subpath" do
       assert {:ok, "./package.json"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, "./package.json")
+               Exports.resolve(@conditional_exports, "./package.json")
     end
 
     test "error for missing subpath" do
       assert :error =
-               NPM.Resolution.Exports.resolve(@conditional_exports, "./missing", ["import"])
+               Exports.resolve(@conditional_exports, "./missing", ["import"])
     end
 
     test "returns error when no conditions match" do
       assert :error =
-               NPM.Resolution.Exports.resolve(@conditional_exports, ".", ["browser", "deno"])
+               Exports.resolve(@conditional_exports, ".", ["browser", "deno"])
     end
 
     test "import takes priority over require" do
       assert {:ok, "./dist/index.mjs"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, ".", ["import", "require"])
+               Exports.resolve(@conditional_exports, ".", ["import", "require"])
     end
 
     test "first matching condition wins" do
       assert {:ok, "./dist/index.cjs"} =
-               NPM.Resolution.Exports.resolve(@conditional_exports, ".", ["require", "import"])
+               Exports.resolve(@conditional_exports, ".", ["require", "import"])
     end
 
     test "nested subpath with conditions" do
@@ -92,7 +94,7 @@ defmodule NPM.Resolution.ExportsExtraTest do
       }
 
       assert {:ok, "./esm/feature.js"} =
-               NPM.Resolution.Exports.resolve(exports, "./feature", ["import"])
+               Exports.resolve(exports, "./feature", ["import"])
     end
 
     test "resolves arrays and nested condition maps" do
@@ -108,77 +110,77 @@ defmodule NPM.Resolution.ExportsExtraTest do
       }
 
       assert {:ok, "./dist/index.mjs"} =
-               NPM.Resolution.Exports.resolve(exports, ".", ["import", "default"])
+               Exports.resolve(exports, ".", ["import", "default"])
 
       assert {:ok, "./dist/index.cjs"} =
-               NPM.Resolution.Exports.resolve(exports, ".", ["require", "default"])
+               Exports.resolve(exports, ".", ["require", "default"])
     end
 
     test "resolves wildcard targets" do
       assert {:ok, "./dist/button.mjs"} =
-               NPM.Resolution.Exports.resolve(@wildcard_exports, "./button", ["import"])
+               Exports.resolve(@wildcard_exports, "./button", ["import"])
     end
   end
 
   describe "subpaths" do
     test "lists all subpaths sorted" do
-      paths = NPM.Resolution.Exports.subpaths(@conditional_exports)
+      paths = Exports.subpaths(@conditional_exports)
       assert "." in paths
       assert "./utils" in paths
       assert "./package.json" in paths
     end
 
     test "empty for nil" do
-      assert [] = NPM.Resolution.Exports.subpaths(nil)
+      assert [] = Exports.subpaths(nil)
     end
   end
 
   describe "module_type" do
     test "ESM for type module" do
-      assert :esm = NPM.Resolution.Exports.module_type(%{"type" => "module"})
+      assert :esm = Exports.module_type(%{"type" => "module"})
     end
 
     test "CJS by default" do
-      assert :cjs = NPM.Resolution.Exports.module_type(%{})
+      assert :cjs = Exports.module_type(%{})
     end
 
     test "CJS for type commonjs" do
-      assert :cjs = NPM.Resolution.Exports.module_type(%{"type" => "commonjs"})
+      assert :cjs = Exports.module_type(%{"type" => "commonjs"})
     end
   end
 
   describe "exported?" do
     test "true for direct subpath" do
-      assert NPM.Resolution.Exports.exported?("./utils", @conditional_exports)
+      assert Exports.exported?("./utils", @conditional_exports)
     end
 
     test "false for non-exported path" do
-      refute NPM.Resolution.Exports.exported?("./internal", @conditional_exports)
+      refute Exports.exported?("./internal", @conditional_exports)
     end
 
     test "false for nil export map" do
-      refute NPM.Resolution.Exports.exported?(".", nil)
+      refute Exports.exported?(".", nil)
     end
 
     test "wildcard pattern matches" do
-      assert NPM.Resolution.Exports.exported?("./anything", @wildcard_exports)
+      assert Exports.exported?("./anything", @wildcard_exports)
     end
   end
 
   describe "conditions" do
     test "extracts unique conditions" do
-      conds = NPM.Resolution.Exports.conditions(@conditional_exports)
+      conds = Exports.conditions(@conditional_exports)
       assert "import" in conds
       assert "require" in conds
       assert "default" in conds
     end
 
     test "nil returns empty" do
-      assert [] = NPM.Resolution.Exports.conditions(nil)
+      assert [] = Exports.conditions(nil)
     end
 
     test "string values contribute default" do
-      conds = NPM.Resolution.Exports.conditions(%{"." => "./index.js"})
+      conds = Exports.conditions(%{"." => "./index.js"})
       assert "default" in conds
     end
   end
@@ -190,18 +192,18 @@ defmodule NPM.Resolution.ExportsExtraTest do
       File.write!(Path.join(dir, "dist/index.js"), "")
 
       exports = %{"." => "./dist/index.js"}
-      assert {:ok, ["./dist/index.js"]} = NPM.Resolution.Exports.validate(exports, dir)
+      assert {:ok, ["./dist/index.js"]} = Exports.validate(exports, dir)
     end
 
     @tag :tmp_dir
     test "error when file missing", %{tmp_dir: dir} do
       exports = %{"." => "./missing.js"}
-      assert {:error, errors} = NPM.Resolution.Exports.validate(exports, dir)
+      assert {:error, errors} = Exports.validate(exports, dir)
       assert Enum.any?(errors, &String.contains?(&1, "not found"))
     end
 
     test "ok for nil" do
-      assert {:ok, []} = NPM.Resolution.Exports.validate(nil, ".")
+      assert {:ok, []} = Exports.validate(nil, ".")
     end
 
     @tag :tmp_dir
@@ -210,7 +212,7 @@ defmodule NPM.Resolution.ExportsExtraTest do
       File.write!(Path.join(dir, "dist/index.mjs"), "")
 
       exports = %{"." => %{"import" => "./dist/index.mjs", "require" => "./dist/index.cjs"}}
-      assert {:error, errors} = NPM.Resolution.Exports.validate(exports, dir)
+      assert {:error, errors} = Exports.validate(exports, dir)
       assert length(errors) == 1
     end
   end
@@ -224,25 +226,25 @@ defmodule NPM.Resolution.ExportsExtraTest do
         }
       }
 
-      parsed = NPM.Resolution.Exports.parse(data)
+      parsed = Exports.parse(data)
       assert is_map(parsed["."])
       assert is_map(parsed["./utils"])
     end
 
     test "single entry without dot prefix wraps as condition" do
       data = %{"exports" => %{"import" => "./index.mjs"}}
-      parsed = NPM.Resolution.Exports.parse(data)
+      parsed = Exports.parse(data)
       assert parsed["."]["import"] == "./index.mjs"
     end
   end
 
   describe "exported? edge cases" do
     test "dot subpath in map" do
-      assert NPM.Resolution.Exports.exported?(".", @conditional_exports)
+      assert Exports.exported?(".", @conditional_exports)
     end
 
     test "wildcard does not match dot" do
-      refute NPM.Resolution.Exports.exported?(".", @wildcard_exports |> Map.delete("."))
+      refute Exports.exported?(".", @wildcard_exports |> Map.delete("."))
     end
   end
 
@@ -253,7 +255,7 @@ defmodule NPM.Resolution.ExportsExtraTest do
         "./pkg" => "./pkg.js"
       }
 
-      conds = NPM.Resolution.Exports.conditions(exports)
+      conds = Exports.conditions(exports)
       assert "import" in conds
       assert "default" in conds
     end

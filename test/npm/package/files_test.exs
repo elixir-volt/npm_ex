@@ -1,69 +1,71 @@
 defmodule NPM.Package.FilesTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Package.Files
+
   describe "whitelist" do
     test "extracts files array" do
-      assert ["dist/", "lib/"] = NPM.Package.Files.whitelist(%{"files" => ["dist/", "lib/"]})
+      assert ["dist/", "lib/"] = Files.whitelist(%{"files" => ["dist/", "lib/"]})
     end
 
     test "nil when no files field" do
-      assert nil == NPM.Package.Files.whitelist(%{})
+      assert nil == Files.whitelist(%{})
     end
   end
 
   describe "always_included?" do
     test "package.json" do
-      assert NPM.Package.Files.always_included?("package.json")
+      assert Files.always_included?("package.json")
     end
 
     test "README.md" do
-      assert NPM.Package.Files.always_included?("README.md")
+      assert Files.always_included?("README.md")
     end
 
     test "LICENSE variations" do
-      assert NPM.Package.Files.always_included?("LICENSE")
-      assert NPM.Package.Files.always_included?("LICENSE.txt")
-      assert NPM.Package.Files.always_included?("LICENCE")
+      assert Files.always_included?("LICENSE")
+      assert Files.always_included?("LICENSE.txt")
+      assert Files.always_included?("LICENCE")
     end
 
     test "CHANGELOG" do
-      assert NPM.Package.Files.always_included?("CHANGELOG.md")
+      assert Files.always_included?("CHANGELOG.md")
     end
 
     test "regular files not included" do
-      refute NPM.Package.Files.always_included?("index.js")
+      refute Files.always_included?("index.js")
     end
   end
 
   describe "always_excluded?" do
     test ".git" do
-      assert NPM.Package.Files.always_excluded?(".git")
+      assert Files.always_excluded?(".git")
     end
 
     test "node_modules" do
-      assert NPM.Package.Files.always_excluded?("node_modules")
+      assert Files.always_excluded?("node_modules")
     end
 
     test ".DS_Store" do
-      assert NPM.Package.Files.always_excluded?(".DS_Store")
+      assert Files.always_excluded?(".DS_Store")
     end
 
     test "regular files not excluded" do
-      refute NPM.Package.Files.always_excluded?("index.js")
+      refute Files.always_excluded?("index.js")
     end
   end
 
   describe "main_entry" do
     test "returns main field" do
-      assert "./dist/index.js" = NPM.Package.Files.main_entry(%{"main" => "./dist/index.js"})
+      assert "./dist/index.js" = Files.main_entry(%{"main" => "./dist/index.js"})
     end
 
     test "falls back to module" do
-      assert "./esm/index.mjs" = NPM.Package.Files.main_entry(%{"module" => "./esm/index.mjs"})
+      assert "./esm/index.mjs" = Files.main_entry(%{"module" => "./esm/index.mjs"})
     end
 
     test "defaults to index.js" do
-      assert "index.js" = NPM.Package.Files.main_entry(%{})
+      assert "index.js" = Files.main_entry(%{})
     end
   end
 
@@ -75,7 +77,7 @@ defmodule NPM.Package.FilesTest do
         "types" => "./dist/types/index.d.ts"
       }
 
-      entries = NPM.Package.Files.entry_points(data)
+      entries = Files.entry_points(data)
       assert length(entries) == 3
     end
 
@@ -85,28 +87,28 @@ defmodule NPM.Package.FilesTest do
         "exports" => %{"." => "./dist/index.js", "./utils" => "./dist/utils.js"}
       }
 
-      entries = NPM.Package.Files.entry_points(data)
+      entries = Files.entry_points(data)
       assert "./dist/utils.js" in entries
     end
 
     test "empty for bare package" do
-      assert [] = NPM.Package.Files.entry_points(%{})
+      assert [] = Files.entry_points(%{})
     end
   end
 
   describe "has_whitelist?" do
     test "true with files" do
-      assert NPM.Package.Files.has_whitelist?(%{"files" => ["dist/"]})
+      assert Files.has_whitelist?(%{"files" => ["dist/"]})
     end
 
     test "false without files" do
-      refute NPM.Package.Files.has_whitelist?(%{})
+      refute Files.has_whitelist?(%{})
     end
   end
 
   describe "default_includes" do
     test "includes expected patterns" do
-      includes = NPM.Package.Files.default_includes()
+      includes = Files.default_includes()
       assert "package.json" in includes
       assert "README.md" in includes
       assert "LICENSE" in includes

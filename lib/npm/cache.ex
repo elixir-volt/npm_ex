@@ -1,4 +1,6 @@
 defmodule NPM.Cache do
+  alias NPM.Security.RegistryPolicy
+
   @moduledoc """
   Global package cache.
 
@@ -40,7 +42,7 @@ defmodule NPM.Cache do
     if cached?(name, version) do
       {:ok, dest}
     else
-      NPM.Security.RegistryPolicy.validate_url!(tarball_url)
+      RegistryPolicy.validate_url!(tarball_url)
 
       case NPM.Tarball.fetch_and_extract(tarball_url, integrity, dest) do
         {:ok, _count} ->

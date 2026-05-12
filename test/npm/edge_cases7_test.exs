@@ -1,25 +1,30 @@
 defmodule NPM.EdgeCases7Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Dependency.Conflict
+  alias NPM.Dependency.Outdated
+  alias NPM.Install.ScriptRunner
+  alias NPM.Package.Manifest.Diff
+
   describe "ManifestDiff edge cases" do
     test "diff with nil scripts" do
       old = %{"dependencies" => %{"a" => "^1.0"}}
       new = %{"dependencies" => %{"a" => "^1.0"}}
-      d = NPM.Package.Manifest.Diff.diff(old, new)
+      d = Diff.diff(old, new)
       assert d.scripts.added == []
     end
 
     test "diff detects name change" do
       old = %{"name" => "old-name"}
       new = %{"name" => "new-name"}
-      d = NPM.Package.Manifest.Diff.diff(old, new)
+      d = Diff.diff(old, new)
       assert d.name_changed
     end
 
     test "diff top-level field changes" do
       old = %{"description" => "old"}
       new = %{"description" => "new", "license" => "MIT"}
-      d = NPM.Package.Manifest.Diff.diff(old, new)
+      d = Diff.diff(old, new)
       assert "license" in d.fields.added
     end
   end
@@ -27,12 +32,12 @@ defmodule NPM.EdgeCases7Test do
   describe "ScriptRunner edge cases" do
     test "eslint detection without lint script" do
       data = %{"scripts" => %{"check" => "eslint src/"}}
-      patterns = NPM.Install.ScriptRunner.detect_patterns(data)
+      patterns = ScriptRunner.detect_patterns(data)
       assert :has_lint in patterns
     end
 
     test "empty patterns for no scripts" do
-      assert [] = NPM.Install.ScriptRunner.detect_patterns(%{})
+      assert [] = ScriptRunner.detect_patterns(%{})
     end
   end
 
@@ -43,23 +48,23 @@ defmodule NPM.EdgeCases7Test do
         "peerDependencies" => %{"react" => "^18.0"}
       }
 
-      conflicts = NPM.Dependency.Conflict.find(data)
+      conflicts = Conflict.find(data)
       assert length(conflicts) == 1
     end
 
     test "empty package data" do
-      assert [] = NPM.Dependency.Conflict.find(%{})
-      refute NPM.Dependency.Conflict.conflicts?(%{})
+      assert [] = Conflict.find(%{})
+      refute Conflict.conflicts?(%{})
     end
   end
 
   describe "PackageUpdate edge cases" do
     test "handles pre-release versions" do
-      assert :current = NPM.Dependency.Outdated.update_type("invalid", "also-invalid")
+      assert :current = Outdated.update_type("invalid", "also-invalid")
     end
 
     test "major jump from 0.x to 1.x" do
-      assert :major = NPM.Dependency.Outdated.update_type("0.9.0", "1.0.0")
+      assert :major = Outdated.update_type("0.9.0", "1.0.0")
     end
   end
 

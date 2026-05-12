@@ -77,7 +77,7 @@ defmodule NPM.StatsTest do
     end
 
     test "zero for empty lockfile" do
-      assert 0.0 = NPM.Stats.connectivity(%{})
+      assert NPM.Stats.connectivity(%{}) == 0.0
     end
 
     test "zero for packages with no deps" do
@@ -86,7 +86,7 @@ defmodule NPM.StatsTest do
         "b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert 0.0 = NPM.Stats.connectivity(lockfile)
+      assert NPM.Stats.connectivity(lockfile) == 0.0
     end
   end
 

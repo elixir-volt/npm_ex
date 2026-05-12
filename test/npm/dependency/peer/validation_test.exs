@@ -1,20 +1,22 @@
 defmodule NPM.Dependency.PeerValidationTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Dependency.Peer
+
   describe "PeerDeps: extract from manifest" do
     test "extracts peerDependencies" do
       manifest = %{"peerDependencies" => %{"react" => "^18.0.0", "react-dom" => "^18.0.0"}}
-      peers = NPM.Dependency.Peer.extract(manifest)
+      peers = Peer.extract(manifest)
       assert peers["react"] == "^18.0.0"
       assert peers["react-dom"] == "^18.0.0"
     end
 
     test "returns empty map when no peerDependencies" do
-      assert %{} = NPM.Dependency.Peer.extract(%{"name" => "pkg"})
+      assert %{} = Peer.extract(%{"name" => "pkg"})
     end
 
     test "returns empty map for nil" do
-      assert %{} = NPM.Dependency.Peer.extract(nil)
+      assert %{} = Peer.extract(nil)
     end
   end
 
@@ -27,13 +29,13 @@ defmodule NPM.Dependency.PeerValidationTest do
         }
       }
 
-      optional = NPM.Dependency.Peer.optional_peers(manifest)
+      optional = Peer.optional_peers(manifest)
       assert MapSet.member?(optional, "react-native")
       refute MapSet.member?(optional, "react")
     end
 
     test "returns empty set when no meta" do
-      assert MapSet.size(NPM.Dependency.Peer.optional_peers(%{})) == 0
+      assert MapSet.size(Peer.optional_peers(%{})) == 0
     end
   end
 
@@ -51,7 +53,7 @@ defmodule NPM.Dependency.PeerValidationTest do
         }
       ]
 
-      warnings = NPM.Dependency.Peer.check(lockfile, manifests)
+      warnings = Peer.check(lockfile, manifests)
       assert warnings == []
     end
   end
@@ -64,7 +66,7 @@ defmodule NPM.Dependency.PeerValidationTest do
         %{"name" => "my-hook", "peerDependencies" => %{"react" => "^18.0.0"}}
       ]
 
-      warnings = NPM.Dependency.Peer.check(lockfile, manifests)
+      warnings = Peer.check(lockfile, manifests)
       assert Enum.any?(warnings, &(&1.peer == "react" and &1.found == nil))
     end
   end
@@ -79,7 +81,7 @@ defmodule NPM.Dependency.PeerValidationTest do
         %{"name" => "modern-hooks", "peerDependencies" => %{"react" => "^18.0.0"}}
       ]
 
-      warnings = NPM.Dependency.Peer.check(lockfile, manifests)
+      warnings = Peer.check(lockfile, manifests)
       assert Enum.any?(warnings, &(&1.peer == "react" and &1.found == "16.8.0"))
     end
   end
@@ -96,7 +98,7 @@ defmodule NPM.Dependency.PeerValidationTest do
         }
       ]
 
-      warnings = NPM.Dependency.Peer.check(lockfile, manifests)
+      warnings = Peer.check(lockfile, manifests)
       assert warnings == []
     end
   end
@@ -112,7 +114,7 @@ defmodule NPM.Dependency.PeerValidationTest do
         %{"name" => "pkg-b", "peerDependencies" => %{"vue" => "^3.0.0"}}
       ]
 
-      warnings = NPM.Dependency.Peer.check(lockfile, manifests)
+      warnings = Peer.check(lockfile, manifests)
       assert Enum.any?(warnings, &(&1.package == "pkg-b" and &1.peer == "vue"))
       refute Enum.any?(warnings, &(&1.package == "pkg-a"))
     end
@@ -126,13 +128,13 @@ defmodule NPM.Dependency.PeerValidationTest do
         %{package: "c", peer: "svelte", required: "^4", found: nil, satisfied: false}
       ]
 
-      s = NPM.Dependency.Peer.summary(warnings)
+      s = Peer.summary(warnings)
       assert s.missing == 2
       assert s.incompatible == 1
     end
 
     test "empty warnings" do
-      s = NPM.Dependency.Peer.summary([])
+      s = Peer.summary([])
       assert s.missing == 0
       assert s.incompatible == 0
     end
@@ -144,7 +146,7 @@ defmodule NPM.Dependency.PeerValidationTest do
         %{package: "hooks-lib", peer: "react", required: "^18.0.0", found: nil, satisfied: false}
       ]
 
-      [msg] = NPM.Dependency.Peer.format_warnings(warnings)
+      [msg] = Peer.format_warnings(warnings)
       assert msg =~ "hooks-lib"
       assert msg =~ "react"
       assert msg =~ "not installed"
@@ -161,19 +163,19 @@ defmodule NPM.Dependency.PeerValidationTest do
         }
       ]
 
-      [msg] = NPM.Dependency.Peer.format_warnings(warnings)
+      [msg] = Peer.format_warnings(warnings)
       assert msg =~ "new-lib"
       assert msg =~ "16.8.0"
     end
 
     test "formats empty list" do
-      assert [] = NPM.Dependency.Peer.format_warnings([])
+      assert [] = Peer.format_warnings([])
     end
   end
 
   describe "PeerDeps: check with empty manifests" do
     test "no manifests produces no warnings" do
-      assert [] = NPM.Dependency.Peer.check(%{"react" => %{version: "18.0.0"}}, [])
+      assert [] = Peer.check(%{"react" => %{version: "18.0.0"}}, [])
     end
   end
 
@@ -181,7 +183,7 @@ defmodule NPM.Dependency.PeerValidationTest do
     test "manifest without peerDependencies produces no warnings" do
       lockfile = %{"react" => %{version: "18.0.0", integrity: "", tarball: "", dependencies: %{}}}
       manifests = [%{"name" => "simple-pkg"}]
-      assert [] = NPM.Dependency.Peer.check(lockfile, manifests)
+      assert [] = Peer.check(lockfile, manifests)
     end
   end
 end

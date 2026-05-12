@@ -7,13 +7,6 @@ defmodule NPM.HoistingConflictTest do
     "debug" => %{version: "4.3.4", dependencies: %{}}
   }
 
-  @lockfile_with_conflict %{
-    "express" => %{version: "4.18.2", dependencies: %{"ms" => "^2.0"}},
-    "koa" => %{version: "2.14.0", dependencies: %{"ms" => "^3.0"}},
-    "ms" => %{version: "2.1.3", dependencies: %{}},
-    "ms_v3" => %{version: "3.0.0", dependencies: %{}}
-  }
-
   describe "find" do
     test "no conflicts when same version" do
       assert [] = NPM.HoistingConflict.find(@lockfile_no_conflict)

@@ -1,6 +1,18 @@
 defmodule NPM.EdgeCases6Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Config.Npmrc
+  alias NPM.Dependency.Peer
+  alias NPM.Dependency.Phantom
+  alias NPM.Lockfile.PackageLock
+  alias NPM.Package.Files
+  alias NPM.Package.Funding
+  alias NPM.Package.Quality
+  alias NPM.Package.Repository
+  alias NPM.Registry.URL
+  alias NPM.Resolution.Conditional
+  alias NPM.Security.SupplyChain
+
   describe "BundleAnalysis + TypeField" do
     test "CJS-only package scores 0 for ESM" do
       data = %{"main" => "./index.js", "type" => "commonjs"}
@@ -12,7 +24,7 @@ defmodule NPM.EdgeCases6Test do
   describe "Migration + PackageLock" do
     test "lockfile v3 needs npm 9+" do
       assert 3 = NPM.Migration.lockfile_version("9.0.0")
-      assert NPM.Lockfile.PackageLock.requires_npm7?(%{"lockfileVersion" => 3})
+      assert PackageLock.requires_npm7?(%{"lockfileVersion" => 3})
     end
   end
 
@@ -32,7 +44,7 @@ defmodule NPM.EdgeCases6Test do
     test "invalid package has low quality" do
       data = %{}
       refute NPM.Validate.valid?(data)
-      score = NPM.Package.Quality.score(data)
+      score = Quality.score(data)
       assert score <= 5
     end
   end
@@ -48,7 +60,7 @@ defmodule NPM.EdgeCases6Test do
       assert stats.with_integrity == 1
 
       chain =
-        NPM.Security.SupplyChain.assess(
+        SupplyChain.assess(
           %{"dependencies" => %{"a" => "^1", "b" => "^2"}},
           lockfile
         )
@@ -74,7 +86,7 @@ defmodule NPM.EdgeCases6Test do
 
   describe "Conditional + Exports" do
     test "resolve string export directly" do
-      assert "./index.js" = NPM.Resolution.Conditional.resolve("./index.js", ["import"])
+      assert "./index.js" = Conditional.resolve("./index.js", ["import"])
     end
   end
 
@@ -90,7 +102,7 @@ defmodule NPM.EdgeCases6Test do
     test "phantom dep has a range type in lockfile" do
       pkg = %{"dependencies" => %{"express" => "^4.18"}}
       lockfile = %{"express" => %{version: "4.18.2"}, "debug" => %{version: "4.3.4"}}
-      phantoms = NPM.Dependency.Phantom.detect(pkg, lockfile)
+      phantoms = Phantom.detect(pkg, lockfile)
       assert "debug" in phantoms
     end
   end
@@ -117,7 +129,7 @@ defmodule NPM.EdgeCases6Test do
     test "valid peer deps format" do
       data = %{"name" => "pkg", "version" => "1.0.0", "peerDependencies" => %{"react" => "^18.0"}}
       assert NPM.Validate.valid?(data)
-      peers = NPM.Dependency.Peer.extract(data)
+      peers = Peer.extract(data)
       assert peers["react"] == "^18.0"
     end
   end
@@ -129,8 +141,8 @@ defmodule NPM.EdgeCases6Test do
         "repository" => "user/repo"
       }
 
-      assert NPM.Package.Funding.has_funding?(data)
-      assert NPM.Package.Repository.has_repository?(data)
+      assert Funding.has_funding?(data)
+      assert Repository.has_repository?(data)
     end
   end
 
@@ -150,14 +162,14 @@ defmodule NPM.EdgeCases6Test do
     test "tree-shakeable with files whitelist" do
       data = %{"sideEffects" => false, "files" => ["dist/"]}
       assert NPM.SideEffects.tree_shakeable?(data)
-      assert NPM.Package.Files.has_whitelist?(data)
+      assert Files.has_whitelist?(data)
     end
   end
 
   describe "Npmrc + RegistryUrl" do
     test "parsed registry used for URL" do
-      config = NPM.Config.Npmrc.parse("registry=https://custom.registry.io")
-      url = NPM.Registry.URL.package_url("lodash", config["registry"])
+      config = Npmrc.parse("registry=https://custom.registry.io")
+      url = URL.package_url("lodash", config["registry"])
       assert url =~ "custom.registry.io"
     end
   end

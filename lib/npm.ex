@@ -1,4 +1,11 @@
 defmodule NPM do
+  alias NPM.Install.Linker
+  alias NPM.Install.LockfileBuilder
+  alias NPM.Install.ScriptInstall
+  alias NPM.Package.JSON
+  alias NPM.Security.Age
+  alias NPM.Security.ExoticDeps
+
   @moduledoc """
   npm package manager for Elixir.
 
@@ -38,14 +45,14 @@ defmodule NPM do
   """
   @spec install(map(), keyword()) :: :ok
   def install(deps, opts) when is_map(deps) do
-    NPM.Install.ScriptInstall.install(deps, opts)
+    ScriptInstall.install(deps, opts)
   end
 
   @doc """
   Returns whether `NPM.install/2` has been called in this VM.
   """
   @spec installed? :: boolean()
-  defdelegate installed?, to: NPM.Install.ScriptInstall
+  defdelegate installed?, to: ScriptInstall
 
   @doc """
   Returns the root directory of the current `NPM.install/2` installation.
@@ -53,7 +60,7 @@ defmodule NPM do
   Raises if `NPM.install/2` has not been called.
   """
   @spec install_dir! :: String.t()
-  defdelegate install_dir!, to: NPM.Install.ScriptInstall
+  defdelegate install_dir!, to: ScriptInstall
 
   @doc """
   Returns the `node_modules` path of the current `NPM.install/2` installation.
@@ -61,7 +68,7 @@ defmodule NPM do
   Raises if `NPM.install/2` has not been called.
   """
   @spec node_modules_dir! :: String.t()
-  defdelegate node_modules_dir!, to: NPM.Install.ScriptInstall
+  defdelegate node_modules_dir!, to: ScriptInstall
 
   @doc """
   Install all dependencies from `package.json` (project context).
@@ -74,7 +81,7 @@ defmodule NPM do
   """
   @spec install(keyword()) :: :ok | {:error, term()}
   def install(opts \\ []) when is_list(opts) do
-    case NPM.Package.JSON.read_all() do
+    case JSON.read_all() do
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps, optional_dependencies: opt_deps}} ->
         all_deps =
           if opts[:production] do
@@ -102,7 +109,7 @@ defmodule NPM do
     range = if range == "latest", do: resolve_latest(name, opts), else: range
 
     with range_str when is_binary(range_str) <- range,
-         :ok <- NPM.Package.JSON.add_dep(name, range_str, "package.json", opts) do
+         :ok <- JSON.add_dep(name, range_str, "package.json", opts) do
       install([])
     end
   end
@@ -112,7 +119,7 @@ defmodule NPM do
   """
   @spec remove(String.t()) :: :ok | {:error, term()}
   def remove(name) do
-    with :ok <- NPM.Package.JSON.remove_dep(name) do
+    with :ok <- JSON.remove_dep(name) do
       install([])
     end
   end
@@ -124,7 +131,7 @@ defmodule NPM do
   """
   @spec update :: :ok | {:error, term()}
   def update do
-    case NPM.Package.JSON.read_all() do
+    case JSON.read_all() do
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} ->
         do_install(Map.merge(deps, dev_deps), [])
 
@@ -140,7 +147,7 @@ defmodule NPM do
   """
   @spec update(String.t()) :: :ok | {:error, term()}
   def update(name) do
-    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.Package.JSON.read_all(),
+    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- JSON.read_all(),
          {:ok, lockfile} <- NPM.Lockfile.read() do
       all_deps = Map.merge(deps, dev_deps)
 
@@ -270,7 +277,7 @@ defmodule NPM do
   end
 
   defp validate_direct_exotic_deps!(deps) do
-    Enum.each(deps, fn {name, spec} -> NPM.Security.ExoticDeps.validate_direct!(name, spec) end)
+    Enum.each(deps, fn {name, spec} -> ExoticDeps.validate_direct!(name, spec) end)
   end
 
   defp node_modules_intact?(lockfile) do
@@ -280,7 +287,7 @@ defmodule NPM do
   end
 
   defp resolve_and_install(deps, old_lockfile) do
-    {:ok, overrides} = NPM.Package.JSON.read_overrides()
+    {:ok, overrides} = JSON.read_overrides()
 
     {resolve_us, result} =
       :timer.tc(fn ->
@@ -312,7 +319,7 @@ defmodule NPM do
 
   defp link_and_nest(lockfile, nested_info, flat) do
     with :ok <- link_from_lockfile(lockfile) do
-      if nested_info != %{}, do: NPM.Install.Linker.link_nested(nested_info, flat, @node_modules)
+      if nested_info != %{}, do: Linker.link_nested(nested_info, flat, @node_modules)
       :ok
     end
   end
@@ -325,7 +332,7 @@ defmodule NPM do
       Mix.shell().info("Fetching #{to_fetch} package#{if to_fetch != 1, do: "s", else: ""}...")
     end
 
-    {link_us, result} = :timer.tc(fn -> NPM.Install.Linker.link(lockfile, @node_modules) end)
+    {link_us, result} = :timer.tc(fn -> Linker.link(lockfile, @node_modules) end)
 
     case result do
       :ok ->
@@ -341,22 +348,7 @@ defmodule NPM do
   end
 
   defp build_lockfile(resolved) do
-    lockfile =
-      for {name, version_str} <- resolved, into: %{} do
-        {:ok, packument} = NPM.Registry.get_packument(name)
-        info = Map.fetch!(packument.versions, version_str)
-        warn_age_heuristics(name, version_str, info)
-
-        {name,
-         %{
-           version: version_str,
-           integrity: info.dist.integrity,
-           tarball: info.dist.tarball,
-           dependencies: info.dependencies,
-           optional_dependencies: info.optional_dependencies,
-           has_install_script: info.has_install_script
-         }}
-      end
+    lockfile = LockfileBuilder.build(resolved, &warn_age_heuristics/3)
 
     warn_unmet_peers(resolved)
     lockfile
@@ -411,9 +403,9 @@ defmodule NPM do
 
   defp warn_age_heuristics(name, version, info) do
     info
-    |> NPM.Security.Age.warnings()
+    |> Age.warnings()
     |> Enum.each(fn warning ->
-      Mix.shell().info("Warning: #{NPM.Security.Age.format(name, version, warning)}")
+      Mix.shell().info("Warning: #{Age.format(name, version, warning)}")
     end)
   end
 

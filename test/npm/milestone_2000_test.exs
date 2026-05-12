@@ -1,6 +1,14 @@
 defmodule NPM.Milestone2000Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Diagnostics.Health
+  alias NPM.Install.CI
+  alias NPM.Node.Bin
+  alias NPM.Package.People
+  alias NPM.Package.Repository
+  alias NPM.Resolution.Exports
+  alias NPM.Security.Provenance
+
   describe "Lockfile round-trip" do
     @tag :tmp_dir
     test "write then read preserves data", %{tmp_dir: dir} do
@@ -56,7 +64,7 @@ defmodule NPM.Milestone2000Test do
 
       NPM.Lockfile.write(%{}, Path.join(dir, "npm.lock"))
 
-      {:error, errors} = NPM.Install.CI.validate(dir)
+      {:error, errors} = CI.validate(dir)
       missing = Enum.filter(errors, &match?({:missing_dep, _}, &1))
       assert length(missing) == 3
     end
@@ -66,8 +74,8 @@ defmodule NPM.Milestone2000Test do
     test "scoped package bin extraction" do
       data = %{"name" => "@myorg/cli", "bin" => %{"mycli" => "./dist/cli.js"}}
       assert NPM.Scope.scoped?(data["name"])
-      assert NPM.Node.Bin.has_bin?(data)
-      assert ["mycli"] = NPM.Node.Bin.commands(data)
+      assert Bin.has_bin?(data)
+      assert ["mycli"] = Bin.commands(data)
     end
   end
 
@@ -78,9 +86,9 @@ defmodule NPM.Milestone2000Test do
         "b" => %{version: "2.0", integrity: "sha512-y"}
       }
 
-      risk = NPM.Security.Provenance.risk_summary(lockfile)
+      risk = Provenance.risk_summary(lockfile)
       health_checks = %{integrity_pct: risk.integrity_pct, vulnerability_count: 0}
-      result = NPM.Diagnostics.Health.score(health_checks)
+      result = Health.score(health_checks)
       assert result.details[:integrity_coverage] == 15
     end
   end
@@ -89,7 +97,7 @@ defmodule NPM.Milestone2000Test do
     test "normalized author can be extracted by People" do
       data = %{"author" => "John Doe <john@example.com> (https://john.dev)"}
       normalized = NPM.Normalize.normalize(data)
-      author = NPM.Package.People.author(normalized)
+      author = People.author(normalized)
       assert author["name"] == "John Doe"
       assert author["email"] == "john@example.com"
     end
@@ -111,9 +119,9 @@ defmodule NPM.Milestone2000Test do
         "exports" => %{"." => "./dist/index.js", "./utils" => "./dist/utils.js"}
       }
 
-      exports = NPM.Resolution.Exports.parse(data)
-      assert NPM.Resolution.Exports.exported?("./utils", exports)
-      paths = NPM.Resolution.Exports.subpaths(exports)
+      exports = Exports.parse(data)
+      assert Exports.exported?("./utils", exports)
+      paths = Exports.subpaths(exports)
       assert length(paths) == 2
     end
   end
@@ -125,7 +133,7 @@ defmodule NPM.Milestone2000Test do
       }
 
       git_url = NPM.GitInfo.repo_url(data)
-      repo_info = NPM.Package.Repository.extract(data)
+      repo_info = Repository.extract(data)
       assert git_url == repo_info.url
     end
   end
@@ -159,7 +167,7 @@ defmodule NPM.Milestone2000Test do
         })
 
       assert NPM.Dist.has_integrity?(dist)
-      assert NPM.Security.Provenance.has_integrity?(dist)
+      assert Provenance.has_integrity?(dist)
     end
   end
 

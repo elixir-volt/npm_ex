@@ -1,6 +1,8 @@
 defmodule NPM.Node.BinResolverTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Node.BinResolver
+
   describe "list" do
     @tag :tmp_dir
     test "lists binaries in .bin directory", %{tmp_dir: dir} do
@@ -10,7 +12,7 @@ defmodule NPM.Node.BinResolverTest do
       File.write!(Path.join(bin_dir, "eslint"), "#!/usr/bin/env node")
       File.write!(Path.join(bin_dir, "prettier"), "#!/usr/bin/env node")
 
-      bins = NPM.Node.BinResolver.list(nm)
+      bins = BinResolver.list(nm)
       names = Enum.map(bins, &elem(&1, 0))
       assert "eslint" in names
       assert "prettier" in names
@@ -24,7 +26,7 @@ defmodule NPM.Node.BinResolverTest do
       File.write!(Path.join(bin_dir, "z-tool"), "#!/bin/sh")
       File.write!(Path.join(bin_dir, "a-tool"), "#!/bin/sh")
 
-      bins = NPM.Node.BinResolver.list(nm)
+      bins = BinResolver.list(nm)
       names = Enum.map(bins, &elem(&1, 0))
       assert names == Enum.sort(names)
     end
@@ -33,19 +35,19 @@ defmodule NPM.Node.BinResolverTest do
     test "empty .bin directory", %{tmp_dir: dir} do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(Path.join(nm, ".bin"))
-      assert [] = NPM.Node.BinResolver.list(nm)
+      assert [] = BinResolver.list(nm)
     end
 
     @tag :tmp_dir
     test "no .bin directory", %{tmp_dir: dir} do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
-      assert [] = NPM.Node.BinResolver.list(nm)
+      assert [] = BinResolver.list(nm)
     end
 
     test "nonexistent node_modules" do
       assert [] =
-               NPM.Node.BinResolver.list("/tmp/nonexistent_#{System.unique_integer([:positive])}")
+               BinResolver.list("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
   end
 
@@ -57,14 +59,14 @@ defmodule NPM.Node.BinResolverTest do
       File.mkdir_p!(bin_dir)
       File.write!(Path.join(bin_dir, "tsc"), "#!/usr/bin/env node")
 
-      assert {:ok, _path} = NPM.Node.BinResolver.find("tsc", nm)
+      assert {:ok, _path} = BinResolver.find("tsc", nm)
     end
 
     @tag :tmp_dir
     test "returns error for missing binary", %{tmp_dir: dir} do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(Path.join(nm, ".bin"))
-      assert :error = NPM.Node.BinResolver.find("nonexistent", nm)
+      assert :error = BinResolver.find("nonexistent", nm)
     end
 
     @tag :tmp_dir
@@ -79,7 +81,7 @@ defmodule NPM.Node.BinResolverTest do
       File.write!(target, "#!/usr/bin/env node")
       File.ln_s!(target, Path.join(bin_dir, "my-cli"))
 
-      {:ok, resolved} = NPM.Node.BinResolver.find("my-cli", nm)
+      {:ok, resolved} = BinResolver.find("my-cli", nm)
       assert String.ends_with?(resolved, "cli.js") or String.contains?(resolved, "my-cli")
     end
   end
@@ -92,18 +94,18 @@ defmodule NPM.Node.BinResolverTest do
       File.mkdir_p!(bin_dir)
       File.write!(Path.join(bin_dir, "jest"), "#!/usr/bin/env node")
 
-      assert NPM.Node.BinResolver.available?("jest", nm)
+      assert BinResolver.available?("jest", nm)
     end
 
     @tag :tmp_dir
     test "false for missing binary", %{tmp_dir: dir} do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(Path.join(nm, ".bin"))
-      refute NPM.Node.BinResolver.available?("ghost", nm)
+      refute BinResolver.available?("ghost", nm)
     end
 
     test "false for nonexistent node_modules" do
-      refute NPM.Node.BinResolver.available?(
+      refute BinResolver.available?(
                "anything",
                "/tmp/nonexistent_#{System.unique_integer([:positive])}"
              )

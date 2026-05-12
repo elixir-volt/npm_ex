@@ -1,6 +1,8 @@
 defmodule NPM.Install.LifecycleTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Install.Lifecycle
+
   describe "Lifecycle.detect" do
     @tag :tmp_dir
     test "detects install hooks", %{tmp_dir: dir} do
@@ -15,7 +17,7 @@ defmodule NPM.Install.LifecycleTest do
         }
       }))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert length(hooks) == 3
       assert {"preinstall", "echo pre"} in hooks
       assert {"install", "node-gyp rebuild"} in hooks
@@ -27,12 +29,12 @@ defmodule NPM.Install.LifecycleTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "no-scripts"}))
 
-      assert NPM.Install.Lifecycle.detect(path) == []
+      assert Lifecycle.detect(path) == []
     end
 
     @tag :tmp_dir
     test "returns empty for missing file", %{tmp_dir: dir} do
-      assert NPM.Install.Lifecycle.detect(Path.join(dir, "missing.json")) == []
+      assert Lifecycle.detect(Path.join(dir, "missing.json")) == []
     end
 
     @tag :tmp_dir
@@ -43,7 +45,7 @@ defmodule NPM.Install.LifecycleTest do
         "scripts": {"test": "jest", "build": "tsc", "lint": "eslint ."}
       }))
 
-      assert NPM.Install.Lifecycle.detect(path) == []
+      assert Lifecycle.detect(path) == []
     end
   end
 
@@ -64,7 +66,7 @@ defmodule NPM.Install.LifecycleTest do
       File.mkdir_p!(pkg_b)
       File.write!(Path.join(pkg_b, "package.json"), ~s({"scripts": {"test": "jest"}}))
 
-      result = NPM.Install.Lifecycle.detect_all(nm_dir)
+      result = Lifecycle.detect_all(nm_dir)
       assert Map.has_key?(result, "native-pkg")
       refute Map.has_key?(result, "normal-pkg")
       assert {"postinstall", "node-gyp rebuild"} in result["native-pkg"]
@@ -75,7 +77,7 @@ defmodule NPM.Install.LifecycleTest do
       nm_dir = Path.join(dir, "node_modules")
       File.mkdir_p!(nm_dir)
 
-      assert NPM.Install.Lifecycle.detect_all(nm_dir) == %{}
+      assert Lifecycle.detect_all(nm_dir) == %{}
     end
   end
 
@@ -91,7 +93,7 @@ defmodule NPM.Install.LifecycleTest do
         ~s({"scripts": {"postinstall": "node setup.js"}})
       )
 
-      result = NPM.Install.Lifecycle.detect_all(nm_dir)
+      result = Lifecycle.detect_all(nm_dir)
       assert Map.has_key?(result, "@scope/native")
     end
   end
@@ -102,14 +104,14 @@ defmodule NPM.Install.LifecycleTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"scripts": {"prepare": "husky install"}}))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert {"prepare", "husky install"} in hooks
     end
   end
 
   describe "Lifecycle.hook_names" do
     test "returns install-related hook names" do
-      names = NPM.Install.Lifecycle.hook_names()
+      names = Lifecycle.hook_names()
       assert "preinstall" in names
       assert "install" in names
       assert "postinstall" in names
@@ -130,7 +132,7 @@ defmodule NPM.Install.LifecycleTest do
         }
       }))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert hooks == []
     end
 
@@ -146,7 +148,7 @@ defmodule NPM.Install.LifecycleTest do
         }
       }))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       names = Enum.map(hooks, &elem(&1, 0))
       assert "preinstall" in names
       assert "postinstall" in names
@@ -164,7 +166,7 @@ defmodule NPM.Install.LifecycleTest do
         "scripts": {"postinstall": "node install.js"}
       }))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert length(hooks) == 1
       assert {"postinstall", "node install.js"} in hooks
     end
@@ -180,7 +182,7 @@ defmodule NPM.Install.LifecycleTest do
         }
       }))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert length(hooks) == 1
       assert {"install", "node-gyp rebuild"} in hooks
     end
@@ -190,14 +192,14 @@ defmodule NPM.Install.LifecycleTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"scripts": {"prepare": "husky install"}}))
 
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert {"prepare", "husky install"} in hooks
     end
   end
 
   describe "Lifecycle: hook_names" do
     test "returns known install hooks" do
-      names = NPM.Install.Lifecycle.hook_names()
+      names = Lifecycle.hook_names()
       assert is_list(names)
       assert Enum.any?(names)
     end
@@ -208,7 +210,7 @@ defmodule NPM.Install.LifecycleTest do
     test "detects postinstall script", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"scripts":{"postinstall":"node build.js"}}))
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert Enum.any?(hooks, fn {name, _} -> name == "postinstall" end)
     end
 
@@ -216,7 +218,7 @@ defmodule NPM.Install.LifecycleTest do
     test "returns empty for no lifecycle scripts", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"scripts":{"test":"jest"}}))
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert hooks == []
     end
 
@@ -224,7 +226,7 @@ defmodule NPM.Install.LifecycleTest do
     test "detects preinstall script", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"scripts":{"preinstall":"echo hi"}}))
-      hooks = NPM.Install.Lifecycle.detect(path)
+      hooks = Lifecycle.detect(path)
       assert Enum.any?(hooks, fn {name, _} -> name == "preinstall" end)
     end
   end
@@ -241,7 +243,7 @@ defmodule NPM.Install.LifecycleTest do
       File.write!(Path.join(pkg_a, "package.json"), ~s({"scripts":{"postinstall":"echo a"}}))
       File.write!(Path.join(pkg_b, "package.json"), ~s({"scripts":{"test":"jest"}}))
 
-      results = NPM.Install.Lifecycle.detect_all(nm)
+      results = Lifecycle.detect_all(nm)
       assert is_list(results) or is_map(results)
     end
   end

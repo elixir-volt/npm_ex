@@ -1,6 +1,8 @@
 defmodule NPM.Node.RunnerTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Node.Runner
+
   @tag :tmp_dir
   test "runs cached esm cli with dependency resolved from project node_modules", %{tmp_dir: dir} do
     cli_dir = Path.join(dir, "cache/pkg/1.0.0")
@@ -22,7 +24,7 @@ defmodule NPM.Node.RunnerTest do
     File.write!(Path.join(dep_dir, "index.js"), "export default 'ok'")
 
     {output, status} =
-      NPM.Node.Runner.run(Path.join(cli_dir, "dist/cli.mjs"), [],
+      Runner.run(Path.join(cli_dir, "dist/cli.mjs"), [],
         node_modules_dir: Path.join(dir, "node_modules"),
         cd: dir
       )

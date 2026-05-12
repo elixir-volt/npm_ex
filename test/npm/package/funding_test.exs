@@ -1,10 +1,12 @@
 defmodule NPM.Package.FundingTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Package.Funding
+
   describe "extract" do
     test "string URL" do
       data = %{"funding" => "https://github.com/sponsors/user"}
-      entries = NPM.Package.Funding.extract(data)
+      entries = Funding.extract(data)
       assert length(entries) == 1
       assert hd(entries)["url"] == "https://github.com/sponsors/user"
     end
@@ -14,7 +16,7 @@ defmodule NPM.Package.FundingTest do
         "funding" => %{"url" => "https://opencollective.com/pkg", "type" => "opencollective"}
       }
 
-      entries = NPM.Package.Funding.extract(data)
+      entries = Funding.extract(data)
       assert hd(entries)["type"] == "opencollective"
     end
 
@@ -26,12 +28,12 @@ defmodule NPM.Package.FundingTest do
         ]
       }
 
-      entries = NPM.Package.Funding.extract(data)
+      entries = Funding.extract(data)
       assert length(entries) == 2
     end
 
     test "empty for no funding" do
-      assert [] = NPM.Package.Funding.extract(%{"name" => "pkg"})
+      assert [] = Funding.extract(%{"name" => "pkg"})
     end
   end
 
@@ -44,7 +46,7 @@ defmodule NPM.Package.FundingTest do
         ]
       }
 
-      urls = NPM.Package.Funding.urls(data)
+      urls = Funding.urls(data)
       assert length(urls) == 2
       assert "https://a.com" in urls
     end
@@ -60,7 +62,7 @@ defmodule NPM.Package.FundingTest do
         ]
       }
 
-      types = NPM.Package.Funding.types(data)
+      types = Funding.types(data)
       assert "github" in types
       assert "opencollective" in types
       assert length(types) == 2
@@ -69,11 +71,11 @@ defmodule NPM.Package.FundingTest do
 
   describe "has_funding?" do
     test "true with funding" do
-      assert NPM.Package.Funding.has_funding?(%{"funding" => "https://a.com"})
+      assert Funding.has_funding?(%{"funding" => "https://a.com"})
     end
 
     test "false without funding" do
-      refute NPM.Package.Funding.has_funding?(%{})
+      refute Funding.has_funding?(%{})
     end
   end
 
@@ -85,14 +87,14 @@ defmodule NPM.Package.FundingTest do
         %{"name" => "no-funding"}
       ]
 
-      stats = NPM.Package.Funding.funding_stats(packages)
+      stats = Funding.funding_stats(packages)
       assert stats.total == 3
       assert stats.with_funding == 2
       assert stats.without_funding == 1
     end
 
     test "empty packages" do
-      stats = NPM.Package.Funding.funding_stats([])
+      stats = Funding.funding_stats([])
       assert stats.total == 0
     end
   end

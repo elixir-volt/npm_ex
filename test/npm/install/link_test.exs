@@ -1,6 +1,8 @@
 defmodule NPM.Install.LinkTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Install.Link
+
   describe "link" do
     @tag :tmp_dir
     test "creates symlink in node_modules", %{tmp_dir: dir} do
@@ -10,7 +12,7 @@ defmodule NPM.Install.LinkTest do
       File.mkdir_p!(nm_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"my-local-pkg"}))
 
-      assert {:ok, info} = NPM.Install.Link.link(pkg_dir, nm_dir)
+      assert {:ok, info} = Link.link(pkg_dir, nm_dir)
       assert info.name == "my-local-pkg"
       assert File.exists?(Path.join(nm_dir, "my-local-pkg"))
 
@@ -26,7 +28,7 @@ defmodule NPM.Install.LinkTest do
       File.mkdir_p!(nm_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"@myorg/utils"}))
 
-      assert {:ok, info} = NPM.Install.Link.link(pkg_dir, nm_dir)
+      assert {:ok, info} = Link.link(pkg_dir, nm_dir)
       assert info.name == "@myorg/utils"
     end
 
@@ -35,7 +37,7 @@ defmodule NPM.Install.LinkTest do
       pkg_dir = Path.join(dir, "no-pkg")
       File.mkdir_p!(pkg_dir)
 
-      assert {:error, :enoent} = NPM.Install.Link.link(pkg_dir, Path.join(dir, "node_modules"))
+      assert {:error, :enoent} = Link.link(pkg_dir, Path.join(dir, "node_modules"))
     end
   end
 
@@ -48,8 +50,8 @@ defmodule NPM.Install.LinkTest do
       File.mkdir_p!(nm_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"linked-pkg"}))
 
-      {:ok, _} = NPM.Install.Link.link(pkg_dir, nm_dir)
-      assert :ok = NPM.Install.Link.unlink("linked-pkg", nm_dir)
+      {:ok, _} = Link.link(pkg_dir, nm_dir)
+      assert :ok = Link.unlink("linked-pkg", nm_dir)
       refute File.exists?(Path.join(nm_dir, "linked-pkg"))
     end
 
@@ -58,7 +60,7 @@ defmodule NPM.Install.LinkTest do
       nm_dir = Path.join(dir, "node_modules")
       File.mkdir_p!(nm_dir)
 
-      assert {:error, :not_linked} = NPM.Install.Link.unlink("nonexistent", nm_dir)
+      assert {:error, :not_linked} = Link.unlink("nonexistent", nm_dir)
     end
   end
 
@@ -71,8 +73,8 @@ defmodule NPM.Install.LinkTest do
       File.mkdir_p!(nm_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"local-pkg"}))
 
-      {:ok, _} = NPM.Install.Link.link(pkg_dir, nm_dir)
-      links = NPM.Install.Link.list(nm_dir)
+      {:ok, _} = Link.link(pkg_dir, nm_dir)
+      links = Link.list(nm_dir)
       assert Enum.any?(links, &(&1.name == "local-pkg"))
     end
 
@@ -82,12 +84,12 @@ defmodule NPM.Install.LinkTest do
       File.mkdir_p!(Path.join(nm_dir, "real-pkg"))
       File.write!(Path.join([nm_dir, "real-pkg", "package.json"]), ~s({"name":"real-pkg"}))
 
-      links = NPM.Install.Link.list(nm_dir)
+      links = Link.list(nm_dir)
       refute Enum.any?(links, &(&1.name == "real-pkg"))
     end
 
     test "empty for nonexistent directory" do
-      assert [] = NPM.Install.Link.list("/tmp/nonexistent_#{System.unique_integer([:positive])}")
+      assert [] = Link.list("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
   end
 
@@ -100,8 +102,8 @@ defmodule NPM.Install.LinkTest do
       File.mkdir_p!(nm_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"pkg"}))
 
-      {:ok, _} = NPM.Install.Link.link(pkg_dir, nm_dir)
-      assert NPM.Install.Link.linked?("pkg", nm_dir)
+      {:ok, _} = Link.link(pkg_dir, nm_dir)
+      assert Link.linked?("pkg", nm_dir)
     end
 
     @tag :tmp_dir
@@ -109,7 +111,7 @@ defmodule NPM.Install.LinkTest do
       nm_dir = Path.join(dir, "node_modules")
       File.mkdir_p!(Path.join(nm_dir, "real-pkg"))
 
-      refute NPM.Install.Link.linked?("real-pkg", nm_dir)
+      refute Link.linked?("real-pkg", nm_dir)
     end
   end
 end

@@ -1,9 +1,11 @@
 defmodule NPM.Registry.TokenTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Registry.Token
+
   describe "mask" do
     test "masks long tokens" do
-      masked = NPM.Registry.Token.mask("npm_abcdefghijklmnop")
+      masked = Token.mask("npm_abcdefghijklmnop")
       assert masked =~ "npm_"
       assert masked =~ "mnop"
       assert masked =~ "..."
@@ -11,15 +13,15 @@ defmodule NPM.Registry.TokenTest do
     end
 
     test "fully masks short tokens" do
-      assert "****" = NPM.Registry.Token.mask("short")
+      assert "****" = Token.mask("short")
     end
 
     test "masks exactly 8 char token" do
-      assert "****" = NPM.Registry.Token.mask("12345678")
+      assert "****" = Token.mask("12345678")
     end
 
     test "masks 9 char token partially" do
-      masked = NPM.Registry.Token.mask("123456789")
+      masked = Token.mask("123456789")
       assert masked =~ "1234"
       assert masked =~ "6789"
     end
@@ -27,29 +29,29 @@ defmodule NPM.Registry.TokenTest do
 
   describe "valid_format?" do
     test "valid UUID-style token" do
-      assert NPM.Registry.Token.valid_format?("npm_abcdefghijklmnop1234")
+      assert Token.valid_format?("npm_abcdefghijklmnop1234")
     end
 
     test "valid base64 token" do
-      assert NPM.Registry.Token.valid_format?("NjQ2NTY0YTQ3MWU2OGUzYjMw")
+      assert Token.valid_format?("NjQ2NTY0YTQ3MWU2OGUzYjMw")
     end
 
     test "too short" do
-      refute NPM.Registry.Token.valid_format?("abc")
+      refute Token.valid_format?("abc")
     end
 
     test "contains spaces" do
-      refute NPM.Registry.Token.valid_format?("token with spaces")
+      refute Token.valid_format?("token with spaces")
     end
 
     test "contains newlines" do
-      refute NPM.Registry.Token.valid_format?("token\nwith\nnewlines")
+      refute Token.valid_format?("token\nwith\nnewlines")
     end
   end
 
   describe "auth_header" do
     test "returns Bearer token" do
-      assert "Bearer my-token" = NPM.Registry.Token.auth_header("my-token")
+      assert "Bearer my-token" = Token.auth_header("my-token")
     end
   end
 
@@ -60,7 +62,7 @@ defmodule NPM.Registry.TokenTest do
       //registry.npmjs.org/:_authToken=npm_abc123def456
       """
 
-      assert "npm_abc123def456" = NPM.Registry.Token.parse_npmrc(content)
+      assert "npm_abc123def456" = Token.parse_npmrc(content)
     end
 
     test "handles scoped registry auth" do
@@ -69,7 +71,7 @@ defmodule NPM.Registry.TokenTest do
       //npm.pkg.github.com/:_authToken=ghp_abcdef123456
       """
 
-      assert "ghp_abcdef123456" = NPM.Registry.Token.parse_npmrc(content)
+      assert "ghp_abcdef123456" = Token.parse_npmrc(content)
     end
 
     test "returns nil when no token" do
@@ -77,24 +79,24 @@ defmodule NPM.Registry.TokenTest do
       registry=https://registry.npmjs.org/
       """
 
-      assert nil == NPM.Registry.Token.parse_npmrc(content)
+      assert nil == Token.parse_npmrc(content)
     end
 
     test "handles empty content" do
-      assert nil == NPM.Registry.Token.parse_npmrc("")
+      assert nil == Token.parse_npmrc("")
     end
   end
 
   describe "configured?" do
     test "returns boolean" do
-      result = NPM.Registry.Token.configured?()
+      result = Token.configured?()
       assert is_boolean(result)
     end
   end
 
   describe "read" do
     test "returns string or nil" do
-      result = NPM.Registry.Token.read()
+      result = Token.read()
       assert is_binary(result) or is_nil(result)
     end
   end

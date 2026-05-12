@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Npm.List do
+  alias NPM.Package.JSON
+
   @shortdoc "List installed npm packages"
 
   @moduledoc """
@@ -18,7 +20,7 @@ defmodule Mix.Tasks.Npm.List do
     {opts, _, _} = OptionParser.parse(args, strict: [depth: :integer])
 
     with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <-
-           NPM.Package.JSON.read_all(),
+           JSON.read_all(),
          {:ok, packages} <- NPM.list() do
       if packages == [] do
         Mix.shell().info("No npm packages installed.")

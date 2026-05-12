@@ -1,13 +1,19 @@
 defmodule NPM.Milestone2500Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Dependency.Freshness
+  alias NPM.Lockfile.Stats
+  alias NPM.Node.Bin
+  alias NPM.Package.Quality
+  alias NPM.Resolution.Conditional
+
   describe "DepFreshness + SnapshotDiff" do
     test "freshness changes after update" do
       old = %{"lodash" => %{version: "4.17.0"}}
       new = %{"lodash" => %{version: "4.17.21"}}
       diff = NPM.SnapshotDiff.diff(old, new)
       assert hd(diff.updated).to == "4.17.21"
-      assert :current = NPM.Dependency.Freshness.classify("4.17.21", "4.17.21")
+      assert :current = Freshness.classify("4.17.21", "4.17.21")
     end
   end
 
@@ -28,7 +34,7 @@ defmodule NPM.Milestone2500Test do
       }
 
       assert NPM.Validate.valid?(data)
-      assert NPM.Package.Quality.score(data) >= 80
+      assert Quality.score(data) >= 80
     end
   end
 
@@ -39,7 +45,7 @@ defmodule NPM.Milestone2500Test do
         "b" => %{version: "2.0", integrity: "sha512-y", dependencies: %{}}
       }
 
-      stats = NPM.Lockfile.Stats.content_stats(lockfile)
+      stats = Stats.content_stats(lockfile)
       report = NPM.Report.dependency_summary(lockfile)
       assert stats.total_packages == report.total
     end
@@ -85,21 +91,21 @@ defmodule NPM.Milestone2500Test do
   describe "DepRange + DepFreshness" do
     test "pinned deps are easier to track freshness" do
       assert :exact = NPM.Dependency.Range.classify("4.17.21")
-      assert :current = NPM.Dependency.Freshness.classify("4.17.21", "4.17.21")
+      assert :current = Freshness.classify("4.17.21", "4.17.21")
     end
   end
 
   describe "DepFreshness additional" do
     test "same major different patch is current" do
-      assert :current = NPM.Dependency.Freshness.classify("4.17.0", "4.17.5")
+      assert :current = Freshness.classify("4.17.0", "4.17.5")
     end
 
     test "group returns empty map for empty list" do
-      assert %{} = NPM.Dependency.Freshness.group([])
+      assert %{} = Freshness.group([])
     end
 
     test "format empty groups" do
-      assert "" = NPM.Dependency.Freshness.format(%{})
+      assert "" = Freshness.format(%{})
     end
   end
 
@@ -122,7 +128,7 @@ defmodule NPM.Milestone2500Test do
   describe "Bin + DepPath" do
     test "bin path resolution" do
       data = %{"name" => "eslint", "bin" => %{"eslint" => "./bin/eslint.js"}}
-      cmds = NPM.Node.Bin.commands(data)
+      cmds = Bin.commands(data)
       path = NPM.NodeModules.Path.bin_path(hd(cmds))
       assert path =~ ".bin/eslint"
     end
@@ -139,7 +145,7 @@ defmodule NPM.Milestone2500Test do
 
       assert NPM.TypeField.esm?(data)
       entry = data["exports"]["."]
-      assert "./dist/index.mjs" = NPM.Resolution.Conditional.resolve(entry, ["import"])
+      assert "./dist/index.mjs" = Conditional.resolve(entry, ["import"])
     end
   end
 end

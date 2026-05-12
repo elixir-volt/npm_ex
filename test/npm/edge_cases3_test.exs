@@ -1,13 +1,19 @@
 defmodule NPM.EdgeCases3Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Node.Bin
+  alias NPM.Package.Keywords
+  alias NPM.Package.People
+  alias NPM.Package.Repository
+  alias NPM.Security.Provenance
+
   describe "Bin edge cases" do
     test "string bin without name falls back to empty" do
-      assert %{} = NPM.Node.Bin.extract(%{"bin" => "./index.js"})
+      assert %{} = Bin.extract(%{"bin" => "./index.js"})
     end
 
     test "count for string bin" do
-      assert 1 = NPM.Node.Bin.count(%{"name" => "pkg", "bin" => "./cli.js"})
+      assert 1 = Bin.count(%{"name" => "pkg", "bin" => "./cli.js"})
     end
   end
 
@@ -20,27 +26,27 @@ defmodule NPM.EdgeCases3Test do
         ]
       }
 
-      result = NPM.Package.People.contributors(data)
+      result = People.contributors(data)
       assert length(result) == 2
       assert hd(result)["name"] == "Alice"
     end
 
     test "all with only contributors" do
       data = %{"contributors" => [%{"name" => "Solo"}]}
-      assert length(NPM.Package.People.all(data)) == 1
+      assert length(People.all(data)) == 1
     end
   end
 
   describe "Repository edge cases" do
     test "ssh protocol cleaned" do
       data = %{"repository" => %{"type" => "git", "url" => "ssh://git@github.com/user/repo.git"}}
-      repo = NPM.Package.Repository.extract(data)
+      repo = Repository.extract(data)
       assert repo.url == "https://github.com/user/repo"
     end
 
     test "clone_url adds .git" do
       data = %{"repository" => "user/repo"}
-      url = NPM.Package.Repository.clone_url(data)
+      url = Repository.clone_url(data)
       assert String.ends_with?(url, ".git")
     end
   end
@@ -53,13 +59,13 @@ defmodule NPM.EdgeCases3Test do
         %{"keywords" => ["a"]}
       ]
 
-      result = NPM.Package.Keywords.most_common(packages, 1)
+      result = Keywords.most_common(packages, 1)
       assert length(result) == 1
       assert elem(hd(result), 0) == "a"
     end
 
     test "group_by_keyword empty" do
-      assert %{} = NPM.Package.Keywords.group_by_keyword([])
+      assert %{} = Keywords.group_by_keyword([])
     end
   end
 
@@ -128,7 +134,7 @@ defmodule NPM.EdgeCases3Test do
         "b" => %{version: "2.0", attestations: []}
       }
 
-      result = NPM.Security.Provenance.scan(lockfile)
+      result = Provenance.scan(lockfile)
       assert length(result.with_provenance) == 2
       assert result.without == []
     end

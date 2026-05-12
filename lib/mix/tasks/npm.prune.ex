@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Npm.Prune do
+  alias NPM.Install.Linker
+
   @shortdoc "Remove extraneous packages"
 
   @moduledoc """
@@ -29,7 +31,7 @@ defmodule Mix.Tasks.Npm.Prune do
   defp do_prune(lockfile) do
     expected = MapSet.new(Map.keys(lockfile))
     before_count = count_packages("node_modules")
-    NPM.Install.Linker.prune("node_modules", expected)
+    Linker.prune("node_modules", expected)
     print_result(before_count - count_packages("node_modules"))
   end
 

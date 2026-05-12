@@ -1,6 +1,10 @@
 defmodule NPM.EdgeCasesTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Diagnostics.EngineCheck
+  alias NPM.Diagnostics.Health
+  alias NPM.Security.Provenance
+
   describe "VersionRange edge cases" do
     test "compatible caret within same major" do
       assert NPM.VersionRange.compatible?("^1.0.0", ">=1.5.0")
@@ -121,7 +125,7 @@ defmodule NPM.EdgeCasesTest do
         "engines" => %{"node" => ">=14", "npm" => ">=7"}
       }
 
-      issues = NPM.Diagnostics.EngineCheck.check_package(data, "20.0.0")
+      issues = EngineCheck.check_package(data, "20.0.0")
       assert length(issues) == 2
     end
   end
@@ -147,25 +151,25 @@ defmodule NPM.EdgeCasesTest do
 
   describe "Provenance edge cases" do
     test "has_provenance with string key attestations" do
-      assert NPM.Security.Provenance.has_provenance?(%{"attestations" => []})
+      assert Provenance.has_provenance?(%{"attestations" => []})
     end
 
     test "has_integrity with string key" do
-      assert NPM.Security.Provenance.has_integrity?(%{"integrity" => "sha512-abc"})
+      assert Provenance.has_integrity?(%{"integrity" => "sha512-abc"})
     end
   end
 
   describe "Health edge cases" do
     test "grade boundary at 90" do
-      assert "A" = NPM.Diagnostics.Health.grade(90)
+      assert "A" = Health.grade(90)
     end
 
     test "grade boundary at 80" do
-      assert "B" = NPM.Diagnostics.Health.grade(80)
+      assert "B" = Health.grade(80)
     end
 
     test "grade boundary at 0" do
-      assert "F" = NPM.Diagnostics.Health.grade(0)
+      assert "F" = Health.grade(0)
     end
   end
 end

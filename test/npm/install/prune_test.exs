@@ -1,6 +1,8 @@
 defmodule NPM.Install.PruneTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Install.Prune
+
   describe "find_extraneous" do
     @tag :tmp_dir
     test "finds packages not in lockfile", %{tmp_dir: dir} do
@@ -13,7 +15,7 @@ defmodule NPM.Install.PruneTest do
       File.write!(Path.join(pkg_b, "package.json"), ~s({"name":"pkg-b","version":"2.0.0"}))
 
       lockfile = %{"pkg-a" => %{version: "1.0.0"}}
-      extraneous = NPM.Install.Prune.find_extraneous(nm, lockfile)
+      extraneous = Prune.find_extraneous(nm, lockfile)
       assert length(extraneous) == 1
       assert hd(extraneous).name == "pkg-b"
       assert hd(extraneous).reason == :not_in_lockfile
@@ -26,7 +28,7 @@ defmodule NPM.Install.PruneTest do
       File.write!(Path.join([nm, "kept", "package.json"]), ~s({"name":"kept","version":"1.0.0"}))
 
       lockfile = %{"kept" => %{version: "1.0.0"}}
-      assert [] = NPM.Install.Prune.find_extraneous(nm, lockfile)
+      assert [] = Prune.find_extraneous(nm, lockfile)
     end
 
     @tag :tmp_dir
@@ -37,7 +39,7 @@ defmodule NPM.Install.PruneTest do
       File.write!(Path.join(scoped, "package.json"), ~s({"name":"@scope/pkg","version":"1.0.0"}))
 
       lockfile = %{}
-      extraneous = NPM.Install.Prune.find_extraneous(nm, lockfile)
+      extraneous = Prune.find_extraneous(nm, lockfile)
       assert length(extraneous) == 1
       assert hd(extraneous).name == "@scope/pkg"
     end
@@ -50,12 +52,12 @@ defmodule NPM.Install.PruneTest do
       File.write!(Path.join(scoped, "package.json"), ~s({"name":"@babel/core","version":"7.0.0"}))
 
       lockfile = %{"@babel/core" => %{version: "7.0.0"}}
-      assert [] = NPM.Install.Prune.find_extraneous(nm, lockfile)
+      assert [] = Prune.find_extraneous(nm, lockfile)
     end
 
     test "nonexistent directory returns empty" do
       assert [] =
-               NPM.Install.Prune.find_extraneous(
+               Prune.find_extraneous(
                  "/tmp/nonexistent_#{System.unique_integer([:positive])}",
                  %{}
                )
@@ -75,7 +77,7 @@ defmodule NPM.Install.PruneTest do
       File.write!(Path.join(remove, "index.js"), "module.exports = {}")
 
       lockfile = %{"keep" => %{version: "1.0.0"}}
-      removed = NPM.Install.Prune.prune!(nm, lockfile)
+      removed = Prune.prune!(nm, lockfile)
 
       assert length(removed) == 1
       assert hd(removed).name == "remove"
@@ -101,7 +103,7 @@ defmodule NPM.Install.PruneTest do
         ~s({"name":"extra2","version":"2.0.0"})
       )
 
-      result = NPM.Install.Prune.dry_run(nm, %{})
+      result = Prune.dry_run(nm, %{})
       assert result.count == 2
       assert length(result.to_remove) == 2
 
@@ -119,12 +121,12 @@ defmodule NPM.Install.PruneTest do
       File.write!(Path.join(pkg_dir, "index.js"), String.duplicate("x", 1000))
 
       entries = [%{name: "my-pkg", version: "1.0.0", path: pkg_dir, reason: :not_in_lockfile}]
-      size = NPM.Install.Prune.extraneous_size(entries)
+      size = Prune.extraneous_size(entries)
       assert size >= 1000
     end
 
     test "empty entries return 0" do
-      assert 0 = NPM.Install.Prune.extraneous_size([])
+      assert 0 = Prune.extraneous_size([])
     end
   end
 end

@@ -1,4 +1,6 @@
 defmodule NPM.Package.Manifest do
+  alias NPM.Resolution.Exports
+
   @moduledoc """
   Generate a complete package manifest from `package.json`.
 
@@ -42,13 +44,13 @@ defmodule NPM.Package.Manifest do
       name: Map.get(data, "name"),
       version: Map.get(data, "version"),
       license: Map.get(data, "license"),
-      module_type: NPM.Resolution.Exports.module_type(data),
+      module_type: Exports.module_type(data),
       dependencies: Map.get(data, "dependencies", %{}),
       dev_dependencies: Map.get(data, "devDependencies", %{}),
       optional_dependencies: Map.get(data, "optionalDependencies", %{}),
       scripts: Map.get(data, "scripts", %{}),
       engines: Map.get(data, "engines", %{}),
-      exports: NPM.Resolution.Exports.parse(data),
+      exports: Exports.parse(data),
       files: Map.get(data, "files")
     }
   end

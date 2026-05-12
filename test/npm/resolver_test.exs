@@ -1,6 +1,8 @@
 defmodule NPM.ResolverTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Node.BinResolver
+
   describe "Resolver.clear_cache" do
     test "succeeds even when no cache exists" do
       assert :ok = NPM.Resolver.clear_cache()
@@ -84,7 +86,7 @@ defmodule NPM.ResolverTest do
       File.write!(Path.join(bin_dir, "aaa"), "#!/bin/sh")
       File.write!(Path.join(bin_dir, "mmm"), "#!/bin/sh")
 
-      bins = NPM.Node.BinResolver.list(nm)
+      bins = BinResolver.list(nm)
       names = Enum.map(bins, &elem(&1, 0))
       assert names == ["aaa", "mmm", "zzz"]
     end
@@ -105,7 +107,7 @@ defmodule NPM.ResolverTest do
     test "available? returns false for missing .bin dir", %{tmp_dir: dir} do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
-      refute NPM.Node.BinResolver.available?("anything", nm)
+      refute BinResolver.available?("anything", nm)
     end
   end
 
@@ -148,7 +150,7 @@ defmodule NPM.ResolverTest do
       link = Path.join(bin_dir, "eslint")
       File.ln_s!(target, link)
 
-      {:ok, resolved} = NPM.Node.BinResolver.find("eslint", nm)
+      {:ok, resolved} = BinResolver.find("eslint", nm)
       assert String.contains?(resolved, "eslint")
     end
   end
@@ -162,7 +164,7 @@ defmodule NPM.ResolverTest do
       File.write!(Path.join(bin_dir, "jest"), "#!/bin/sh")
       File.write!(Path.join(bin_dir, "tsc"), "#!/bin/sh")
 
-      bins = NPM.Node.BinResolver.list(nm)
+      bins = BinResolver.list(nm)
       names = Enum.map(bins, &elem(&1, 0))
       assert "jest" in names
       assert "tsc" in names
@@ -175,7 +177,7 @@ defmodule NPM.ResolverTest do
       File.mkdir_p!(bin_dir)
       File.write!(Path.join(bin_dir, "eslint"), "#!/bin/sh")
 
-      assert {:ok, path} = NPM.Node.BinResolver.find("eslint", nm)
+      assert {:ok, path} = BinResolver.find("eslint", nm)
       assert String.contains?(path, "eslint")
     end
 
@@ -184,7 +186,7 @@ defmodule NPM.ResolverTest do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
 
-      assert :error = NPM.Node.BinResolver.find("nonexistent", nm)
+      assert :error = BinResolver.find("nonexistent", nm)
     end
 
     @tag :tmp_dir
@@ -194,8 +196,8 @@ defmodule NPM.ResolverTest do
       File.mkdir_p!(bin_dir)
       File.write!(Path.join(bin_dir, "prettier"), "#!/bin/sh")
 
-      assert NPM.Node.BinResolver.available?("prettier", nm)
-      refute NPM.Node.BinResolver.available?("missing", nm)
+      assert BinResolver.available?("prettier", nm)
+      refute BinResolver.available?("missing", nm)
     end
 
     @tag :tmp_dir
@@ -203,7 +205,7 @@ defmodule NPM.ResolverTest do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
 
-      assert NPM.Node.BinResolver.list(nm) == []
+      assert BinResolver.list(nm) == []
     end
   end
 

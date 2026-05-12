@@ -1,6 +1,8 @@
 defmodule NPM.Security.RegistryPolicyTest do
   use ExUnit.Case, async: false
 
+  alias NPM.Security.RegistryPolicy
+
   setup do
     original_allowed = Application.get_env(:npm, :allowed_registries)
     original_registry = Application.get_env(:npm, :registry)
@@ -21,7 +23,7 @@ defmodule NPM.Security.RegistryPolicyTest do
       "https://mirror.example/"
     ])
 
-    assert NPM.Security.RegistryPolicy.allowed_origins() == [
+    assert RegistryPolicy.allowed_origins() == [
              "https://registry.npmjs.org",
              "https://mirror.example"
            ]
@@ -31,7 +33,7 @@ defmodule NPM.Security.RegistryPolicyTest do
     Application.put_env(:npm, :allowed_registries, ["https://registry.npmjs.org"])
 
     assert :ok =
-             NPM.Security.RegistryPolicy.validate_url!(
+             RegistryPolicy.validate_url!(
                "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
              )
   end
@@ -39,8 +41,8 @@ defmodule NPM.Security.RegistryPolicyTest do
   test "rejects tarballs from unexpected origins" do
     Application.put_env(:npm, :allowed_registries, ["https://registry.npmjs.org"])
 
-    assert_raise NPM.Security.RegistryPolicy.Error, ~r/untrusted npm registry URL/, fn ->
-      NPM.Security.RegistryPolicy.validate_url!("https://evil.example/pkg.tgz")
+    assert_raise RegistryPolicy.Error, ~r/untrusted npm registry URL/, fn ->
+      RegistryPolicy.validate_url!("https://evil.example/pkg.tgz")
     end
   end
 

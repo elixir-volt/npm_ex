@@ -1,6 +1,11 @@
 defmodule NPM.EdgeCases2Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Diagnostics.Health
+  alias NPM.Install.CI
+  alias NPM.Lockfile.PackageLock
+  alias NPM.Security.CVE
+
   describe "Scope edge cases" do
     test "extract from double-scoped-looking name" do
       assert "types" = NPM.Scope.extract("@types/babel__core")
@@ -65,58 +70,58 @@ defmodule NPM.EdgeCases2Test do
 
   describe "PackageLock edge cases" do
     test "version 2 detected" do
-      assert 2 = NPM.Lockfile.PackageLock.version(%{"lockfileVersion" => 2})
+      assert 2 = PackageLock.version(%{"lockfileVersion" => 2})
     end
 
     test "invalid version number" do
-      assert nil == NPM.Lockfile.PackageLock.version(%{"lockfileVersion" => 99})
+      assert nil == PackageLock.version(%{"lockfileVersion" => 99})
     end
 
     test "requires_npm7 for v2" do
-      assert NPM.Lockfile.PackageLock.requires_npm7?(%{"lockfileVersion" => 2})
+      assert PackageLock.requires_npm7?(%{"lockfileVersion" => 2})
     end
   end
 
   describe "Cve edge cases" do
     test "extract multiple CVEs from references" do
       refs = "CVE-2021-23337 and CVE-2020-28500 are related"
-      cves = NPM.Security.CVE.extract_cves(%{"references" => refs})
+      cves = CVE.extract_cves(%{"references" => refs})
       assert length(cves) == 2
     end
 
     test "severity_counts with all same severity" do
       advs = [%{"severity" => "high"}, %{"severity" => "high"}]
-      counts = NPM.Security.CVE.severity_counts(advs)
+      counts = CVE.severity_counts(advs)
       assert counts["high"] == 2
     end
 
     test "above_threshold with empty list" do
-      refute NPM.Security.CVE.above_threshold?([], "high")
+      refute CVE.above_threshold?([], "high")
     end
   end
 
   describe "Health edge cases" do
     test "integrity 50% gives 5 points" do
       checks = %{integrity_pct: 50}
-      result = NPM.Diagnostics.Health.score(checks)
+      result = Health.score(checks)
       assert result.details[:integrity_coverage] == 5
     end
 
     test "integrity below 50% gives 0" do
       checks = %{integrity_pct: 20}
-      result = NPM.Diagnostics.Health.score(checks)
+      result = Health.score(checks)
       assert result.details[:integrity_coverage] == 0
     end
 
     test "few outdated gives partial points" do
       checks = %{outdated_count: 3}
-      result = NPM.Diagnostics.Health.score(checks)
+      result = Health.score(checks)
       assert result.details[:up_to_date] == 5
     end
 
     test "many outdated gives 0 points" do
       checks = %{outdated_count: 10}
-      result = NPM.Diagnostics.Health.score(checks)
+      result = Health.score(checks)
       assert result.details[:up_to_date] == 0
     end
   end
@@ -172,7 +177,7 @@ defmodule NPM.EdgeCases2Test do
   describe "CI edge cases" do
     test "format_errors with multiple missing deps" do
       errors = [{:missing_dep, "a"}, {:missing_dep, "b"}]
-      formatted = NPM.Install.CI.format_errors(errors)
+      formatted = CI.format_errors(errors)
       assert formatted =~ "a"
       assert formatted =~ "b"
     end

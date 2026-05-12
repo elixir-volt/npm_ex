@@ -1,6 +1,14 @@
 defmodule NPM.EdgeCases4Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Lockfile.Check
+  alias NPM.Node.Bin
+  alias NPM.Package.Files
+  alias NPM.Package.Funding
+  alias NPM.Package.People
+  alias NPM.Package.PublishConfig
+  alias NPM.Registry.URL
+
   describe "Validate + Scope" do
     test "scoped name with uppercase doesn't warn" do
       issues = NPM.Validate.validate(%{"name" => "@Types/Node", "version" => "1.0.0"})
@@ -35,7 +43,7 @@ defmodule NPM.EdgeCases4Test do
         "lodash" => %{version: "4.17.21", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert [] = NPM.Lockfile.Check.mismatched(pkg, lockfile)
+      assert [] = Check.mismatched(pkg, lockfile)
       assert :exact = NPM.Dependency.Range.classify("4.17.21")
     end
   end
@@ -61,9 +69,9 @@ defmodule NPM.EdgeCases4Test do
         "funding" => "https://github.com/sponsors/johndoe"
       }
 
-      assert NPM.Package.People.has_author?(data)
-      assert NPM.Package.Funding.has_funding?(data)
-      assert ["https://github.com/sponsors/johndoe"] = NPM.Package.Funding.urls(data)
+      assert People.has_author?(data)
+      assert Funding.has_funding?(data)
+      assert ["https://github.com/sponsors/johndoe"] = Funding.urls(data)
     end
   end
 
@@ -85,8 +93,8 @@ defmodule NPM.EdgeCases4Test do
   describe "PackageFiles + Bin" do
     test "bin file is an entry point" do
       data = %{"name" => "cli", "bin" => "./dist/cli.js", "main" => "./dist/index.js"}
-      assert NPM.Node.Bin.has_bin?(data)
-      entries = NPM.Package.Files.entry_points(data)
+      assert Bin.has_bin?(data)
+      entries = Files.entry_points(data)
       assert "./dist/index.js" in entries
     end
   end
@@ -105,8 +113,8 @@ defmodule NPM.EdgeCases4Test do
   describe "RegistryUrl + PublishConfig" do
     test "custom publish registry" do
       data = %{"publishConfig" => %{"registry" => "https://npm.pkg.github.com"}}
-      registry = NPM.Package.PublishConfig.registry(data)
-      url = NPM.Registry.URL.package_url("my-pkg", registry)
+      registry = PublishConfig.registry(data)
+      url = URL.package_url("my-pkg", registry)
       assert url =~ "npm.pkg.github.com"
     end
   end

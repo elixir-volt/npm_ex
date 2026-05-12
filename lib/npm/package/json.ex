@@ -208,13 +208,7 @@ defmodule NPM.Package.JSON do
     end
   end
 
-  defp read_raw(path) do
-    case NPM.JSON.read_file(path) do
-      {:ok, data} -> {:ok, data}
-      {:error, :enoent} -> {:error, :enoent}
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  defp read_raw(path), do: NPM.JSON.read_file(path)
 
   defp read_raw!(path) do
     case read_raw(path) do

@@ -1,6 +1,8 @@
 defmodule NPM.Install.RebuildTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Install.Rebuild
+
   describe "scan" do
     @tag :tmp_dir
     test "finds packages with binding.gyp", %{tmp_dir: dir} do
@@ -10,7 +12,7 @@ defmodule NPM.Install.RebuildTest do
       File.write!(Path.join(pkg, "binding.gyp"), "{}")
       File.write!(Path.join(pkg, "package.json"), ~s({"name":"bcrypt"}))
 
-      result = NPM.Install.Rebuild.scan(nm)
+      result = Rebuild.scan(nm)
       assert Enum.any?(result, &(&1.name == "bcrypt"))
     end
 
@@ -25,7 +27,7 @@ defmodule NPM.Install.RebuildTest do
         ~s({"name":"esbuild","scripts":{"postinstall":"node install.js"}})
       )
 
-      result = NPM.Install.Rebuild.scan(nm)
+      result = Rebuild.scan(nm)
       assert Enum.any?(result, &(&1.name == "esbuild"))
     end
 
@@ -36,13 +38,13 @@ defmodule NPM.Install.RebuildTest do
       File.mkdir_p!(pkg)
       File.write!(Path.join(pkg, "package.json"), ~s({"name":"lodash"}))
 
-      result = NPM.Install.Rebuild.scan(nm)
+      result = Rebuild.scan(nm)
       refute Enum.any?(result, &(&1.name == "lodash"))
     end
 
     test "empty for nonexistent dir" do
       assert [] =
-               NPM.Install.Rebuild.scan("/tmp/nonexistent_#{System.unique_integer([:positive])}")
+               Rebuild.scan("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
 
     @tag :tmp_dir
@@ -53,7 +55,7 @@ defmodule NPM.Install.RebuildTest do
       File.write!(Path.join(pkg, "binding.gyp"), "{}")
       File.write!(Path.join(pkg, "package.json"), ~s({"name":"@scope/native"}))
 
-      result = NPM.Install.Rebuild.scan(nm)
+      result = Rebuild.scan(nm)
       assert Enum.any?(result, &(&1.name == "@scope/native"))
     end
   end
@@ -62,25 +64,25 @@ defmodule NPM.Install.RebuildTest do
     @tag :tmp_dir
     test "true for binding.gyp", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "binding.gyp"), "{}")
-      assert NPM.Install.Rebuild.native?(dir)
+      assert Rebuild.native?(dir)
     end
 
     @tag :tmp_dir
     test "true for CMakeLists.txt", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "CMakeLists.txt"), "")
-      assert NPM.Install.Rebuild.native?(dir)
+      assert Rebuild.native?(dir)
     end
 
     @tag :tmp_dir
     test "true for install script", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "package.json"), ~s({"scripts":{"install":"node-gyp rebuild"}}))
-      assert NPM.Install.Rebuild.native?(dir)
+      assert Rebuild.native?(dir)
     end
 
     @tag :tmp_dir
     test "false for regular package", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "package.json"), ~s({"name":"lodash"}))
-      refute NPM.Install.Rebuild.native?(dir)
+      refute Rebuild.native?(dir)
     end
   end
 
@@ -93,7 +95,7 @@ defmodule NPM.Install.RebuildTest do
       File.write!(Path.join(pkg, "binding.gyp"), "{}")
       File.write!(Path.join(pkg, "package.json"), ~s({"name":"native-pkg"}))
 
-      names = NPM.Install.Rebuild.needs_rebuild(nm)
+      names = Rebuild.needs_rebuild(nm)
       assert "native-pkg" in names
     end
   end
@@ -101,13 +103,13 @@ defmodule NPM.Install.RebuildTest do
   describe "format_results" do
     test "formats package list" do
       packages = [%{name: "bcrypt", reason: "has native build files"}]
-      formatted = NPM.Install.Rebuild.format_results(packages)
+      formatted = Rebuild.format_results(packages)
       assert formatted =~ "bcrypt"
       assert formatted =~ "1"
     end
 
     test "empty message" do
-      assert "No native addons found." = NPM.Install.Rebuild.format_results([])
+      assert "No native addons found." = Rebuild.format_results([])
     end
   end
 end

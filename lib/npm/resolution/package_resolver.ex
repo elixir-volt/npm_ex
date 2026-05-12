@@ -1,4 +1,6 @@
 defmodule NPM.Resolution.PackageResolver do
+  alias NPM.Resolution.Exports
+
   @moduledoc """
   Resolve bare and relative import specifiers to files on disk.
 
@@ -146,7 +148,7 @@ defmodule NPM.Resolution.PackageResolver do
 
   Reads `package.json` and checks (in order):
 
-    1. `exports` field (via `NPM.Resolution.Exports`) with the given subpath and conditions
+    1. `exports` field (via `Exports`) with the given subpath and conditions
     2. `browser` field (when `"browser"` is in conditions and value is a string)
     3. `module` field
     4. `main` field
@@ -285,7 +287,7 @@ defmodule NPM.Resolution.PackageResolver do
     extensions = Keyword.get(opts, :extensions, @default_extensions)
 
     with {:ok, package_dir, %{"imports" => imports}} <- nearest_package(from_dir),
-         {:ok, target} <- NPM.Resolution.Exports.resolve(imports, specifier, conditions) do
+         {:ok, target} <- Exports.resolve(imports, specifier, conditions) do
       package_dir
       |> expand_target(target)
       |> try_resolve(extensions: extensions)
@@ -314,12 +316,12 @@ defmodule NPM.Resolution.PackageResolver do
   end
 
   defp resolve_via_exports(pkg, package_dir, subpath, conditions) do
-    case NPM.Resolution.Exports.parse(pkg) do
+    case Exports.parse(pkg) do
       nil ->
         :error
 
       export_map ->
-        case NPM.Resolution.Exports.resolve(export_map, subpath, conditions) do
+        case Exports.resolve(export_map, subpath, conditions) do
           {:ok, target} -> ensure_file(package_dir, target)
           :error -> :error
         end

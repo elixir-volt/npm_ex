@@ -29,9 +29,9 @@ defmodule NPM.JSON do
   @doc "Read and decode a JSON file."
   @spec read_file(String.t()) :: {:ok, term()} | {:error, term()}
   def read_file(path) do
-    with {:ok, content} <- File.read(path),
-         {:ok, data} <- decode(content) do
-      {:ok, data}
+    case File.read(path) do
+      {:ok, content} -> decode(content)
+      error -> error
     end
   end
 

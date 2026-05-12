@@ -1,4 +1,6 @@
 defmodule NPM.Node.Runner do
+  alias NPM.Node.Exec
+
   @moduledoc """
   Runs JavaScript entrypoints with Node.js using project `node_modules` resolution.
 
@@ -14,7 +16,7 @@ defmodule NPM.Node.Runner do
   @spec run(String.t(), [String.t()], keyword()) :: {String.t(), non_neg_integer()}
   def run(entrypoint, args, opts \\ []) do
     node_modules_dir = Path.expand(Keyword.get(opts, :node_modules_dir, "node_modules"))
-    env = Keyword.get(opts, :env, []) ++ NPM.Node.Exec.env(node_modules_dir)
+    env = Keyword.get(opts, :env, []) ++ Exec.env(node_modules_dir)
     entrypoint = resolve_entrypoint(Path.expand(entrypoint), node_modules_dir)
 
     loader_path = write_loader(node_modules_dir, entrypoint)
@@ -56,7 +58,7 @@ defmodule NPM.Node.Runner do
       {:ok, Path.expand(rel_path, Path.dirname(real_bin_path))}
     else
       _ ->
-        case NPM.Node.Exec.which(command, node_modules_dir) do
+        case Exec.which(command, node_modules_dir) do
           {:ok, pkg_path} -> {:ok, Path.expand(pkg_path)}
           _ -> :error
         end

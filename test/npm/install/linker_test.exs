@@ -3,6 +3,8 @@ defmodule NPM.Install.LinkerTest do
 
   import NPM.TestHelpers
 
+  alias NPM.Install.Linker
+
   describe "Linker.hoist" do
     test "returns one entry per package" do
       lockfile = %{
@@ -10,7 +12,7 @@ defmodule NPM.Install.LinkerTest do
         "bar" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      hoisted = NPM.Install.Linker.hoist(lockfile)
+      hoisted = Linker.hoist(lockfile)
       names = Enum.map(hoisted, &elem(&1, 0)) |> Enum.sort()
       assert names == ["bar", "foo"]
     end
@@ -20,13 +22,13 @@ defmodule NPM.Install.LinkerTest do
         "foo" => %{version: "1.2.3", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      [{name, version}] = NPM.Install.Linker.hoist(lockfile)
+      [{name, version}] = Linker.hoist(lockfile)
       assert name == "foo"
       assert version == "1.2.3"
     end
 
     test "handles empty lockfile" do
-      assert NPM.Install.Linker.hoist(%{}) == []
+      assert Linker.hoist(%{}) == []
     end
   end
 
@@ -46,7 +48,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      Linker.link(lockfile, nm_dir, :copy)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.exists?(Path.join([nm_dir, "test-pkg", "package.json"]))
@@ -72,7 +74,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      Linker.link(lockfile, nm_dir, :copy)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.read!(Path.join([nm_dir, "pkg", "index.js"])) == "v2"
@@ -94,7 +96,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      Linker.link(lockfile, nm_dir, :copy)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.exists?(Path.join([nm_dir, "a", "package.json"]))
@@ -118,7 +120,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :symlink)
+      Linker.link(lockfile, nm_dir, :symlink)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       link_target = Path.join(nm_dir, "test-pkg")
@@ -142,7 +144,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :symlink)
+      Linker.link(lockfile, nm_dir, :symlink)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.read!(Path.join([nm_dir, "pkg", "index.js"])) == "hello from cache"
@@ -162,7 +164,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :symlink)
+      Linker.link(lockfile, nm_dir, :symlink)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.exists?(Path.join([nm_dir, "@scope", "pkg", "package.json"]))
@@ -178,7 +180,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"my-tool","bin":"./cli.js"}))
       File.write!(Path.join(pkg_dir, "cli.js"), "#!/usr/bin/env node\nconsole.log('hi')")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"my-tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"my-tool", "1.0.0"}])
 
       link = Path.join([nm_dir, ".bin", "my-tool"])
       assert File.exists?(link)
@@ -200,7 +202,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_dir, "a.js"), "#!/usr/bin/env node")
       File.write!(Path.join(pkg_dir, "b.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"multi-tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"multi-tool", "1.0.0"}])
 
       assert File.exists?(Path.join([nm_dir, ".bin", "cmd-a"]))
       assert File.exists?(Path.join([nm_dir, ".bin", "cmd-b"]))
@@ -213,7 +215,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(pkg_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"no-bin"}))
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"no-bin", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"no-bin", "1.0.0"}])
 
       refute File.exists?(Path.join([nm_dir, ".bin"]))
     end
@@ -226,7 +228,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"exec-tool","bin":"./run.js"}))
       File.write!(Path.join(pkg_dir, "run.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"exec-tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"exec-tool", "1.0.0"}])
 
       {:ok, stat} = File.stat(Path.join(pkg_dir, "run.js"))
       assert Bitwise.band(stat.mode, 0o111) != 0
@@ -240,7 +242,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"@scope/tool","bin":"./cli.js"}))
       File.write!(Path.join(pkg_dir, "cli.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"@scope/tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"@scope/tool", "1.0.0"}])
 
       assert File.exists?(Path.join([nm_dir, ".bin", "tool"]))
     end
@@ -260,7 +262,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(bin_dir, "run.js"), "#!/usr/bin/env node")
       File.write!(Path.join(bin_dir, "test.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"dir-bin-tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"dir-bin-tool", "1.0.0"}])
 
       assert File.exists?(Path.join([nm_dir, ".bin", "run"]))
       assert File.exists?(Path.join([nm_dir, ".bin", "test"]))
@@ -271,7 +273,7 @@ defmodule NPM.Install.LinkerTest do
       nm_dir = Path.join(dir, "node_modules")
       File.mkdir_p!(nm_dir)
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"ghost-pkg", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"ghost-pkg", "1.0.0"}])
 
       refute File.exists?(Path.join([nm_dir, ".bin"]))
     end
@@ -283,7 +285,7 @@ defmodule NPM.Install.LinkerTest do
         "foo" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result = NPM.Install.Linker.hoist(lockfile)
+      result = Linker.hoist(lockfile)
       assert length(result) == 1
       assert {"foo", "1.0.0"} in result
     end
@@ -294,7 +296,7 @@ defmodule NPM.Install.LinkerTest do
         "@scope/b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result = NPM.Install.Linker.hoist(lockfile)
+      result = Linker.hoist(lockfile)
       names = Enum.map(result, &elem(&1, 0)) |> Enum.sort()
       assert names == ["@scope/a", "@scope/b"]
     end
@@ -304,7 +306,7 @@ defmodule NPM.Install.LinkerTest do
         "only-one" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      [{name, version}] = NPM.Install.Linker.hoist(lockfile)
+      [{name, version}] = Linker.hoist(lockfile)
       assert name == "only-one"
       assert version == "3.0.0"
     end
@@ -318,7 +320,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(pkg_dir)
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"no-bins","version":"1.0.0"}))
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"no-bins", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"no-bins", "1.0.0"}])
 
       refute File.exists?(Path.join(nm_dir, ".bin"))
     end
@@ -332,7 +334,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(Path.join(nm_dir, "pkg"))
       File.write!(Path.join([nm_dir, "pkg", "index.js"]), "ok")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new(["pkg"]))
+      Linker.prune(nm_dir, MapSet.new(["pkg"]))
 
       assert File.exists?(Path.join(nm_dir, ".bin"))
       assert File.exists?(Path.join([nm_dir, "pkg", "index.js"]))
@@ -348,7 +350,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join([nm_dir, "keep-me", "index.js"]), "kept")
       File.write!(Path.join([nm_dir, "remove-me", "index.js"]), "removed")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new(["keep-me"]))
+      Linker.prune(nm_dir, MapSet.new(["keep-me"]))
 
       assert File.exists?(Path.join([nm_dir, "keep-me", "index.js"]))
       refute File.exists?(Path.join(nm_dir, "remove-me"))
@@ -362,7 +364,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join([nm_dir, "@scope", "keep", "index.js"]), "kept")
       File.write!(Path.join([nm_dir, "@scope", "remove", "index.js"]), "removed")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new(["@scope/keep"]))
+      Linker.prune(nm_dir, MapSet.new(["@scope/keep"]))
 
       assert File.exists?(Path.join([nm_dir, "@scope", "keep", "index.js"]))
       refute File.exists?(Path.join([nm_dir, "@scope", "remove"]))
@@ -374,7 +376,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(Path.join([nm_dir, "@scope", "pkg"]))
       File.write!(Path.join([nm_dir, "@scope", "pkg", "index.js"]), "data")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new())
+      Linker.prune(nm_dir, MapSet.new())
 
       refute File.exists?(Path.join(nm_dir, "@scope"))
     end
@@ -382,7 +384,7 @@ defmodule NPM.Install.LinkerTest do
     @tag :tmp_dir
     test "handles missing node_modules directory", %{tmp_dir: dir} do
       nm_dir = Path.join(dir, "nonexistent")
-      assert :ok = NPM.Install.Linker.prune(nm_dir, MapSet.new())
+      assert :ok = Linker.prune(nm_dir, MapSet.new())
     end
 
     @tag :tmp_dir
@@ -393,7 +395,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join([nm_dir, "a", "index.js"]), "a")
       File.write!(Path.join([nm_dir, "b", "index.js"]), "b")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new(["a", "b"]))
+      Linker.prune(nm_dir, MapSet.new(["a", "b"]))
 
       assert File.exists?(Path.join([nm_dir, "a", "index.js"]))
       assert File.exists?(Path.join([nm_dir, "b", "index.js"]))
@@ -404,7 +406,7 @@ defmodule NPM.Install.LinkerTest do
       nm_dir = Path.join(dir, "node_modules")
       File.mkdir_p!(nm_dir)
 
-      assert :ok = NPM.Install.Linker.prune(nm_dir, MapSet.new(["something"]))
+      assert :ok = Linker.prune(nm_dir, MapSet.new(["something"]))
     end
   end
 
@@ -423,7 +425,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile_v1, nm_dir, :copy)
+      Linker.link(lockfile_v1, nm_dir, :copy)
 
       assert File.exists?(Path.join([nm_dir, "a", "package.json"]))
       assert File.exists?(Path.join([nm_dir, "b", "package.json"]))
@@ -432,7 +434,7 @@ defmodule NPM.Install.LinkerTest do
         "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      NPM.Install.Linker.link(lockfile_v2, nm_dir, :copy)
+      Linker.link(lockfile_v2, nm_dir, :copy)
 
       assert File.exists?(Path.join([nm_dir, "a", "package.json"]))
       refute File.exists?(Path.join(nm_dir, "b"))
@@ -457,7 +459,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      Linker.link(lockfile, nm_dir, :copy)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.exists?(Path.join([nm_dir, ".bin", "my-cli"]))
@@ -479,7 +481,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_b, "package.json"), ~s({"name":"tool-b","bin":"./b.js"}))
       File.write!(Path.join(pkg_b, "b.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"tool-a", "1.0.0"}, {"tool-b", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"tool-a", "1.0.0"}, {"tool-b", "1.0.0"}])
 
       assert File.exists?(Path.join([nm_dir, ".bin", "tool-a"]))
       assert File.exists?(Path.join([nm_dir, ".bin", "tool-b"]))
@@ -502,7 +504,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :symlink)
+      Linker.link(lockfile, nm_dir, :symlink)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.exists?(Path.join([nm_dir, ".bin", "cli"]))
@@ -525,7 +527,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      Linker.link(lockfile, nm_dir, :copy)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       target = Path.join([nm_dir, "cp-test", "index.js"])
@@ -547,7 +549,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :symlink)
+      Linker.link(lockfile, nm_dir, :symlink)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       target = Path.join(nm_dir, "ln-test")
@@ -572,7 +574,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-      NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      Linker.link(lockfile, nm_dir, :copy)
       System.delete_env("NPM_EX_CACHE_DIR")
 
       assert File.exists?(Path.join([nm_dir, "@scope", "pkg", "package.json"]))
@@ -587,7 +589,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(Path.join(nm_dir, ".cache"))
       File.write!(Path.join([nm_dir, ".cache", "data"]), "cached")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new())
+      Linker.prune(nm_dir, MapSet.new())
 
       assert File.exists?(Path.join([nm_dir, ".cache", "data"]))
     end
@@ -598,7 +600,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(nm_dir)
       File.write!(Path.join(nm_dir, ".package-lock.json"), "{}")
 
-      NPM.Install.Linker.prune(nm_dir, MapSet.new())
+      Linker.prune(nm_dir, MapSet.new())
 
       assert File.exists?(Path.join(nm_dir, ".package-lock.json"))
     end
@@ -630,7 +632,7 @@ defmodule NPM.Install.LinkerTest do
         "old-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      NPM.Install.Linker.link(lockfile_v1, nm_dir, :copy)
+      Linker.link(lockfile_v1, nm_dir, :copy)
 
       assert File.exists?(Path.join([nm_dir, "tool-a", "run.js"]))
       assert File.exists?(Path.join([nm_dir, "lib-b", "package.json"]))
@@ -642,7 +644,7 @@ defmodule NPM.Install.LinkerTest do
         "lib-b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      NPM.Install.Linker.link(lockfile_v2, nm_dir, :copy)
+      Linker.link(lockfile_v2, nm_dir, :copy)
 
       assert File.exists?(Path.join([nm_dir, "tool-a", "run.js"]))
       assert File.exists?(Path.join([nm_dir, "lib-b", "package.json"]))
@@ -657,7 +659,7 @@ defmodule NPM.Install.LinkerTest do
     @tag :tmp_dir
     test "handles empty lockfile gracefully", %{tmp_dir: dir} do
       nm_dir = Path.join(dir, "node_modules")
-      assert :ok = NPM.Install.Linker.link(%{}, nm_dir, :copy)
+      assert :ok = Linker.link(%{}, nm_dir, :copy)
       assert File.exists?(nm_dir)
     end
   end
@@ -670,8 +672,8 @@ defmodule NPM.Install.LinkerTest do
         "c" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result1 = NPM.Install.Linker.hoist(lockfile) |> Enum.sort()
-      result2 = NPM.Install.Linker.hoist(lockfile) |> Enum.sort()
+      result1 = Linker.hoist(lockfile) |> Enum.sort()
+      result2 = Linker.hoist(lockfile) |> Enum.sort()
       assert result1 == result2
     end
   end
@@ -690,7 +692,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_dir, "package.json"), ~s({"name":"tool","bin":"./new.js"}))
       File.write!(Path.join(pkg_dir, "new.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"tool", "1.0.0"}])
 
       assert File.exists?(Path.join(bin_dir, "tool"))
     end
@@ -703,7 +705,7 @@ defmodule NPM.Install.LinkerTest do
         "react" => %{version: "18.2.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      tree = NPM.Install.Linker.hoist(lockfile)
+      tree = Linker.hoist(lockfile)
       names = Enum.map(tree, &elem(&1, 0))
       assert "lodash" in names
       assert "react" in names
@@ -714,7 +716,7 @@ defmodule NPM.Install.LinkerTest do
         "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      [{name, version}] = NPM.Install.Linker.hoist(lockfile)
+      [{name, version}] = Linker.hoist(lockfile)
       assert name == "a"
       assert version == "1.0.0"
     end
@@ -728,7 +730,7 @@ defmodule NPM.Install.LinkerTest do
         "c" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      tree = NPM.Install.Linker.hoist(lockfile)
+      tree = Linker.hoist(lockfile)
       names = Enum.map(tree, &elem(&1, 0)) |> Enum.sort()
       assert names == ["a", "b", "c"]
     end
@@ -745,7 +747,7 @@ defmodule NPM.Install.LinkerTest do
         ~s({"name":"plain-pkg","version":"1.0.0"})
       )
 
-      NPM.Install.Linker.link_bins(nm, [{"plain-pkg", "1.0.0"}])
+      Linker.link_bins(nm, [{"plain-pkg", "1.0.0"}])
       refute File.exists?(Path.join(nm, ".bin"))
     end
   end
@@ -757,7 +759,7 @@ defmodule NPM.Install.LinkerTest do
       scope_dir = Path.join(nm, "@empty-scope")
       File.mkdir_p!(scope_dir)
 
-      NPM.Install.Linker.prune(nm, MapSet.new())
+      Linker.prune(nm, MapSet.new())
       refute File.exists?(scope_dir)
     end
   end
@@ -770,8 +772,8 @@ defmodule NPM.Install.LinkerTest do
         "b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      tree1 = NPM.Install.Linker.hoist(lockfile)
-      tree2 = NPM.Install.Linker.hoist(lockfile)
+      tree1 = Linker.hoist(lockfile)
+      tree2 = Linker.hoist(lockfile)
       assert Enum.sort(tree1) == Enum.sort(tree2)
     end
   end
@@ -792,7 +794,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(bin_src, "tool-a"), "#!/bin/sh")
       File.write!(Path.join(bin_src, "tool-b"), "#!/bin/sh")
 
-      NPM.Install.Linker.link_bins(nm, [{"dir-bin-pkg", "1.0.0"}])
+      Linker.link_bins(nm, [{"dir-bin-pkg", "1.0.0"}])
 
       bin_dir = Path.join(nm, ".bin")
       assert File.exists?(Path.join(bin_dir, "tool-a"))
@@ -808,7 +810,7 @@ defmodule NPM.Install.LinkerTest do
         "z" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      tree = NPM.Install.Linker.hoist(lockfile)
+      tree = Linker.hoist(lockfile)
       versions = Map.new(tree)
       assert versions["x"] == "1.0.0"
       assert versions["y"] == "2.0.0"
@@ -826,7 +828,7 @@ defmodule NPM.Install.LinkerTest do
       }
 
       # hoist is the same regardless of strategy
-      tree = NPM.Install.Linker.hoist(lockfile)
+      tree = Linker.hoist(lockfile)
       assert [{"test-pkg", "1.0.0"}] = tree
     end
   end
@@ -841,7 +843,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join([nm, "keep-pkg", "index.js"]), "")
 
       expected = MapSet.new(["keep-pkg"])
-      NPM.Install.Linker.prune(nm, expected)
+      Linker.prune(nm, expected)
 
       assert File.exists?(Path.join(nm, "keep-pkg"))
       refute File.exists?(Path.join(nm, "old-pkg"))
@@ -856,7 +858,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join([nm, "@scope", "remove", "index.js"]), "")
 
       expected = MapSet.new(["@scope/keep"])
-      NPM.Install.Linker.prune(nm, expected)
+      Linker.prune(nm, expected)
 
       assert File.exists?(Path.join([nm, "@scope", "keep"]))
       refute File.exists?(Path.join([nm, "@scope", "remove"]))
@@ -870,7 +872,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(bin_dir, "my-tool"), "#!/bin/sh")
 
       expected = MapSet.new()
-      NPM.Install.Linker.prune(nm, expected)
+      Linker.prune(nm, expected)
 
       assert File.exists?(Path.join(bin_dir, "my-tool"))
     end
@@ -893,7 +895,7 @@ defmodule NPM.Install.LinkerTest do
         "real-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir, :copy)
+      assert :ok = Linker.link(lockfile, nm_dir, :copy)
 
       target = Path.join([nm_dir, "real-pkg", "index.js"])
       assert File.exists?(target)
@@ -912,7 +914,7 @@ defmodule NPM.Install.LinkerTest do
         "b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{"a" => "^1.0"}}
       }
 
-      tree = NPM.Install.Linker.hoist(lockfile)
+      tree = Linker.hoist(lockfile)
       names = Enum.map(tree, &elem(&1, 0)) |> Enum.sort()
       assert "a" in names
       assert "b" in names
@@ -935,7 +937,7 @@ defmodule NPM.Install.LinkerTest do
         "leaf" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      tree = NPM.Install.Linker.hoist(lockfile)
+      tree = Linker.hoist(lockfile)
       assert length(tree) == 3
     end
   end
@@ -948,7 +950,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(Path.join(nm, "remove-me"))
       File.mkdir_p!(Path.join(nm, ".bin"))
 
-      NPM.Install.Linker.prune(nm, MapSet.new(["keep-me"]))
+      Linker.prune(nm, MapSet.new(["keep-me"]))
 
       assert File.dir?(Path.join(nm, "keep-me"))
       refute File.dir?(Path.join(nm, "remove-me"))
@@ -961,7 +963,7 @@ defmodule NPM.Install.LinkerTest do
       File.mkdir_p!(Path.join([nm, "@scope", "keep"]))
       File.mkdir_p!(Path.join([nm, "@scope", "remove"]))
 
-      NPM.Install.Linker.prune(nm, MapSet.new(["@scope/keep"]))
+      Linker.prune(nm, MapSet.new(["@scope/keep"]))
 
       assert File.dir?(Path.join([nm, "@scope", "keep"]))
       refute File.dir?(Path.join([nm, "@scope", "remove"]))
@@ -991,7 +993,7 @@ defmodule NPM.Install.LinkerTest do
         "parent-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      :ok = NPM.Install.Linker.link(flat_lockfile, nm_dir, :copy)
+      :ok = Linker.link(flat_lockfile, nm_dir, :copy)
       assert File.exists?(Path.join([nm_dir, "parent-pkg", "package.json"]))
 
       # Now create nested
@@ -1034,7 +1036,7 @@ defmodule NPM.Install.LinkerTest do
         "ms" => %{version: "2.1.3", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      :ok = NPM.Install.Linker.link(flat_lockfile, nm_dir, :copy)
+      :ok = Linker.link(flat_lockfile, nm_dir, :copy)
 
       # Hoisted ms is 2.1.3
       hoisted_pkg = Path.join([nm_dir, "ms", "package.json"])
@@ -1083,7 +1085,7 @@ defmodule NPM.Install.LinkerTest do
       File.write!(Path.join(pkg_dir, "bin/tool.js"), "#!/usr/bin/env node")
       File.write!(Path.join(pkg_dir, "bin/dev.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"my-tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"my-tool", "1.0.0"}])
 
       assert File.exists?(Path.join(bin_dir, "tool"))
       assert File.exists?(Path.join(bin_dir, "tool-dev"))
@@ -1104,7 +1106,7 @@ defmodule NPM.Install.LinkerTest do
 
       File.write!(Path.join(pkg_dir, "cli.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"simple-cli", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"simple-cli", "1.0.0"}])
 
       bin_dir = Path.join(nm_dir, ".bin")
       assert File.exists?(Path.join(bin_dir, "simple-cli"))
@@ -1125,7 +1127,7 @@ defmodule NPM.Install.LinkerTest do
 
       File.write!(Path.join(scope_dir, "cli.js"), "#!/usr/bin/env node")
 
-      NPM.Install.Linker.link_bins(nm_dir, [{"@scope/my-tool", "1.0.0"}])
+      Linker.link_bins(nm_dir, [{"@scope/my-tool", "1.0.0"}])
 
       bin_dir = Path.join(nm_dir, ".bin")
       assert File.exists?(Path.join(bin_dir, "my-tool"))
@@ -1148,7 +1150,7 @@ defmodule NPM.Install.LinkerTest do
         "linked-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir, :symlink)
+      assert :ok = Linker.link(lockfile, nm_dir, :symlink)
 
       target = Path.join(nm_dir, "linked-pkg")
       {:ok, info} = File.lstat(target)

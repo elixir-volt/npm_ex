@@ -1,4 +1,6 @@
 defmodule NPM.Config.Npmrc.Merge do
+  alias NPM.Config.Npmrc
+
   @moduledoc """
   Multi-layer .npmrc resolution (project → user → global).
 
@@ -35,7 +37,7 @@ defmodule NPM.Config.Npmrc.Merge do
   @spec read_layer(String.t()) :: map()
   def read_layer(path) do
     case File.read(path) do
-      {:ok, content} -> NPM.Config.Npmrc.parse(content)
+      {:ok, content} -> Npmrc.parse(content)
       _ -> %{}
     end
   end

@@ -1,9 +1,11 @@
 defmodule NPM.Registry.MirrorTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Registry.Mirror
+
   describe "RegistryMirror.known_mirrors" do
     test "returns known mirrors" do
-      mirrors = NPM.Registry.Mirror.known_mirrors()
+      mirrors = Mirror.known_mirrors()
       assert Map.has_key?(mirrors, "china")
       assert Map.has_key?(mirrors, "yarn")
       assert Map.has_key?(mirrors, "npmjs")
@@ -12,21 +14,21 @@ defmodule NPM.Registry.MirrorTest do
 
   describe "RegistryMirror.get_mirror" do
     test "gets a known mirror" do
-      assert "https://registry.npmmirror.com" = NPM.Registry.Mirror.get_mirror("china")
+      assert "https://registry.npmmirror.com" = Mirror.get_mirror("china")
     end
 
     test "returns nil for unknown mirror" do
-      assert nil == NPM.Registry.Mirror.get_mirror("nonexistent")
+      assert nil == Mirror.get_mirror("nonexistent")
     end
   end
 
   describe "RegistryMirror.known_mirror?" do
     test "detects known mirror URL" do
-      assert NPM.Registry.Mirror.known_mirror?("https://registry.npmjs.org")
+      assert Mirror.known_mirror?("https://registry.npmjs.org")
     end
 
     test "rejects unknown URL" do
-      refute NPM.Registry.Mirror.known_mirror?("https://custom.example.com")
+      refute Mirror.known_mirror?("https://custom.example.com")
     end
   end
 
@@ -35,7 +37,7 @@ defmodule NPM.Registry.MirrorTest do
       original = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
       mirror = "https://registry.npmmirror.com"
 
-      result = NPM.Registry.Mirror.rewrite_tarball_url(original, mirror)
+      result = Mirror.rewrite_tarball_url(original, mirror)
       assert String.starts_with?(result, "https://registry.npmmirror.com")
       assert String.contains?(result, "lodash")
     end
@@ -43,7 +45,7 @@ defmodule NPM.Registry.MirrorTest do
 
   describe "RegistryMirror.mirror_url" do
     test "returns a URL" do
-      url = NPM.Registry.Mirror.mirror_url()
+      url = Mirror.mirror_url()
       assert is_binary(url)
       assert String.starts_with?(url, "http")
     end
@@ -51,7 +53,7 @@ defmodule NPM.Registry.MirrorTest do
 
   describe "RegistryMirror: URL rewriting" do
     test "known_mirrors returns map of mirror names to URLs" do
-      mirrors = NPM.Registry.Mirror.known_mirrors()
+      mirrors = Mirror.known_mirrors()
       assert is_map(mirrors)
       assert Map.has_key?(mirrors, "npmjs")
       assert mirrors["npmjs"] == "https://registry.npmjs.org"
@@ -61,7 +63,7 @@ defmodule NPM.Registry.MirrorTest do
       mirror = "https://registry.npmmirror.com"
 
       rewritten =
-        NPM.Registry.Mirror.rewrite_tarball_url(
+        Mirror.rewrite_tarball_url(
           "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
           mirror
         )
@@ -71,13 +73,13 @@ defmodule NPM.Registry.MirrorTest do
     end
 
     test "known_mirror? checks if URL is a known mirror" do
-      assert NPM.Registry.Mirror.known_mirror?("https://registry.npmmirror.com")
+      assert Mirror.known_mirror?("https://registry.npmmirror.com")
     end
   end
 
   describe "RegistryMirror: mirror_url" do
     test "mirror_url returns configured or default" do
-      url = NPM.Registry.Mirror.mirror_url()
+      url = Mirror.mirror_url()
       assert is_binary(url)
       assert String.starts_with?(url, "https://")
     end
@@ -85,12 +87,12 @@ defmodule NPM.Registry.MirrorTest do
 
   describe "RegistryMirror: get_mirror" do
     test "get_mirror by name returns URL" do
-      url = NPM.Registry.Mirror.get_mirror("china")
+      url = Mirror.get_mirror("china")
       assert url == "https://registry.npmmirror.com"
     end
 
     test "get_mirror returns nil for unknown" do
-      assert nil == NPM.Registry.Mirror.get_mirror("nonexistent")
+      assert nil == Mirror.get_mirror("nonexistent")
     end
   end
 end

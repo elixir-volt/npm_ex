@@ -51,23 +51,25 @@ defmodule NPM.Security.ExoticDeps do
   @spec validate!(String.t(), String.t(), map()) :: :ok
   def validate!(package, version, info) do
     if NPM.Config.block_exotic_subdeps?() do
-      Enum.each(@fields, fn {key, field} ->
-        info
-        |> Map.get(key, %{})
-        |> Enum.each(fn {dependency, spec} ->
-          if exotic?(spec) do
-            raise Error,
-              package: package,
-              version: version,
-              field: field,
-              dependency: dependency,
-              spec: spec
-          end
-        end)
-      end)
+      Enum.each(@fields, &validate_field!(&1, package, version, info))
     end
 
     :ok
+  end
+
+  defp validate_field!({key, field}, package, version, info) do
+    info
+    |> Map.get(key, %{})
+    |> Enum.each(fn {dependency, spec} ->
+      if exotic?(spec) do
+        raise Error,
+          package: package,
+          version: version,
+          field: field,
+          dependency: dependency,
+          spec: spec
+      end
+    end)
   end
 
   @spec exotic?(term()) :: boolean()

@@ -1,6 +1,8 @@
 defmodule NPM.Config.NpmrcTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Config.Npmrc
+
   @content """
   # npm config
   registry=https://registry.npmjs.org
@@ -13,27 +15,27 @@ defmodule NPM.Config.NpmrcTest do
 
   describe "parse" do
     test "parses key-value pairs" do
-      config = NPM.Config.Npmrc.parse(@content)
+      config = Npmrc.parse(@content)
       assert config["registry"] == "https://registry.npmjs.org"
       assert config["save-exact"] == "true"
     end
 
     test "skips comments and blank lines" do
-      config = NPM.Config.Npmrc.parse(@content)
+      config = Npmrc.parse(@content)
       refute Map.has_key?(config, "# npm config")
     end
 
     test "parses scoped registries" do
-      config = NPM.Config.Npmrc.parse(@content)
+      config = Npmrc.parse(@content)
       assert config["@myorg:registry"] == "https://npm.myorg.com"
     end
 
     test "empty content" do
-      assert %{} = NPM.Config.Npmrc.parse("")
+      assert %{} = Npmrc.parse("")
     end
 
     test "comment-only file" do
-      assert %{} = NPM.Config.Npmrc.parse("# comment\n; another")
+      assert %{} = Npmrc.parse("# comment\n; another")
     end
   end
 
@@ -42,15 +44,13 @@ defmodule NPM.Config.NpmrcTest do
     test "reads .npmrc file", %{tmp_dir: dir} do
       path = Path.join(dir, ".npmrc")
       File.write!(path, "registry=https://custom.com\n")
-      assert {:ok, config} = NPM.Config.Npmrc.read(path)
+      assert {:ok, config} = Npmrc.read(path)
       assert config["registry"] == "https://custom.com"
     end
 
     test "error for missing file" do
       assert {:error, :not_found} =
-               NPM.Config.Npmrc.read(
-                 "/tmp/nonexistent_npmrc_#{System.unique_integer([:positive])}"
-               )
+               Npmrc.read("/tmp/nonexistent_npmrc_#{System.unique_integer([:positive])}")
     end
   end
 
@@ -61,44 +61,44 @@ defmodule NPM.Config.NpmrcTest do
         %{"registry" => "https://b.com"}
       ]
 
-      merged = NPM.Config.Npmrc.merge(configs)
+      merged = Npmrc.merge(configs)
       assert merged["registry"] == "https://b.com"
     end
   end
 
   describe "has_auth?" do
     test "true with auth token" do
-      config = NPM.Config.Npmrc.parse(@content)
-      assert NPM.Config.Npmrc.has_auth?(config)
+      config = Npmrc.parse(@content)
+      assert Npmrc.has_auth?(config)
     end
 
     test "false without auth" do
-      refute NPM.Config.Npmrc.has_auth?(%{"registry" => "https://npm.com"})
+      refute Npmrc.has_auth?(%{"registry" => "https://npm.com"})
     end
   end
 
   describe "scoped_registries" do
     test "extracts scoped registries" do
-      config = NPM.Config.Npmrc.parse(@content)
-      registries = NPM.Config.Npmrc.scoped_registries(config)
+      config = Npmrc.parse(@content)
+      registries = Npmrc.scoped_registries(config)
       assert {"myorg", "https://npm.myorg.com"} in registries
     end
 
     test "empty for no scoped registries" do
-      assert [] = NPM.Config.Npmrc.scoped_registries(%{"registry" => "https://npm.com"})
+      assert [] = Npmrc.scoped_registries(%{"registry" => "https://npm.com"})
     end
   end
 
   describe "format" do
     test "redacts auth tokens" do
       config = %{"_authToken" => "secret", "registry" => "https://npm.com"}
-      formatted = NPM.Config.Npmrc.format(config)
+      formatted = Npmrc.format(config)
       assert formatted =~ "[REDACTED]"
       refute formatted =~ "secret"
     end
 
     test "empty config" do
-      assert "Empty .npmrc" = NPM.Config.Npmrc.format(%{})
+      assert "Empty .npmrc" = Npmrc.format(%{})
     end
   end
 
@@ -106,7 +106,7 @@ defmodule NPM.Config.NpmrcTest do
     @tag :tmp_dir
     test "finds project .npmrc", %{tmp_dir: dir} do
       File.write!(Path.join(dir, ".npmrc"), "registry=https://custom.com\n")
-      found = NPM.Config.Npmrc.locate(dir)
+      found = Npmrc.locate(dir)
       assert Enum.any?(found, &String.ends_with?(&1, ".npmrc"))
     end
   end

@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Npm.Run do
+  alias NPM.Package.JSON
+
   @shortdoc "Run an npm script"
 
   @moduledoc """
@@ -25,7 +27,7 @@ defmodule Mix.Tasks.Npm.Run do
   end
 
   defp list_scripts do
-    case NPM.Package.JSON.read_scripts() do
+    case JSON.read_scripts() do
       {:ok, scripts} when scripts == %{} ->
         Mix.shell().info("No scripts found in package.json.")
 
@@ -42,7 +44,7 @@ defmodule Mix.Tasks.Npm.Run do
   end
 
   defp run_script(name, extra_args) do
-    case NPM.Package.JSON.read_scripts() do
+    case JSON.read_scripts() do
       {:ok, scripts} ->
         case Map.fetch(scripts, name) do
           {:ok, command} ->

@@ -4,10 +4,24 @@ defmodule NPM.Install.LinkerOptionalRuntimeTest do
   import ExUnit.CaptureLog
   import NPM.TestHelpers
 
+  alias NPM.Install.Linker
+
   @tag :tmp_dir
   test "populate_cache tolerates missing optional package tarballs when package is optional", %{
     tmp_dir: dir
   } do
+    {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+    {:ok, port} = :inet.port(listen)
+
+    spawn(fn ->
+      {:ok, conn} = :gen_tcp.accept(listen)
+      {:ok, _data} = :gen_tcp.recv(conn, 0, 5000)
+      :gen_tcp.send(conn, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n")
+      :gen_tcp.close(conn)
+    end)
+
+    missing_url = "http://127.0.0.1:#{port}/missing.tgz"
+
     lockfile = %{
       "oxlint" => %{
         version: "1.56.0",
@@ -19,7 +33,7 @@ defmodule NPM.Install.LinkerOptionalRuntimeTest do
       "@oxlint/binding-darwin-arm64" => %{
         version: "1.56.0",
         integrity: "sha512-optional",
-        tarball: "https://example.com/missing.tgz",
+        tarball: missing_url,
         dependencies: %{},
         optional_dependencies: %{}
       }
@@ -34,12 +48,27 @@ defmodule NPM.Install.LinkerOptionalRuntimeTest do
     original = System.get_env("NPM_EX_CACHE_DIR")
     original_allowed = System.get_env("NPM_EX_ALLOWED_REGISTRIES")
     System.put_env("NPM_EX_CACHE_DIR", cache_dir)
-    System.put_env("NPM_EX_ALLOWED_REGISTRIES", "https://example.com,https://registry.npmjs.org")
+
+    System.put_env(
+      "NPM_EX_ALLOWED_REGISTRIES",
+      "https://example.com,https://registry.npmjs.org,http://127.0.0.1:#{port}"
+    )
+
+    NPM.PackumentCache.put("@oxlint/binding-darwin-arm64", %{
+      name: "@oxlint/binding-darwin-arm64",
+      versions: %{
+        "1.56.0" => %{
+          os: ["darwin"],
+          cpu: ["arm64"],
+          dist: %{tarball: missing_url, integrity: "sha512-optional"}
+        }
+      }
+    })
 
     try do
       log =
         capture_log(fn ->
-          assert :ok = NPM.Install.Linker.link(lockfile, Path.join(dir, "node_modules"), :copy)
+          assert :ok = Linker.link(lockfile, Path.join(dir, "node_modules"), :copy)
         end)
 
       assert File.exists?(Path.join(dir, "node_modules/oxlint"))
@@ -57,6 +86,8 @@ defmodule NPM.Install.LinkerOptionalRuntimeTest do
       else
         System.delete_env("NPM_EX_ALLOWED_REGISTRIES")
       end
+
+      :gen_tcp.close(listen)
     end
   end
 end

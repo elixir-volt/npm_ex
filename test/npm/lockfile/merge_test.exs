@@ -1,6 +1,8 @@
 defmodule NPM.Lockfile.MergeTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Lockfile.Merge
+
   describe "LockMerge: diff with version changes" do
     test "diff detects only version changes, not identical entries" do
       base = %{
@@ -13,7 +15,7 @@ defmodule NPM.Lockfile.MergeTest do
         "b" => %{version: "2.0.0", integrity: "sha-same", tarball: "url2", dependencies: %{}}
       }
 
-      {added, removed, changed} = NPM.Lockfile.Merge.diff(base, newer)
+      {added, removed, changed} = Merge.diff(base, newer)
       assert added == []
       assert removed == []
       assert changed == [{"a", "1.0.0", "1.0.1"}]
@@ -33,7 +35,7 @@ defmodule NPM.Lockfile.MergeTest do
         "b" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result = NPM.Lockfile.Merge.merge(base, newer)
+      result = Merge.merge(base, newer)
       assert result["a"].version == "2.0.0"
       assert result["b"].version == "3.0.0"
       assert result["c"].version == "1.0.0"
@@ -45,8 +47,8 @@ defmodule NPM.Lockfile.MergeTest do
       a = %{"only-a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}}
       b = %{"only-b" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}}
 
-      {added_ab, removed_ab, _} = NPM.Lockfile.Merge.diff(a, b)
-      {added_ba, removed_ba, _} = NPM.Lockfile.Merge.diff(b, a)
+      {added_ab, removed_ab, _} = Merge.diff(a, b)
+      {added_ba, removed_ba, _} = Merge.diff(b, a)
 
       assert added_ab == removed_ba
       assert removed_ab == added_ba
@@ -59,7 +61,7 @@ defmodule NPM.Lockfile.MergeTest do
         "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result = NPM.Lockfile.Merge.merge(%{}, newer)
+      result = Merge.merge(%{}, newer)
       assert result == newer
     end
 
@@ -68,7 +70,7 @@ defmodule NPM.Lockfile.MergeTest do
         "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result = NPM.Lockfile.Merge.merge(base, %{})
+      result = Merge.merge(base, %{})
       assert result == base
     end
   end
@@ -85,7 +87,7 @@ defmodule NPM.Lockfile.MergeTest do
         "vue" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      merged = NPM.Lockfile.Merge.merge(base, newer)
+      merged = Merge.merge(base, newer)
       assert merged["lodash"].version == "4.17.21"
       assert merged["react"].version == "18.0.0"
       assert merged["vue"].version == "3.0.0"
@@ -101,7 +103,7 @@ defmodule NPM.Lockfile.MergeTest do
       }
 
       result =
-        NPM.Lockfile.Merge.merge(base, newer, fn _name, b, n ->
+        Merge.merge(base, newer, fn _name, b, n ->
           if NPM.VersionUtil.gt?(n.version, b.version), do: n, else: b
         end)
 
@@ -119,7 +121,7 @@ defmodule NPM.Lockfile.MergeTest do
         "new-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      {added, removed, changed} = NPM.Lockfile.Merge.diff(base, newer)
+      {added, removed, changed} = Merge.diff(base, newer)
       assert "new-pkg" in added
       assert "removed-pkg" in removed
       assert {"lodash", "4.17.20", "4.17.21"} in changed
@@ -130,7 +132,7 @@ defmodule NPM.Lockfile.MergeTest do
         "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      {added, removed, changed} = NPM.Lockfile.Merge.diff(lockfile, lockfile)
+      {added, removed, changed} = Merge.diff(lockfile, lockfile)
       assert added == []
       assert removed == []
       assert changed == []
@@ -143,7 +145,7 @@ defmodule NPM.Lockfile.MergeTest do
         "a" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      {added, removed, changed} = NPM.Lockfile.Merge.diff(lockfile, lockfile)
+      {added, removed, changed} = Merge.diff(lockfile, lockfile)
       assert added == []
       assert removed == []
       assert changed == []

@@ -1,6 +1,8 @@
 defmodule NPM.Security.AgeTest do
   use ExUnit.Case, async: false
 
+  alias NPM.Security.Age
+
   setup do
     original_package_days = Application.get_env(:npm, :package_age_warning_days)
     original_version_days = Application.get_env(:npm, :version_age_warning_days)
@@ -17,7 +19,7 @@ defmodule NPM.Security.AgeTest do
 
     now = DateTime.utc_now() |> DateTime.to_iso8601()
 
-    warnings = NPM.Security.Age.warnings(%{created_at: now, published_at: now})
+    warnings = Age.warnings(%{created_at: now, published_at: now})
 
     assert Enum.any?(warnings, &(&1.type == :new_package))
     assert Enum.any?(warnings, &(&1.type == :new_version))
@@ -29,7 +31,7 @@ defmodule NPM.Security.AgeTest do
 
     now = DateTime.utc_now() |> DateTime.to_iso8601()
 
-    assert [] = NPM.Security.Age.warnings(%{created_at: now, published_at: now})
+    assert [] = Age.warnings(%{created_at: now, published_at: now})
   end
 
   defp restore_app(key, nil), do: Application.delete_env(:npm, key)

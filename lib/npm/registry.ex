@@ -1,4 +1,6 @@
 defmodule NPM.Registry do
+  alias NPM.Security.RegistryPolicy
+
   @moduledoc """
   HTTP client for the npm registry.
 
@@ -59,7 +61,7 @@ defmodule NPM.Registry do
   end
 
   defp fetch_with_retry(package, url, headers, retries_left) do
-    NPM.Security.RegistryPolicy.validate_url!(url)
+    RegistryPolicy.validate_url!(url)
 
     result =
       Req.get(url,
@@ -123,7 +125,7 @@ defmodule NPM.Registry do
   defp parse_version_info(info, times) do
     dist = Map.get(info, "dist", %{})
     tarball = Map.get(dist, "tarball", "")
-    NPM.Security.RegistryPolicy.validate_url!(tarball)
+    RegistryPolicy.validate_url!(tarball)
 
     %{
       dependencies: Map.get(info, "dependencies", %{}),

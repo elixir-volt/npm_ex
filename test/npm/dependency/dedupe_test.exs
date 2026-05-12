@@ -1,6 +1,8 @@
 defmodule NPM.Dependency.DedupeTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Dependency.Dedupe
+
   describe "find_duplicates with no duplicates" do
     test "returns empty list" do
       lockfile = %{
@@ -8,13 +10,13 @@ defmodule NPM.Dependency.DedupeTest do
         "b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert [] = NPM.Dependency.Dedupe.find_duplicates(lockfile)
+      assert [] = Dedupe.find_duplicates(lockfile)
     end
   end
 
   describe "find_duplicates with empty lockfile" do
     test "returns empty list" do
-      assert [] = NPM.Dependency.Dedupe.find_duplicates(%{})
+      assert [] = Dedupe.find_duplicates(%{})
     end
   end
 
@@ -30,7 +32,7 @@ defmodule NPM.Dependency.DedupeTest do
         }
       }
 
-      dupes = NPM.Dependency.Dedupe.find_duplicates(lockfile)
+      dupes = Dedupe.find_duplicates(lockfile)
       assert length(dupes) == 1
       {name, versions} = hd(dupes)
       assert name == "ms"
@@ -51,7 +53,7 @@ defmodule NPM.Dependency.DedupeTest do
         }
       }
 
-      assert [] = NPM.Dependency.Dedupe.find_duplicates(lockfile)
+      assert [] = Dedupe.find_duplicates(lockfile)
     end
   end
 
@@ -62,7 +64,7 @@ defmodule NPM.Dependency.DedupeTest do
         "b" => %{version: "2.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      result = NPM.Dependency.Dedupe.savings_estimate(lockfile)
+      result = Dedupe.savings_estimate(lockfile)
       assert result.packages == 2
       assert result.duplicates == 0
     end
@@ -78,7 +80,7 @@ defmodule NPM.Dependency.DedupeTest do
         }
       }
 
-      result = NPM.Dependency.Dedupe.savings_estimate(lockfile)
+      result = Dedupe.savings_estimate(lockfile)
       assert result.duplicates == 1
     end
   end
@@ -101,7 +103,7 @@ defmodule NPM.Dependency.DedupeTest do
         }
       }
 
-      assert {:ok, "2.1.3"} = NPM.Dependency.Dedupe.best_shared_version("ms", lockfile)
+      assert {:ok, "2.1.3"} = Dedupe.best_shared_version("ms", lockfile)
     end
 
     test "returns :no_common_version for missing package" do
@@ -110,7 +112,7 @@ defmodule NPM.Dependency.DedupeTest do
       }
 
       assert :no_common_version =
-               NPM.Dependency.Dedupe.best_shared_version("nonexistent", lockfile)
+               Dedupe.best_shared_version("nonexistent", lockfile)
     end
 
     test "returns :no_common_version when version doesn't satisfy all ranges" do
@@ -124,7 +126,7 @@ defmodule NPM.Dependency.DedupeTest do
         }
       }
 
-      assert :no_common_version = NPM.Dependency.Dedupe.best_shared_version("ms", lockfile)
+      assert :no_common_version = Dedupe.best_shared_version("ms", lockfile)
     end
   end
 
@@ -136,7 +138,7 @@ defmodule NPM.Dependency.DedupeTest do
         "c" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      s = NPM.Dependency.Dedupe.summary(lockfile)
+      s = Dedupe.summary(lockfile)
       assert s.total_packages == 3
       assert s.unique_packages == 3
       assert s.duplicate_groups == 0
@@ -155,7 +157,7 @@ defmodule NPM.Dependency.DedupeTest do
         "debug" => %{version: "4.3.4", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      s = NPM.Dependency.Dedupe.summary(lockfile)
+      s = Dedupe.summary(lockfile)
       assert s.total_packages == 3
       assert s.unique_packages == 2
       assert s.duplicate_groups == 1
@@ -170,13 +172,13 @@ defmodule NPM.Dependency.DedupeTest do
         "debug" => %{version: "4.3.4", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      s = NPM.Dependency.Dedupe.summary(lockfile)
+      s = Dedupe.summary(lockfile)
       assert s.duplicate_groups == 1
       assert s.saveable == 2
     end
 
     test "empty lockfile" do
-      s = NPM.Dependency.Dedupe.summary(%{})
+      s = Dedupe.summary(%{})
       assert s.total_packages == 0
       assert s.unique_packages == 0
       assert s.duplicate_groups == 0

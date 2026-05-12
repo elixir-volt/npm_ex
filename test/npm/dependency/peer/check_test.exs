@@ -1,6 +1,8 @@
 defmodule NPM.Dependency.Peer.CheckTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Dependency.Peer.Check
+
   @lockfile %{
     "react" => %{version: "18.2.0", integrity: "", tarball: "", dependencies: %{}},
     "react-dom" => %{version: "18.2.0", integrity: "", tarball: "", dependencies: %{}}
@@ -13,7 +15,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
         "peerDependencies" => %{"react" => "^18.0.0"}
       }
 
-      assert [] = NPM.Dependency.Peer.Check.check_peers(data, @lockfile)
+      assert [] = Check.check_peers(data, @lockfile)
     end
 
     test "missing peer dependency" do
@@ -22,7 +24,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
         "peerDependencies" => %{"vue" => "^3.0.0"}
       }
 
-      issues = NPM.Dependency.Peer.Check.check_peers(data, @lockfile)
+      issues = Check.check_peers(data, @lockfile)
       assert length(issues) == 1
       assert hd(issues).status == :missing
       assert hd(issues).peer == "vue"
@@ -34,7 +36,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
         "peerDependencies" => %{"react" => "^16.0.0"}
       }
 
-      issues = NPM.Dependency.Peer.Check.check_peers(data, @lockfile)
+      issues = Check.check_peers(data, @lockfile)
       assert length(issues) == 1
       assert hd(issues).status == :incompatible
       assert hd(issues).installed == "18.2.0"
@@ -47,14 +49,14 @@ defmodule NPM.Dependency.Peer.CheckTest do
         "peerDependenciesMeta" => %{"@emotion/styled" => %{"optional" => true}}
       }
 
-      issues = NPM.Dependency.Peer.Check.check_peers(data, @lockfile)
+      issues = Check.check_peers(data, @lockfile)
       assert length(issues) == 1
       assert hd(issues).status == :optional_missing
     end
 
     test "no peer deps means no issues" do
       data = %{"name" => "simple"}
-      assert [] = NPM.Dependency.Peer.Check.check_peers(data, @lockfile)
+      assert [] = Check.check_peers(data, @lockfile)
     end
   end
 
@@ -70,13 +72,13 @@ defmodule NPM.Dependency.Peer.CheckTest do
         ~s({"name":"my-component","peerDependencies":{"angular":"^15.0.0"}})
       )
 
-      issues = NPM.Dependency.Peer.Check.check(nm, @lockfile)
+      issues = Check.check(nm, @lockfile)
       assert Enum.any?(issues, &(&1.peer == "angular"))
     end
 
     @tag :tmp_dir
     test "empty for nonexistent dir", %{tmp_dir: dir} do
-      assert [] = NPM.Dependency.Peer.Check.check(Path.join(dir, "nonexistent"), %{})
+      assert [] = Check.check(Path.join(dir, "nonexistent"), %{})
     end
   end
 
@@ -87,7 +89,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
         %{package: "b", peer: "y", required: "^2", status: :incompatible, installed: "1.0.0"}
       ]
 
-      result = NPM.Dependency.Peer.Check.filter_by_status(issues, :missing)
+      result = Check.filter_by_status(issues, :missing)
       assert length(result) == 1
       assert hd(result).package == "a"
     end
@@ -99,7 +101,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
         %{package: "lib", peer: "react", required: "^18", status: :missing, installed: nil}
       ]
 
-      formatted = NPM.Dependency.Peer.Check.format_issues(issues)
+      formatted = Check.format_issues(issues)
       assert formatted =~ "not installed"
       assert formatted =~ "react"
     end
@@ -115,12 +117,12 @@ defmodule NPM.Dependency.Peer.CheckTest do
         }
       ]
 
-      formatted = NPM.Dependency.Peer.Check.format_issues(issues)
+      formatted = Check.format_issues(issues)
       assert formatted =~ "18.2.0"
     end
 
     test "all satisfied message" do
-      assert "All peer dependencies satisfied." = NPM.Dependency.Peer.Check.format_issues([])
+      assert "All peer dependencies satisfied." = Check.format_issues([])
     end
   end
 
@@ -132,7 +134,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
         %{package: "c", peer: "z", required: "^3", status: :optional_missing, installed: nil}
       ]
 
-      s = NPM.Dependency.Peer.Check.summary(issues)
+      s = Check.summary(issues)
       assert s.missing == 1
       assert s.incompatible == 1
       assert s.optional_missing == 1
@@ -140,7 +142,7 @@ defmodule NPM.Dependency.Peer.CheckTest do
     end
 
     test "empty issues" do
-      s = NPM.Dependency.Peer.Check.summary([])
+      s = Check.summary([])
       assert s.total == 0
     end
   end

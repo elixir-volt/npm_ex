@@ -1,6 +1,8 @@
 defmodule NPM.Diagnostics.HealthTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Diagnostics.Health
+
   @healthy_checks %{
     has_lockfile: true,
     has_package_json: true,
@@ -23,12 +25,12 @@ defmodule NPM.Diagnostics.HealthTest do
 
   describe "score" do
     test "healthy project scores high" do
-      result = NPM.Diagnostics.Health.score(@healthy_checks)
+      result = Health.score(@healthy_checks)
       assert result.score >= 90
     end
 
     test "unhealthy project scores low" do
-      result = NPM.Diagnostics.Health.score(@unhealthy_checks)
+      result = Health.score(@unhealthy_checks)
       assert result.score < 30
     end
 
@@ -43,65 +45,65 @@ defmodule NPM.Diagnostics.HealthTest do
         no_deprecated: false
       }
 
-      result = NPM.Diagnostics.Health.score(checks)
+      result = Health.score(checks)
       assert result.score > 30 and result.score < 80
     end
 
     test "returns details breakdown" do
-      result = NPM.Diagnostics.Health.score(@healthy_checks)
+      result = Health.score(@healthy_checks)
       assert is_map(result.details)
       assert result.details[:has_lockfile] == 15
     end
 
     test "score capped at 100" do
-      result = NPM.Diagnostics.Health.score(@healthy_checks)
+      result = Health.score(@healthy_checks)
       assert result.score <= 100
     end
   end
 
   describe "grade" do
     test "A for 90+" do
-      assert "A" = NPM.Diagnostics.Health.grade(95)
+      assert "A" = Health.grade(95)
     end
 
     test "B for 80-89" do
-      assert "B" = NPM.Diagnostics.Health.grade(85)
+      assert "B" = Health.grade(85)
     end
 
     test "C for 70-79" do
-      assert "C" = NPM.Diagnostics.Health.grade(75)
+      assert "C" = Health.grade(75)
     end
 
     test "D for 60-69" do
-      assert "D" = NPM.Diagnostics.Health.grade(65)
+      assert "D" = Health.grade(65)
     end
 
     test "F for below 60" do
-      assert "F" = NPM.Diagnostics.Health.grade(50)
+      assert "F" = Health.grade(50)
     end
   end
 
   describe "recommendations" do
     test "recommends lockfile creation" do
-      recs = NPM.Diagnostics.Health.recommendations(%{has_lockfile: false})
+      recs = Health.recommendations(%{has_lockfile: false})
       assert Enum.any?(recs, &String.contains?(&1, "lockfile"))
     end
 
     test "recommends audit for vulns" do
-      recs = NPM.Diagnostics.Health.recommendations(%{vulnerability_count: 3})
+      recs = Health.recommendations(%{vulnerability_count: 3})
       assert Enum.any?(recs, &String.contains?(&1, "audit"))
     end
 
     test "no recommendations for healthy project" do
-      recs = NPM.Diagnostics.Health.recommendations(@healthy_checks)
+      recs = Health.recommendations(@healthy_checks)
       assert recs == []
     end
   end
 
   describe "format_report" do
     test "includes score and grade" do
-      result = NPM.Diagnostics.Health.score(@healthy_checks)
-      formatted = NPM.Diagnostics.Health.format_report(result)
+      result = Health.score(@healthy_checks)
+      formatted = Health.format_report(result)
       assert formatted =~ "Health Score:"
       assert formatted =~ "/100"
     end

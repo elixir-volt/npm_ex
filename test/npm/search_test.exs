@@ -29,7 +29,7 @@ defmodule NPM.SearchTest do
 
     test "no match scores 0.0" do
       pkg = %{name: "react", version: "18.0.0", description: "UI library", keywords: []}
-      assert 0.0 = NPM.Search.score(pkg, "zzz-nonexistent")
+      assert NPM.Search.score(pkg, "zzz-nonexistent") == 0.0
     end
 
     test "case insensitive" do

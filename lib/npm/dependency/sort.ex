@@ -1,4 +1,6 @@
 defmodule NPM.Dependency.Sort do
+  alias NPM.Dependency.Graph
+
   @moduledoc """
   Topological sorting of packages for correct install/build order.
   """
@@ -30,7 +32,7 @@ defmodule NPM.Dependency.Sort do
   """
   @spec parallel_levels(map()) :: [[String.t()]]
   def parallel_levels(adj) do
-    rev = NPM.Dependency.Graph.reverse(adj)
+    rev = Graph.reverse(adj)
     in_degree = compute_in_degree(rev)
     build_levels(rev, in_degree, [])
   end

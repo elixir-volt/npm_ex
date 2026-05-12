@@ -54,7 +54,7 @@ defmodule NPM.SBOMTest do
 
     test "includes metadata" do
       sbom = NPM.SBOM.generate(@lockfile)
-      assert sbom.metadata.tools != []
+      assert [_ | _] = sbom.metadata.tools
     end
   end
 

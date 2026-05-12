@@ -1,72 +1,74 @@
 defmodule NPM.Node.BinTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Node.Bin
+
   describe "extract" do
     test "string shorthand with name" do
       data = %{"name" => "typescript", "bin" => "./bin/tsc"}
-      assert %{"typescript" => "./bin/tsc"} = NPM.Node.Bin.extract(data)
+      assert %{"typescript" => "./bin/tsc"} = Bin.extract(data)
     end
 
     test "map format" do
       data = %{"bin" => %{"tsc" => "./bin/tsc", "tsserver" => "./bin/tsserver"}}
-      bins = NPM.Node.Bin.extract(data)
+      bins = Bin.extract(data)
       assert bins["tsc"] == "./bin/tsc"
       assert bins["tsserver"] == "./bin/tsserver"
     end
 
     test "empty when no bin" do
-      assert %{} = NPM.Node.Bin.extract(%{"name" => "lodash"})
+      assert %{} = Bin.extract(%{"name" => "lodash"})
     end
 
     test "directories.bin fallback" do
       data = %{"directories" => %{"bin" => "./bin"}}
-      assert NPM.Node.Bin.extract(data) == %{"__dir__" => "./bin"}
+      assert Bin.extract(data) == %{"__dir__" => "./bin"}
     end
   end
 
   describe "commands" do
     test "lists command names" do
       data = %{"bin" => %{"eslint" => "./bin/eslint.js", "eslint-config" => "./bin/config.js"}}
-      cmds = NPM.Node.Bin.commands(data)
+      cmds = Bin.commands(data)
       assert "eslint" in cmds
       assert "eslint-config" in cmds
     end
 
     test "empty for no bin" do
-      assert [] = NPM.Node.Bin.commands(%{})
+      assert [] = Bin.commands(%{})
     end
   end
 
   describe "has_bin?" do
     test "true with bin field" do
-      assert NPM.Node.Bin.has_bin?(%{"bin" => %{"cmd" => "./script.js"}})
+      assert Bin.has_bin?(%{"bin" => %{"cmd" => "./script.js"}})
     end
 
     test "false without bin" do
-      refute NPM.Node.Bin.has_bin?(%{"name" => "pkg"})
+      refute Bin.has_bin?(%{"name" => "pkg"})
     end
   end
 
   describe "resolve" do
     test "finds script for command" do
       data = %{"bin" => %{"jest" => "./bin/jest.js"}}
-      assert "./bin/jest.js" = NPM.Node.Bin.resolve("jest", data)
+      assert "./bin/jest.js" = Bin.resolve("jest", data)
     end
 
     test "nil for unknown command" do
       data = %{"bin" => %{"jest" => "./bin/jest.js"}}
-      assert nil == NPM.Node.Bin.resolve("mocha", data)
+      assert nil == Bin.resolve("mocha", data)
     end
   end
 
   describe "count" do
     test "counts binaries" do
       data = %{"bin" => %{"a" => "./a", "b" => "./b"}}
-      assert 2 = NPM.Node.Bin.count(data)
+      assert 2 = Bin.count(data)
     end
 
     test "zero for no bin" do
-      assert 0 = NPM.Node.Bin.count(%{})
+      assert 0 = Bin.count(%{})
     end
   end
 
@@ -82,12 +84,12 @@ defmodule NPM.Node.BinTest do
         ~s({"name":"eslint","bin":{"eslint":"./bin/eslint.js"}})
       )
 
-      bins = NPM.Node.Bin.all_bins(nm)
+      bins = Bin.all_bins(nm)
       assert Map.has_key?(bins, "eslint")
     end
 
     test "empty for nonexistent dir" do
-      assert %{} = NPM.Node.Bin.all_bins("/tmp/nonexistent_#{System.unique_integer([:positive])}")
+      assert %{} = Bin.all_bins("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
   end
 end

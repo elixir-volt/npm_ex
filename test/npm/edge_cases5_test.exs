@@ -1,6 +1,14 @@
 defmodule NPM.EdgeCases5Test do
   use ExUnit.Case, async: true
 
+  alias NPM.Config.Npmrc
+  alias NPM.Dependency.Phantom
+  alias NPM.Dependency.Stats
+  alias NPM.Lockfile.Check
+  alias NPM.Package.Files
+  alias NPM.Package.PublishConfig
+  alias NPM.Resolution.Conditional
+
   describe "Workspaces edge cases" do
     test "object format with packages" do
       data = %{"workspaces" => %{"packages" => ["apps/*"], "nohoist" => ["**/debug"]}}
@@ -15,12 +23,12 @@ defmodule NPM.EdgeCases5Test do
 
   describe "Npmrc edge cases" do
     test "semicolon comments" do
-      config = NPM.Config.Npmrc.parse("; comment\nregistry=https://npm.com")
+      config = Npmrc.parse("; comment\nregistry=https://npm.com")
       assert config["registry"] == "https://npm.com"
     end
 
     test "merge preserves unique keys" do
-      merged = NPM.Config.Npmrc.merge([%{"a" => "1"}, %{"b" => "2"}])
+      merged = Npmrc.merge([%{"a" => "1"}, %{"b" => "2"}])
       assert merged["a"] == "1"
       assert merged["b"] == "2"
     end
@@ -57,18 +65,18 @@ defmodule NPM.EdgeCases5Test do
   describe "PhantomDep edge cases" do
     test "includes optionalDependencies in declared" do
       pkg = %{"optionalDependencies" => %{"fsevents" => "^2.0"}}
-      refute NPM.Dependency.Phantom.phantom?("fsevents", pkg)
+      refute Phantom.phantom?("fsevents", pkg)
     end
 
     test "includes peerDependencies in declared" do
       pkg = %{"peerDependencies" => %{"react" => "^18.0"}}
-      refute NPM.Dependency.Phantom.phantom?("react", pkg)
+      refute Phantom.phantom?("react", pkg)
     end
   end
 
   describe "Conditional edge cases" do
     test "resolve nil exports" do
-      assert nil == NPM.Resolution.Conditional.resolve(nil, ["import"])
+      assert nil == Conditional.resolve(nil, ["import"])
     end
 
     test "conditions from nested exports" do
@@ -79,7 +87,7 @@ defmodule NPM.EdgeCases5Test do
         }
       }
 
-      conds = NPM.Resolution.Conditional.conditions(exports)
+      conds = Conditional.conditions(exports)
       assert "node" in conds
       assert "import" in conds
     end
@@ -105,15 +113,15 @@ defmodule NPM.EdgeCases5Test do
 
   describe "DepStats edge cases" do
     test "format with no scopes" do
-      stats = NPM.Dependency.Stats.compute(%{"lodash" => %{version: "4.17.21"}})
-      formatted = NPM.Dependency.Stats.format(stats)
+      stats = Stats.compute(%{"lodash" => %{version: "4.17.21"}})
+      formatted = Stats.format(stats)
       assert formatted =~ "Top scopes: none"
     end
   end
 
   describe "PublishConfig edge cases" do
     test "non-string publishConfig ignored" do
-      assert %{} = NPM.Package.PublishConfig.extract(%{"publishConfig" => "invalid"})
+      assert %{} = PublishConfig.extract(%{"publishConfig" => "invalid"})
     end
   end
 
@@ -126,7 +134,7 @@ defmodule NPM.EdgeCases5Test do
   describe "LockfileCheck edge cases" do
     test "format_results missing only" do
       result = %{valid: false, missing: ["a", "b"], extraneous: [], mismatched: []}
-      formatted = NPM.Lockfile.Check.format_results(result)
+      formatted = Check.format_results(result)
       assert formatted =~ "Missing: a, b"
     end
   end
@@ -134,12 +142,12 @@ defmodule NPM.EdgeCases5Test do
   describe "PackageFiles edge cases" do
     test "string exports in entry_points" do
       data = %{"exports" => "./dist/index.js"}
-      entries = NPM.Package.Files.entry_points(data)
+      entries = Files.entry_points(data)
       assert "./dist/index.js" in entries
     end
 
     test "COPYING always included" do
-      assert NPM.Package.Files.always_included?("COPYING")
+      assert Files.always_included?("COPYING")
     end
   end
 end

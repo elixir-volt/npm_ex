@@ -4,19 +4,21 @@ defmodule NPM.MiscTest do
   alias Mix.Tasks.Npm.Licenses
   import NPM.TestHelpers
 
+  alias NPM.Package.JSON
+
   describe "scoped package operations" do
     @tag :tmp_dir
     test "add and remove scoped dev dependency", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.Package.JSON.add_dep("@types/react", "^18.0", path, dev: true)
+      JSON.add_dep("@types/react", "^18.0", path, dev: true)
 
-      {:ok, %{dev_dependencies: dev_deps}} = NPM.Package.JSON.read_all(path)
+      {:ok, %{dev_dependencies: dev_deps}} = JSON.read_all(path)
       assert dev_deps["@types/react"] == "^18.0"
 
-      NPM.Package.JSON.remove_dep("@types/react", path)
+      JSON.remove_dep("@types/react", path)
 
-      {:ok, %{dev_dependencies: dev_deps2}} = NPM.Package.JSON.read_all(path)
+      {:ok, %{dev_dependencies: dev_deps2}} = JSON.read_all(path)
       assert dev_deps2 == %{}
     end
 
@@ -145,7 +147,7 @@ defmodule NPM.MiscTest do
 
       # Read both and check mismatch
       {:ok, lockfile_data} = NPM.Lockfile.read(lock_path)
-      {:ok, pkg_data} = NPM.Package.JSON.read_all(pkg_path)
+      {:ok, pkg_data} = JSON.read_all(pkg_path)
       _all_deps = pkg_data.dependencies
 
       # Express is in deps but not lockfile — should be a mismatch

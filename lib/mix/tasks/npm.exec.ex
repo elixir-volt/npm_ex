@@ -1,4 +1,7 @@
 defmodule Mix.Tasks.Npm.Exec do
+  alias NPM.Node.Exec
+  alias NPM.Node.Runner
+
   @shortdoc "Execute a package binary"
 
   @moduledoc """
@@ -16,7 +19,7 @@ defmodule Mix.Tasks.Npm.Exec do
   def run([command | args]) do
     Application.ensure_all_started(:req)
 
-    case NPM.Node.Exec.which(command, "node_modules") do
+    case Exec.which(command, "node_modules") do
       {:ok, bin_path} ->
         execute(bin_path, args)
 
@@ -45,7 +48,7 @@ defmodule Mix.Tasks.Npm.Exec do
 
   defp execute(bin_path, args) do
     {output, status} =
-      NPM.Node.Runner.run(Path.expand(bin_path), args,
+      Runner.run(Path.expand(bin_path), args,
         node_modules_dir: "node_modules",
         cd: File.cwd!()
       )

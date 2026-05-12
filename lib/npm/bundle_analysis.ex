@@ -1,4 +1,6 @@
 defmodule NPM.BundleAnalysis do
+  alias NPM.Package.Files
+
   @moduledoc """
   Analyzes package bundle-friendliness.
 
@@ -16,7 +18,7 @@ defmodule NPM.BundleAnalysis do
     points = if NPM.SideEffects.tree_shakeable?(data), do: points + 25, else: points
     points = if is_map(data["exports"]), do: points + 20, else: points
     points = if is_binary(data["module"]), do: points + 15, else: points
-    if NPM.Package.Files.has_whitelist?(data), do: points + 15, else: points
+    if Files.has_whitelist?(data), do: points + 15, else: points
   end
 
   @doc """

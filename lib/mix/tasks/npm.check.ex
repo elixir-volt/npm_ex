@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Npm.Check do
+  alias NPM.Package.JSON
+
   @shortdoc "Verify npm installation state"
 
   @moduledoc """
@@ -41,7 +43,7 @@ defmodule Mix.Tasks.Npm.Check do
 
   defp check_package_json do
     if File.exists?("package.json") do
-      case NPM.Package.JSON.read() do
+      case JSON.read() do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, "package.json is invalid: #{inspect(reason)}"}
       end

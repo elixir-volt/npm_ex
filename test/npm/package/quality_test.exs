@@ -1,6 +1,8 @@
 defmodule NPM.Package.QualityTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Package.Quality
+
   @high_quality %{
     "name" => "good-pkg",
     "version" => "1.0.0",
@@ -21,37 +23,37 @@ defmodule NPM.Package.QualityTest do
 
   describe "score" do
     test "high quality package scores well" do
-      score = NPM.Package.Quality.score(@high_quality)
+      score = Quality.score(@high_quality)
       assert score >= 90
     end
 
     test "minimal package scores low" do
-      score = NPM.Package.Quality.score(@minimal)
+      score = Quality.score(@minimal)
       assert score < 30
     end
   end
 
   describe "grade" do
     test "A grade" do
-      assert "A" = NPM.Package.Quality.grade(95)
+      assert "A" = Quality.grade(95)
     end
 
     test "B grade" do
-      assert "B" = NPM.Package.Quality.grade(80)
+      assert "B" = Quality.grade(80)
     end
 
     test "F grade" do
-      assert "F" = NPM.Package.Quality.grade(30)
+      assert "F" = Quality.grade(30)
     end
   end
 
   describe "missing_fields" do
     test "none for complete package" do
-      assert [] = NPM.Package.Quality.missing_fields(@high_quality)
+      assert [] = Quality.missing_fields(@high_quality)
     end
 
     test "many for minimal package" do
-      missing = NPM.Package.Quality.missing_fields(@minimal)
+      missing = Quality.missing_fields(@minimal)
       assert "description" in missing
       assert "license" in missing
       assert "repository" in missing
@@ -61,7 +63,7 @@ defmodule NPM.Package.QualityTest do
   describe "rank" do
     test "ranks by score descending" do
       packages = [{"minimal", @minimal}, {"good", @high_quality}]
-      ranked = NPM.Package.Quality.rank(packages)
+      ranked = Quality.rank(packages)
       assert hd(ranked) |> elem(0) == "good"
     end
   end
@@ -69,12 +71,12 @@ defmodule NPM.Package.QualityTest do
   describe "average" do
     test "computes average score" do
       packages = [{"good", @high_quality}, {"minimal", @minimal}]
-      avg = NPM.Package.Quality.average(packages)
+      avg = Quality.average(packages)
       assert avg > 0
     end
 
     test "zero for empty" do
-      assert 0.0 = NPM.Package.Quality.average([])
+      assert Quality.average([]) == 0.0
     end
   end
 end

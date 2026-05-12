@@ -1,4 +1,6 @@
 defmodule NPM.Install.ScriptRunner do
+  alias NPM.Install.Lifecycle
+
   @moduledoc """
   Analyzes and validates npm scripts from package.json.
   """
@@ -18,7 +20,7 @@ defmodule NPM.Install.ScriptRunner do
   @spec lifecycle(map()) :: map()
   def lifecycle(data) do
     scripts = extract(data)
-    Map.take(scripts, NPM.Install.Lifecycle.hook_names())
+    Map.take(scripts, Lifecycle.hook_names())
   end
 
   @doc """
@@ -27,7 +29,7 @@ defmodule NPM.Install.ScriptRunner do
   @spec custom(map()) :: map()
   def custom(data) do
     scripts = extract(data)
-    lifecycle_names = NPM.Install.Lifecycle.hook_names()
+    lifecycle_names = Lifecycle.hook_names()
     Map.reject(scripts, fn {k, _} -> k in lifecycle_names end)
   end
 

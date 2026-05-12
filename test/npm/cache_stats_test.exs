@@ -24,7 +24,7 @@ defmodule NPM.CacheStatsTest do
 
     test "0% for all misses" do
       lockfile = %{"nonexistent-pkg-xyz" => %{version: "99.99.99"}}
-      assert 0.0 = NPM.CacheStats.hit_rate(lockfile)
+      assert NPM.CacheStats.hit_rate(lockfile) == 0.0
     end
   end
 

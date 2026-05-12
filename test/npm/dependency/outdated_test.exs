@@ -1,6 +1,8 @@
 defmodule NPM.Dependency.OutdatedTest do
   use ExUnit.Case, async: true
 
+  alias NPM.Dependency.Outdated
+
   describe "check outdated packages" do
     test "detects major update" do
       lockfile = %{
@@ -10,7 +12,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"lodash" => "^3.0.0"}
       latest = %{"lodash" => "4.17.21"}
 
-      [entry] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      [entry] = Outdated.check(lockfile, deps, latest)
       assert entry.name == "lodash"
       assert entry.current == "3.10.1"
       assert entry.latest == "4.17.21"
@@ -25,7 +27,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"express" => "^4.0.0"}
       latest = %{"express" => "4.21.2"}
 
-      [entry] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      [entry] = Outdated.check(lockfile, deps, latest)
       assert entry.type == :minor
     end
 
@@ -37,7 +39,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"ms" => "^2.1.0"}
       latest = %{"ms" => "2.1.3"}
 
-      [entry] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      [entry] = Outdated.check(lockfile, deps, latest)
       assert entry.type == :patch
     end
 
@@ -49,7 +51,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"react" => "^18.0.0"}
       latest = %{"react" => "18.2.0"}
 
-      assert [] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      assert [] = Outdated.check(lockfile, deps, latest)
     end
 
     test "multiple packages" do
@@ -62,7 +64,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"a" => "^1.0.0", "b" => "^2.0.0", "c" => "^3.0.0"}
       latest = %{"a" => "2.0.0", "b" => "2.0.0", "c" => "4.0.0"}
 
-      entries = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      entries = Outdated.check(lockfile, deps, latest)
       names = Enum.map(entries, & &1.name)
       assert "a" in names
       assert "c" in names
@@ -74,7 +76,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"ghost" => "^1.0.0"}
       latest = %{"ghost" => "2.0.0"}
 
-      assert [] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      assert [] = Outdated.check(lockfile, deps, latest)
     end
   end
 
@@ -86,7 +88,7 @@ defmodule NPM.Dependency.OutdatedTest do
         %{name: "c", current: "1.0.0", wanted: "1.0.1", latest: "1.0.1", type: :patch}
       ]
 
-      major = NPM.Dependency.Outdated.filter_by_type(entries, :major)
+      major = Outdated.filter_by_type(entries, :major)
       assert length(major) == 1
       assert hd(major).name == "a"
     end
@@ -102,7 +104,7 @@ defmodule NPM.Dependency.OutdatedTest do
         type: :major
       }
 
-      formatted = NPM.Dependency.Outdated.format_entry(entry)
+      formatted = Outdated.format_entry(entry)
       assert formatted =~ "lodash"
       assert formatted =~ "3.10.1"
       assert formatted =~ "4.17.21"
@@ -119,7 +121,7 @@ defmodule NPM.Dependency.OutdatedTest do
         %{name: "d", current: "1.0.0", wanted: "1.0.1", latest: "1.0.1", type: :patch}
       ]
 
-      s = NPM.Dependency.Outdated.summary(entries)
+      s = Outdated.summary(entries)
       assert s.total == 4
       assert s.major == 2
       assert s.minor == 1
@@ -127,7 +129,7 @@ defmodule NPM.Dependency.OutdatedTest do
     end
 
     test "empty list" do
-      s = NPM.Dependency.Outdated.summary([])
+      s = Outdated.summary([])
       assert s.total == 0
       assert s.major == 0
     end
@@ -142,7 +144,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"@babel/core" => "^7.0.0"}
       latest = %{"@babel/core" => "7.24.5"}
 
-      [entry] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      [entry] = Outdated.check(lockfile, deps, latest)
       assert entry.name == "@babel/core"
       assert entry.type == :minor
     end
@@ -157,7 +159,7 @@ defmodule NPM.Dependency.OutdatedTest do
       deps = %{"internal-pkg" => "^1.0.0"}
       latest = %{}
 
-      assert [] = NPM.Dependency.Outdated.check(lockfile, deps, latest)
+      assert [] = Outdated.check(lockfile, deps, latest)
     end
   end
 
@@ -168,7 +170,7 @@ defmodule NPM.Dependency.OutdatedTest do
         %{name: "b", current: "1.0.0", wanted: "1.0.1", latest: "1.0.1", type: :patch}
       ]
 
-      minor = NPM.Dependency.Outdated.filter_by_type(entries, :minor)
+      minor = Outdated.filter_by_type(entries, :minor)
       assert length(minor) == 1
       assert hd(minor).name == "a"
     end
@@ -179,7 +181,7 @@ defmodule NPM.Dependency.OutdatedTest do
         %{name: "b", current: "1.0.0", wanted: "1.0.1", latest: "1.0.1", type: :patch}
       ]
 
-      patch = NPM.Dependency.Outdated.filter_by_type(entries, :patch)
+      patch = Outdated.filter_by_type(entries, :patch)
       assert length(patch) == 1
       assert hd(patch).name == "b"
     end

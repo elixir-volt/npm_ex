@@ -1,4 +1,9 @@
 defmodule NPM.Install.ScriptInstall do
+  alias NPM.Install.Linker
+  alias NPM.Install.LockfileBuilder
+  alias NPM.Security.Age
+  alias NPM.Security.ExoticDeps
+
   @moduledoc """
   Implements `NPM.install/2` for script-style usage outside Mix projects.
 
@@ -72,7 +77,7 @@ defmodule NPM.Install.ScriptInstall do
         {_nested, flat} = Map.pop(resolved, :nested, %{})
         lockfile = build_lockfile(flat)
         NPM.Lockfile.write(lockfile, lockfile_path)
-        NPM.Install.Linker.link(lockfile, nm_dir)
+        Linker.link(lockfile, nm_dir)
 
       {:error, message} ->
         Mix.raise("NPM.install/2 resolution failed:\n#{message}")
@@ -80,21 +85,7 @@ defmodule NPM.Install.ScriptInstall do
   end
 
   defp build_lockfile(resolved) do
-    for {name, version_str} <- resolved, into: %{} do
-      {:ok, packument} = NPM.Registry.get_packument(name)
-      info = Map.fetch!(packument.versions, version_str)
-      warn_age_heuristics(name, version_str, info)
-
-      {name,
-       %{
-         version: version_str,
-         integrity: info.dist.integrity,
-         tarball: info.dist.tarball,
-         dependencies: info.dependencies,
-         optional_dependencies: info.optional_dependencies,
-         has_install_script: info.has_install_script
-       }}
-    end
+    LockfileBuilder.build(resolved, &warn_age_heuristics/3)
   end
 
   defp lockfile_policy_current?(lockfile_path) do
@@ -106,9 +97,9 @@ defmodule NPM.Install.ScriptInstall do
 
   defp warn_age_heuristics(name, version, info) do
     info
-    |> NPM.Security.Age.warnings()
+    |> Age.warnings()
     |> Enum.each(fn warning ->
-      Mix.shell().info("Warning: #{NPM.Security.Age.format(name, version, warning)}")
+      Mix.shell().info("Warning: #{Age.format(name, version, warning)}")
     end)
   end
 
@@ -125,7 +116,7 @@ defmodule NPM.Install.ScriptInstall do
   end
 
   defp validate_direct_exotic_deps!(deps) do
-    Enum.each(deps, fn {name, spec} -> NPM.Security.ExoticDeps.validate_direct!(name, spec) end)
+    Enum.each(deps, fn {name, spec} -> ExoticDeps.validate_direct!(name, spec) end)
   end
 
   defp cache_id(deps) do

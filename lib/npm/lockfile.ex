@@ -6,6 +6,9 @@ defmodule NPM.Lockfile do
   relationships to ensure reproducible installs.
   """
 
+  alias NPM.Config
+  alias NPM.Security.RegistryPolicy
+
   @default_path "npm.lock"
 
   @type entry :: %{
@@ -62,10 +65,10 @@ defmodule NPM.Lockfile do
   @spec current_policy :: map()
   def current_policy do
     %{
-      "block_exotic_subdeps" => NPM.Config.block_exotic_subdeps?(),
-      "exotic_deps" => NPM.Config.exotic_deps(),
-      "allowed_registries" => NPM.Security.RegistryPolicy.allowed_origins(),
-      "allow_registry_redirects" => NPM.Config.allow_registry_redirects?()
+      "block_exotic_subdeps" => Config.block_exotic_subdeps?(),
+      "exotic_deps" => Config.exotic_deps(),
+      "allowed_registries" => RegistryPolicy.allowed_origins(),
+      "allow_registry_redirects" => Config.allow_registry_redirects?()
     }
   end
 
@@ -74,16 +77,16 @@ defmodule NPM.Lockfile do
   def policy_matches?(nil), do: false
 
   def policy_matches?(policy) when is_map(policy) do
-    policy["block_exotic_subdeps"] == NPM.Config.block_exotic_subdeps?() and
+    policy["block_exotic_subdeps"] == Config.block_exotic_subdeps?() and
       MapSet.subset?(
         MapSet.new(policy["exotic_deps"] || []),
-        MapSet.new(NPM.Config.exotic_deps())
+        MapSet.new(Config.exotic_deps())
       ) and
       MapSet.subset?(
         MapSet.new(policy["allowed_registries"] || []),
-        MapSet.new(NPM.Security.RegistryPolicy.allowed_origins())
+        MapSet.new(RegistryPolicy.allowed_origins())
       ) and
-      policy["allow_registry_redirects"] == NPM.Config.allow_registry_redirects?()
+      policy["allow_registry_redirects"] == Config.allow_registry_redirects?()
   end
 
   @doc "Parse a raw packages map into lockfile entries."

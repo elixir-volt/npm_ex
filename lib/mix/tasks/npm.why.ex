@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Npm.Why do
+  alias NPM.Package.JSON
+
   @shortdoc "Explain why a package is installed"
 
   @moduledoc """
@@ -16,7 +18,7 @@ defmodule Mix.Tasks.Npm.Why do
     Application.ensure_all_started(:req)
 
     with {:ok, lockfile} <- NPM.Lockfile.read(),
-         {:ok, deps} <- NPM.Package.JSON.read() do
+         {:ok, deps} <- JSON.read() do
       explain(name, lockfile, deps)
     end
   end
