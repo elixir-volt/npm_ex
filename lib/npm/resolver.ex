@@ -256,14 +256,23 @@ defmodule NPM.Resolver do
 
   defp parse_sorted_versions(packument) do
     packument.versions
-    |> Map.keys()
-    |> Enum.flat_map(fn v ->
+    |> Enum.reject(fn {version_str, info} ->
+      exotic_candidate?(packument.name, version_str, info)
+    end)
+    |> Enum.flat_map(fn {v, _info} ->
       case Version.parse(v) do
         {:ok, version} -> [version]
         :error -> []
       end
     end)
     |> Enum.sort(Version)
+  end
+
+  defp exotic_candidate?(package, version_str, info) do
+    ExoticDeps.validate!(package, version_str, info)
+    false
+  rescue
+    ExoticDeps.Error -> true
   end
 
   defp deps_for_version(package, packument, version_str) do

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+### Fixed
+
+- Skip package versions with blocked transitive exotic dependencies during dependency solving instead of aborting resolution before a safe version can be selected.
+
 ## 0.7.0
 
 ### Breaking changes
