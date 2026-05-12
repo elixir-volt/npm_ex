@@ -94,6 +94,98 @@ defmodule NPM.Dependency.Graph do
     end
   end
 
+  @doc """
+  Compute the transitive closure — all reachable packages from a root.
+  """
+  @spec transitive_deps(%{String.t() => [String.t()]}, String.t()) :: MapSet.t(String.t())
+  def transitive_deps(adj, root) do
+    walk(adj, [root], MapSet.new())
+  end
+
+  @doc """
+  Find the shortest path between two packages.
+  """
+  @spec shortest_path(%{String.t() => [String.t()]}, String.t(), String.t()) :: [String.t()] | nil
+  def shortest_path(adj, from, to) do
+    bfs(adj, [{[from]}], MapSet.new([from]), to)
+  end
+
+  @doc """
+  Compute the maximum dependency depth from a package.
+  """
+  @spec max_depth(%{String.t() => [String.t()]}, String.t()) :: non_neg_integer()
+  def max_depth(adj, root) do
+    depth(adj, root, MapSet.new())
+  end
+
+  @doc """
+  Compute impact score — how many packages transitively depend on a package.
+  """
+  @spec impact(%{String.t() => [String.t()]}, String.t()) :: non_neg_integer()
+  def impact(adj, package) do
+    reverse = reverse(adj)
+
+    if Map.has_key?(reverse, package) do
+      reverse |> transitive_deps(package) |> MapSet.size()
+    else
+      0
+    end
+  end
+
+  @doc """
+  Reverse the graph so all edges point from dependencies to dependents.
+  """
+  @spec reverse(%{String.t() => [String.t()]}) :: %{String.t() => [String.t()]}
+  def reverse(adj) do
+    base = Map.new(Map.keys(adj), &{&1, []})
+
+    Enum.reduce(adj, base, fn {name, deps}, acc ->
+      Enum.reduce(deps, acc, fn dep, inner ->
+        Map.update(inner, dep, [name], &[name | &1])
+      end)
+    end)
+  end
+
+  defp walk(_adj, [], visited), do: visited
+
+  defp walk(adj, [node | rest], visited) do
+    deps = Map.get(adj, node, [])
+    new_deps = Enum.reject(deps, &MapSet.member?(visited, &1))
+    walk(adj, new_deps ++ rest, MapSet.union(visited, MapSet.new(new_deps)))
+  end
+
+  defp bfs(_adj, [], _visited, _target), do: nil
+
+  defp bfs(adj, [{path} | rest], visited, target) do
+    current = hd(path)
+
+    if current == target do
+      Enum.reverse(path)
+    else
+      neighbors = Map.get(adj, current, [])
+
+      new_paths =
+        for neighbor <- neighbors, not MapSet.member?(visited, neighbor), do: {[neighbor | path]}
+
+      new_visited = MapSet.union(visited, MapSet.new(Enum.map(neighbors, & &1)))
+      bfs(adj, rest ++ new_paths, new_visited, target)
+    end
+  end
+
+  defp depth(adj, node, visited) do
+    if MapSet.member?(visited, node) do
+      0
+    else
+      deps = Map.get(adj, node, [])
+      new_visited = MapSet.put(visited, node)
+
+      case deps do
+        [] -> 0
+        _ -> 1 + (deps |> Enum.map(&depth(adj, &1, new_visited)) |> Enum.max())
+      end
+    end
+  end
+
   defp self_loop?(g, [v]) do
     Enum.any?(:digraph.out_edges(g, v), fn edge ->
       {_, ^v, ^v, _} = :digraph.edge(g, edge)

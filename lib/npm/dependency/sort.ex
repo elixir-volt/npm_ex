@@ -30,7 +30,7 @@ defmodule NPM.Dependency.Sort do
   """
   @spec parallel_levels(map()) :: [[String.t()]]
   def parallel_levels(adj) do
-    rev = NPM.Dependency.Graph.Ops.reverse_graph(adj)
+    rev = NPM.Dependency.Graph.reverse(adj)
     in_degree = compute_in_degree(rev)
     build_levels(rev, in_degree, [])
   end
