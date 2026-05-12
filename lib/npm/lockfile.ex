@@ -24,7 +24,7 @@ defmodule NPM.Lockfile do
   def read(path \\ @default_path) do
     case File.read(path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         lockfile = parse(Map.get(data, "packages", %{}))
         {:ok, lockfile}
 
@@ -66,7 +66,7 @@ defmodule NPM.Lockfile do
   def version(path \\ @default_path) do
     case File.read(path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         Map.get(data, "lockfileVersion")
 
       {:error, _} ->

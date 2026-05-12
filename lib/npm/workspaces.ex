@@ -76,7 +76,7 @@ defmodule NPM.Workspaces do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
 
         [
           %{

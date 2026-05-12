@@ -95,7 +95,7 @@ defmodule NPM.Rebuild do
 
     case File.read(pkg_json) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         scripts = data["scripts"] || %{}
         Map.has_key?(scripts, "install") or Map.has_key?(scripts, "postinstall")
 

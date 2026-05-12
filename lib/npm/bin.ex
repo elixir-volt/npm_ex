@@ -70,7 +70,7 @@ defmodule NPM.Bin do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         bins = extract(data)
         Enum.map(bins, fn {cmd, script} -> {cmd, Path.join([nm_dir, name, script])} end)
 

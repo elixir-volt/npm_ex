@@ -71,7 +71,7 @@ defmodule NPM.Monorepo do
   defp has_workspaces?(path) do
     case File.read(path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         is_list(data["workspaces"]) and data["workspaces"] != []
 
       _ ->

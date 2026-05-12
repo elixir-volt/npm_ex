@@ -61,7 +61,7 @@ defmodule Mix.Tasks.Npm.Licenses do
   defp read_license(path) do
     case File.read(path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         Map.get(data, "license")
 
       {:error, _} ->

@@ -88,7 +88,7 @@ defmodule NPM.Package.Fund do
 
     case File.read(pkg_json) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         extract(data)
 
       _ ->

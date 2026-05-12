@@ -8,6 +8,7 @@
 - Move supply-chain security helpers under `NPM.Security.*`
 - Move lockfile helper modules under `NPM.Lockfile.*`
 - Move package metadata helpers under `NPM.Package.*`
+- Route JSON decoding through `NPM.JSON` across library modules
 
 ## 0.6.1
 

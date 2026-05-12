@@ -106,7 +106,7 @@ defmodule NPM.Package.License do
 
     case File.read(pkg_json) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
 
         [
           %{

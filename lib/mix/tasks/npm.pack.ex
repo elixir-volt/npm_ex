@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Npm.Pack do
 
     case File.read("package.json") do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         pack(data)
 
       {:error, :enoent} ->

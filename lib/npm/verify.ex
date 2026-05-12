@@ -148,7 +148,7 @@ defmodule NPM.Verify do
 
   defp read_installed_version(pkg_dir) do
     case File.read(Path.join(pkg_dir, "package.json")) do
-      {:ok, content} -> :json.decode(content)["version"]
+      {:ok, content} -> NPM.JSON.decode!(content)["version"]
       _ -> nil
     end
   rescue

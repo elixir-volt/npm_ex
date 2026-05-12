@@ -84,7 +84,7 @@ defmodule NPM.Link do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         {:ok, data["name"] || Path.basename(dir)}
 
       {:error, reason} ->

@@ -20,7 +20,7 @@ defmodule NPM.Lockfile.Shrinkwrap do
 
     case File.read(lock_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         shrinkwrap = Map.put(data, "lockfileVersion", Map.get(data, "lockfileVersion", 3))
         File.write(shrink_path, :json.encode(shrinkwrap))
 
@@ -45,7 +45,7 @@ defmodule NPM.Lockfile.Shrinkwrap do
     path = Path.join(project_dir, @shrinkwrap_file)
 
     case File.read(path) do
-      {:ok, content} -> {:ok, :json.decode(content)}
+      {:ok, content} -> {:ok, NPM.JSON.decode!(content)}
       error -> error
     end
   end
@@ -88,8 +88,8 @@ defmodule NPM.Lockfile.Shrinkwrap do
 
     with {:ok, lock_content} <- File.read(lock_path),
          {:ok, shrink_content} <- File.read(shrink_path) do
-      lock_data = :json.decode(lock_content)
-      shrink_data = :json.decode(shrink_content)
+      lock_data = NPM.JSON.decode!(lock_content)
+      shrink_data = NPM.JSON.decode!(shrink_content)
 
       lock_packages = lock_data["packages"] || lock_data["dependencies"] || %{}
       shrink_packages = shrink_data["packages"] || shrink_data["dependencies"] || %{}

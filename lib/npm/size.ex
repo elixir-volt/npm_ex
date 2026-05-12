@@ -132,7 +132,7 @@ defmodule NPM.Size do
 
   defp read_version(dir) do
     case File.read(Path.join(dir, "package.json")) do
-      {:ok, content} -> :json.decode(content)["version"]
+      {:ok, content} -> NPM.JSON.decode!(content)["version"]
       _ -> nil
     end
   rescue

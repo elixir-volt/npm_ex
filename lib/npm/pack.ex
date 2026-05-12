@@ -18,7 +18,7 @@ defmodule NPM.Pack do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         files = resolve_files(data, project_dir)
         {:ok, Enum.sort(files)}
 

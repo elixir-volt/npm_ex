@@ -15,7 +15,7 @@ defmodule NPM.Scripts do
   def read(package_json_path) do
     case File.read(package_json_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         {:ok, data["scripts"] || %{}}
 
       error ->

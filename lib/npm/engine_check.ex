@@ -86,7 +86,7 @@ defmodule NPM.EngineCheck do
 
     case File.read(pkg_json) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
 
         case data["engines"] do
           engines when is_map(engines) and map_size(engines) > 0 -> [{full_name, engines}]

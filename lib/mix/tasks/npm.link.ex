@@ -34,7 +34,7 @@ defmodule Mix.Tasks.Npm.Link do
     end
 
     {:ok, content} = File.read(pkg_json)
-    data = :json.decode(content)
+    data = NPM.JSON.decode!(content)
     name = Map.get(data, "name")
 
     unless name do

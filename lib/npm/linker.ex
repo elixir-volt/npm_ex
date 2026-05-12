@@ -197,7 +197,7 @@ defmodule NPM.Linker do
 
     case File.read(pkg_json_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         pkg_dir = Path.join(node_modules_dir, name)
         parse_bin_field(data, pkg_dir)
 

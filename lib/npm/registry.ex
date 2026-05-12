@@ -97,7 +97,7 @@ defmodule NPM.Registry do
   @spec encode_package(String.t()) :: String.t()
   def encode_package(package), do: String.replace(package, "/", "%2f")
 
-  defp decode_body(body) when is_binary(body), do: :json.decode(body)
+  defp decode_body(body) when is_binary(body), do: NPM.JSON.decode!(body)
   defp decode_body(body) when is_map(body), do: body
 
   defp parse_packument(data) do

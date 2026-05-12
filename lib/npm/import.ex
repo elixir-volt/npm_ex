@@ -32,7 +32,7 @@ defmodule NPM.Import do
   def from_package_lock(path) do
     case File.read(path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         packages = extract_npm_lock_packages(data)
         {:ok, packages}
 

@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Npm.Publish do
     dry_run = Keyword.get(opts, :dry_run, false)
 
     with {:ok, content} <- File.read("package.json"),
-         data <- :json.decode(content),
+         data <- NPM.JSON.decode!(content),
          :ok <- validate_publish(data) do
       name = data["name"]
       version = data["version"]

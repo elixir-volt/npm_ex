@@ -84,7 +84,7 @@ defmodule NPM.TypesResolution do
     pkg_json = Path.join([nm_dir, name, "package.json"])
 
     case File.read(pkg_json) do
-      {:ok, content} -> has_bundled_types?(:json.decode(content))
+      {:ok, content} -> has_bundled_types?(NPM.JSON.decode!(content))
       _ -> false
     end
   rescue

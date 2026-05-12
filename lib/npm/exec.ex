@@ -91,7 +91,7 @@ defmodule NPM.Exec do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         resolve_bin(data, command, node_modules_dir)
 
       _ ->
@@ -128,7 +128,7 @@ defmodule NPM.Exec do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         if has_command?(data, command), do: pkg_name, else: nil
 
       _ ->
@@ -160,7 +160,7 @@ defmodule NPM.Exec do
 
     case File.read(pkg_path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         extract_bin_names(data)
 
       _ ->

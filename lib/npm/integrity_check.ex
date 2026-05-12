@@ -14,7 +14,7 @@ defmodule NPM.IntegrityCheck do
 
     case File.read(pkg_json_path) do
       {:ok, content} ->
-        installed = :json.decode(content)
+        installed = NPM.JSON.decode!(content)
         check_version(installed, entry)
 
       {:error, _} ->

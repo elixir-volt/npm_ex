@@ -38,7 +38,7 @@ defmodule Mix.Tasks.Npm.Diff do
   defp read_git_lockfile do
     case System.cmd("git", ["show", "HEAD:npm.lock"], stderr_to_stdout: true) do
       {content, 0} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         lockfile = NPM.Lockfile.parse_packages(Map.get(data, "packages", %{}))
         {:ok, lockfile}
 

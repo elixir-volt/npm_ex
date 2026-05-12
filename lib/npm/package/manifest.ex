@@ -36,7 +36,7 @@ defmodule NPM.Package.Manifest do
   """
   @spec from_json(String.t()) :: t()
   def from_json(json) do
-    data = :json.decode(json)
+    data = NPM.JSON.decode!(json)
 
     %{
       name: Map.get(data, "name"),

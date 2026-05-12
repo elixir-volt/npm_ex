@@ -387,7 +387,7 @@ defmodule NPM.Resolution.PackageResolver do
 
   defp read_package_json(path) do
     case File.read(path) do
-      {:ok, content} -> {:ok, :json.decode(content)}
+      {:ok, content} -> {:ok, NPM.JSON.decode!(content)}
       {:error, _} -> :error
     end
   end

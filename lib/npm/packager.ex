@@ -51,7 +51,7 @@ defmodule NPM.Packager do
 
     case File.read(path) do
       {:ok, content} ->
-        data = :json.decode(content)
+        data = NPM.JSON.decode!(content)
         Map.get(data, "files")
 
       {:error, _} ->

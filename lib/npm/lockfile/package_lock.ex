@@ -12,7 +12,7 @@ defmodule NPM.Lockfile.PackageLock do
   @spec read(String.t()) :: {:ok, map()} | {:error, term()}
   def read(path) do
     case File.read(path) do
-      {:ok, content} -> {:ok, :json.decode(content)}
+      {:ok, content} -> {:ok, NPM.JSON.decode!(content)}
       error -> error
     end
   rescue

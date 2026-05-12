@@ -114,7 +114,7 @@ defmodule NPM.Prune do
     pkg_json = Path.join(pkg_dir, "package.json")
 
     case File.read(pkg_json) do
-      {:ok, content} -> :json.decode(content)["version"]
+      {:ok, content} -> NPM.JSON.decode!(content)["version"]
       _ -> nil
     end
   rescue

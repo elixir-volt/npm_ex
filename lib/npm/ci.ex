@@ -23,7 +23,7 @@ defmodule NPM.CI do
 
     with {:pkg, {:ok, pkg_content}} <- {:pkg, File.read(pkg_path)},
          {:lock, {:ok, _lock_content}} <- {:lock, File.read(lock_path)} do
-      pkg_data = :json.decode(pkg_content)
+      pkg_data = NPM.JSON.decode!(pkg_content)
       deps = Map.merge(pkg_data["dependencies"] || %{}, pkg_data["devDependencies"] || %{})
       validate_deps(deps, lock_path)
     else

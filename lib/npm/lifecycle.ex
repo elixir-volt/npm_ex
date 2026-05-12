@@ -20,7 +20,7 @@ defmodule NPM.Lifecycle do
   def detect(package_json_path) do
     case File.read(package_json_path) do
       {:ok, content} ->
-        content |> :json.decode() |> Map.get("scripts", %{}) |> extract_hooks()
+        content |> NPM.JSON.decode!() |> Map.get("scripts", %{}) |> extract_hooks()
 
       {:error, _} ->
         []
