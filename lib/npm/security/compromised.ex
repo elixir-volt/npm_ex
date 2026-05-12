@@ -67,6 +67,17 @@ defmodule NPM.Security.Compromised do
     end)
   end
 
+  @doc "Convert a finding to a JSON-encodable map."
+  @spec finding_to_json(finding()) :: map()
+  def finding_to_json(finding) do
+    %{
+      "package" => finding.package,
+      "version" => finding.version,
+      "source" => Atom.to_string(finding.source),
+      "advisory" => finding.advisory
+    }
+  end
+
   defp check_source(lockfile, :local, opts) do
     path = Keyword.get(opts, :db_path, Config.compromised_db_path())
 
@@ -84,12 +95,17 @@ defmodule NPM.Security.Compromised do
   defp check_source(_lockfile, _source, _opts), do: []
 
   defp query_osv(lockfile, opts) do
-    Enum.flat_map(lockfile, fn {package, entry} ->
-      case OSV.query_package(package, entry_version(entry), opts) do
-        {:ok, advisories} -> match_advisories(%{package => entry}, advisories, :osv)
-        {:error, _reason} -> []
-      end
-    end)
+    packages = Enum.map(lockfile, fn {package, entry} -> {package, entry_version(entry)} end)
+
+    case OSV.query_packages(packages, opts) do
+      {:ok, advisories_by_package} ->
+        Enum.flat_map(lockfile, fn {package, entry} ->
+          match_advisories(%{package => entry}, Map.get(advisories_by_package, package, []), :osv)
+        end)
+
+      {:error, _reason} ->
+        []
+    end
   end
 
   defp normalize_database(%{"advisories" => advisories}) when is_list(advisories),

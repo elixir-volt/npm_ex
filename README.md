@@ -113,14 +113,18 @@ mix npm.config
 
 This blocks install-time credential stealers that rely on postinstall hooks reading files like `.env` and exfiltrating them during dependency installation.
 
-Known-malicious package checks can be run against OSV.dev for packages already recorded in `npm.lock`:
+Known-malicious package checks can be run through `mix npm.audit` against OSV.dev or a local OSV-format database for packages already recorded in `npm.lock`:
 
 ```sh
-mix npm.security.osv
-mix npm.security.osv --write priv/security/compromised_packages.json
+mix npm.audit --osv
+mix npm.audit --osv --lockfile npm.lock --format json
+mix npm.audit --osv --write priv/security/compromised_packages.json
+mix npm.audit --compromised --db priv/security/compromised_packages.json
 ```
 
-The optional `--write` flag stores matching malicious-package OSV advisories in a local database that `NPM.Security.Compromised` can use offline.
+The optional OSV `--write` flag stores matching malicious-package advisories in a local database that `mix npm.audit --compromised` and `NPM.Security.Compromised` can use offline. Compromised-package audit modes exit non-zero when matches are found unless the compromised-package policy is set to `warn` or `off`.
+
+OpenSSF/OSV is the default-compatible open data source because OpenSSF malicious-package reports are published in OSV format and available through OSV.dev. Socket, Snyk, and Phylum provide valuable proprietary intelligence or install-time firewall workflows; they fit best as external scanners/proxies or future optional integrations rather than default `npm_ex` install dependencies.
 
 ## Why `npm.lock` instead of `package-lock.json`?
 
@@ -158,6 +162,7 @@ Set environment variables to customize behavior:
 - `NPM_EX_VERSION_AGE_WARNING_DAYS` — warn for versions published more recently than this many days (default: `3`)
 - `NPM_EX_COMPROMISED_DB_PATH` — local OSV-format compromised-package database path
 - `NPM_EX_COMPROMISED_SOURCES` — comma-separated compromised-package sources (default: `local`; online OSV checks are explicit)
+- `NPM_EX_COMPROMISED_POLICY` — `error`, `warn`, or `off` for security task findings (default: `error`)
 
 Elixir application config is also supported:
 
@@ -175,7 +180,8 @@ config :npm,
   package_age_warning_days: 7,
   version_age_warning_days: 3,
   compromised_db_path: "priv/security/compromised_packages.json",
-  compromised_sources: [:local]
+  compromised_sources: [:local],
+  compromised_policy: :error
 ```
 
 ## License

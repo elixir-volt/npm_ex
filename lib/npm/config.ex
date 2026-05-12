@@ -122,6 +122,15 @@ defmodule NPM.Config do
     end
   end
 
+  @doc "Policy for compromised-package findings in security tasks."
+  @spec compromised_policy :: :error | :warn | :off
+  def compromised_policy do
+    case System.get_env("NPM_EX_COMPROMISED_POLICY") do
+      nil -> Application.get_env(:npm, :compromised_policy, :error)
+      value -> parse_compromised_policy(value)
+    end
+  end
+
   @doc """
   Read a value from `.npmrc` files.
 
@@ -209,6 +218,15 @@ defmodule NPM.Config do
   defp parse_compromised_source("local"), do: [:local]
   defp parse_compromised_source("osv"), do: [:osv]
   defp parse_compromised_source(_), do: []
+
+  defp parse_compromised_policy(value) when is_binary(value) do
+    case value |> String.trim() |> String.downcase() do
+      "error" -> :error
+      "warn" -> :warn
+      "off" -> :off
+      _ -> :error
+    end
+  end
 
   defp env_list(name) do
     case System.get_env(name) do

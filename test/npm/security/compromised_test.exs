@@ -71,11 +71,28 @@ defmodule NPM.Security.CompromisedTest do
     assert [] = Compromised.check_package("evil", "1.0.0", sources: [:osv])
   end
 
-  test "builds OSV npm query body" do
+  test "builds OSV npm query bodies" do
     assert OSV.query_body("@scope/pkg", "1.0.0") == %{
              "package" => %{"name" => "@scope/pkg", "ecosystem" => "npm"},
              "version" => "1.0.0"
            }
+
+    assert OSV.batch_body([{"evil", "1.0.0"}]) == %{
+             "queries" => [
+               %{"package" => %{"name" => "evil", "ecosystem" => "npm"}, "version" => "1.0.0"}
+             ]
+           }
+  end
+
+  test "converts findings to JSON maps" do
+    finding = %{
+      package: "evil",
+      version: "1.0.0",
+      source: :local,
+      advisory: @osv_advisory
+    }
+
+    assert Compromised.finding_to_json(finding)["source"] == "local"
   end
 
   test "identifies malicious OSV advisories" do

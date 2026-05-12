@@ -22,6 +22,10 @@ defmodule NPM.Lockfile do
 
   @type t :: %{String.t() => entry()}
 
+  @doc "Return the default npm_ex lockfile path."
+  @spec default_path :: String.t()
+  def default_path, do: @default_path
+
   @doc "Read the lockfile. Returns empty map if it doesn't exist."
   @spec read(String.t()) :: {:ok, t()} | {:error, term()}
   def read(path \\ @default_path) do

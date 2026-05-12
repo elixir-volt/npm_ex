@@ -81,6 +81,7 @@ defmodule NPM.ConfigTest do
       original_block = Application.get_env(:npm, :block_exotic_subdeps)
       original_compromised_db = Application.get_env(:npm, :compromised_db_path)
       original_compromised_sources = Application.get_env(:npm, :compromised_sources)
+      original_compromised_policy = Application.get_env(:npm, :compromised_policy)
 
       Application.put_env(:npm, :cache_dir, "/tmp/npm-cache")
       Application.put_env(:npm, :install_dir, "/tmp/npm-installs")
@@ -88,12 +89,14 @@ defmodule NPM.ConfigTest do
       Application.put_env(:npm, :block_exotic_subdeps, false)
       Application.put_env(:npm, :compromised_db_path, "/tmp/npm-compromised.json")
       Application.put_env(:npm, :compromised_sources, [:local, :osv])
+      Application.put_env(:npm, :compromised_policy, :warn)
 
       assert NPM.Config.cache_dir() == "/tmp/npm-cache"
       assert NPM.Config.install_dir("abc") == "/tmp/npm-installs/abc"
       assert NPM.Config.mirror_url() == "https://mirror.example"
       assert NPM.Config.compromised_db_path() == "/tmp/npm-compromised.json"
       assert NPM.Config.compromised_sources() == [:local, :osv]
+      assert NPM.Config.compromised_policy() == :warn
       refute NPM.Config.block_exotic_subdeps?()
 
       restore_app_config(:cache_dir, original_cache)
@@ -102,6 +105,7 @@ defmodule NPM.ConfigTest do
       restore_app_config(:block_exotic_subdeps, original_block)
       restore_app_config(:compromised_db_path, original_compromised_db)
       restore_app_config(:compromised_sources, original_compromised_sources)
+      restore_app_config(:compromised_policy, original_compromised_policy)
     end
   end
 

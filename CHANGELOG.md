@@ -16,7 +16,7 @@
 - Record dependency security policy in `npm.lock` and invalidate locks generated with weaker policy
 - Block direct exotic dependencies unless their exact specs are listed in `exotic_deps`
 - Warn when registry metadata shows newly created packages or freshly published versions
-- Add `NPM.Security.Compromised` and `mix npm.security.osv` for OSV-backed malicious package checks
+- Add `NPM.Security.Compromised` and `mix npm.audit --osv/--compromised` for OSV-backed malicious package checks
 
 ## 0.6.1
 
