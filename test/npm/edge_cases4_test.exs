@@ -35,7 +35,7 @@ defmodule NPM.EdgeCases4Test do
         "lodash" => %{version: "4.17.21", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert [] = NPM.LockfileCheck.mismatched(pkg, lockfile)
+      assert [] = NPM.Lockfile.Check.mismatched(pkg, lockfile)
       assert :exact = NPM.Dependency.Range.classify("4.17.21")
     end
   end

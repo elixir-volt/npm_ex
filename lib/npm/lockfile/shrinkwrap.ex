@@ -1,4 +1,4 @@
-defmodule NPM.Shrinkwrap do
+defmodule NPM.Lockfile.Shrinkwrap do
   @moduledoc """
   Implements npm shrinkwrap lockfile freezing.
 

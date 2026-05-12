@@ -1,4 +1,4 @@
-defmodule NPM.LockfileCheckTest do
+defmodule NPM.Lockfile.CheckTest do
   use ExUnit.Case, async: true
 
   @pkg %{
@@ -14,35 +14,35 @@ defmodule NPM.LockfileCheckTest do
 
   describe "missing" do
     test "no missing when all present" do
-      assert [] = NPM.LockfileCheck.missing(@pkg, @lockfile)
+      assert [] = NPM.Lockfile.Check.missing(@pkg, @lockfile)
     end
 
     test "detects missing packages" do
       lockfile = Map.delete(@lockfile, "jest")
-      assert ["jest"] = NPM.LockfileCheck.missing(@pkg, lockfile)
+      assert ["jest"] = NPM.Lockfile.Check.missing(@pkg, lockfile)
     end
 
     test "multiple missing" do
-      result = NPM.LockfileCheck.missing(@pkg, %{})
+      result = NPM.Lockfile.Check.missing(@pkg, %{})
       assert length(result) == 3
     end
   end
 
   describe "extraneous" do
     test "no extraneous when exact match" do
-      assert [] = NPM.LockfileCheck.extraneous(@pkg, @lockfile)
+      assert [] = NPM.Lockfile.Check.extraneous(@pkg, @lockfile)
     end
 
     test "detects extraneous packages" do
       lockfile = Map.put(@lockfile, "debug", %{version: "4.3.0"})
-      extra = NPM.LockfileCheck.extraneous(@pkg, lockfile)
+      extra = NPM.Lockfile.Check.extraneous(@pkg, lockfile)
       assert "debug" in extra
     end
   end
 
   describe "mismatched" do
     test "no mismatches when versions satisfy" do
-      assert [] = NPM.LockfileCheck.mismatched(@pkg, @lockfile)
+      assert [] = NPM.Lockfile.Check.mismatched(@pkg, @lockfile)
     end
 
     test "detects version mismatch" do
@@ -54,7 +54,7 @@ defmodule NPM.LockfileCheckTest do
           dependencies: %{}
         })
 
-      mismatched = NPM.LockfileCheck.mismatched(@pkg, lockfile)
+      mismatched = NPM.Lockfile.Check.mismatched(@pkg, lockfile)
       assert length(mismatched) == 1
       {name, range, version} = hd(mismatched)
       assert name == "lodash"
@@ -65,14 +65,14 @@ defmodule NPM.LockfileCheckTest do
 
   describe "check" do
     test "valid when consistent" do
-      result = NPM.LockfileCheck.check(@pkg, @lockfile)
+      result = NPM.Lockfile.Check.check(@pkg, @lockfile)
       assert result.valid
       assert result.missing == []
       assert result.mismatched == []
     end
 
     test "invalid when missing deps" do
-      result = NPM.LockfileCheck.check(@pkg, %{})
+      result = NPM.Lockfile.Check.check(@pkg, %{})
       refute result.valid
       assert length(result.missing) == 3
     end
@@ -81,12 +81,12 @@ defmodule NPM.LockfileCheckTest do
   describe "format_results" do
     test "consistent message" do
       assert "Lockfile is consistent." =
-               NPM.LockfileCheck.format_results(%{valid: true, extraneous: []})
+               NPM.Lockfile.Check.format_results(%{valid: true, extraneous: []})
     end
 
     test "extraneous only message" do
       result = %{valid: true, extraneous: ["debug"]}
-      assert NPM.LockfileCheck.format_results(result) =~ "1 extraneous"
+      assert NPM.Lockfile.Check.format_results(result) =~ "1 extraneous"
     end
 
     test "missing and mismatched" do
@@ -97,7 +97,7 @@ defmodule NPM.LockfileCheckTest do
         mismatched: [{"lodash", "^4.17.0", "3.10.0"}]
       }
 
-      formatted = NPM.LockfileCheck.format_results(result)
+      formatted = NPM.Lockfile.Check.format_results(result)
       assert formatted =~ "Missing: jest"
       assert formatted =~ "Mismatched: lodash"
     end

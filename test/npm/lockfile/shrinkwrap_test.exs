@@ -1,4 +1,4 @@
-defmodule NPM.ShrinkwrapTest do
+defmodule NPM.Lockfile.ShrinkwrapTest do
   use ExUnit.Case, async: true
 
   describe "create shrinkwrap" do
@@ -11,7 +11,7 @@ defmodule NPM.ShrinkwrapTest do
 
       File.write!(Path.join(dir, "package-lock.json"), :json.encode(lock_data))
 
-      assert :ok = NPM.Shrinkwrap.create(dir)
+      assert :ok = NPM.Lockfile.Shrinkwrap.create(dir)
       assert File.exists?(Path.join(dir, "npm-shrinkwrap.json"))
     end
 
@@ -20,14 +20,14 @@ defmodule NPM.ShrinkwrapTest do
       lock_data = %{"lockfileVersion" => 2, "packages" => %{}}
       File.write!(Path.join(dir, "package-lock.json"), :json.encode(lock_data))
 
-      :ok = NPM.Shrinkwrap.create(dir)
-      {:ok, shrink} = NPM.Shrinkwrap.read(dir)
+      :ok = NPM.Lockfile.Shrinkwrap.create(dir)
+      {:ok, shrink} = NPM.Lockfile.Shrinkwrap.read(dir)
       assert shrink["lockfileVersion"] == 2
     end
 
     @tag :tmp_dir
     test "returns error when no lockfile", %{tmp_dir: dir} do
-      assert {:error, {:no_lockfile, _}} = NPM.Shrinkwrap.create(dir)
+      assert {:error, {:no_lockfile, _}} = NPM.Lockfile.Shrinkwrap.create(dir)
     end
   end
 
@@ -35,12 +35,12 @@ defmodule NPM.ShrinkwrapTest do
     @tag :tmp_dir
     test "true when shrinkwrap exists", %{tmp_dir: dir} do
       File.write!(Path.join(dir, "npm-shrinkwrap.json"), "{}")
-      assert NPM.Shrinkwrap.exists?(dir)
+      assert NPM.Lockfile.Shrinkwrap.exists?(dir)
     end
 
     @tag :tmp_dir
     test "false when no shrinkwrap", %{tmp_dir: dir} do
-      refute NPM.Shrinkwrap.exists?(dir)
+      refute NPM.Lockfile.Shrinkwrap.exists?(dir)
     end
   end
 
@@ -50,13 +50,13 @@ defmodule NPM.ShrinkwrapTest do
       data = %{"lockfileVersion" => 3, "packages" => %{"react" => %{"version" => "18.2.0"}}}
       File.write!(Path.join(dir, "npm-shrinkwrap.json"), :json.encode(data))
 
-      {:ok, parsed} = NPM.Shrinkwrap.read(dir)
+      {:ok, parsed} = NPM.Lockfile.Shrinkwrap.read(dir)
       assert parsed["lockfileVersion"] == 3
     end
 
     @tag :tmp_dir
     test "returns error for missing file", %{tmp_dir: dir} do
-      assert {:error, :enoent} = NPM.Shrinkwrap.read(dir)
+      assert {:error, :enoent} = NPM.Lockfile.Shrinkwrap.read(dir)
     end
   end
 
@@ -69,14 +69,14 @@ defmodule NPM.ShrinkwrapTest do
         "react" => %{version: "18.2.0"}
       }
 
-      assert [] = NPM.Shrinkwrap.verify(shrinkwrap, installed)
+      assert [] = NPM.Lockfile.Shrinkwrap.verify(shrinkwrap, installed)
     end
 
     test "detects missing packages" do
       shrinkwrap = %{"lodash" => "4.17.21"}
       installed = %{}
 
-      [mismatch] = NPM.Shrinkwrap.verify(shrinkwrap, installed)
+      [mismatch] = NPM.Lockfile.Shrinkwrap.verify(shrinkwrap, installed)
       assert mismatch.name == "lodash"
       assert mismatch.type == :missing
       assert mismatch.actual == nil
@@ -86,7 +86,7 @@ defmodule NPM.ShrinkwrapTest do
       shrinkwrap = %{"lodash" => "4.17.21"}
       installed = %{"lodash" => %{version: "4.17.20"}}
 
-      [mismatch] = NPM.Shrinkwrap.verify(shrinkwrap, installed)
+      [mismatch] = NPM.Lockfile.Shrinkwrap.verify(shrinkwrap, installed)
       assert mismatch.type == :version_mismatch
       assert mismatch.expected == "4.17.21"
       assert mismatch.actual == "4.17.20"
@@ -96,7 +96,7 @@ defmodule NPM.ShrinkwrapTest do
       shrinkwrap = %{"z-pkg" => "1.0.0", "a-pkg" => "2.0.0"}
       installed = %{}
 
-      mismatches = NPM.Shrinkwrap.verify(shrinkwrap, installed)
+      mismatches = NPM.Lockfile.Shrinkwrap.verify(shrinkwrap, installed)
       names = Enum.map(mismatches, & &1.name)
       assert names == Enum.sort(names)
     end
@@ -110,7 +110,7 @@ defmodule NPM.ShrinkwrapTest do
       File.write!(Path.join(dir, "package-lock.json"), json)
       File.write!(Path.join(dir, "npm-shrinkwrap.json"), json)
 
-      refute NPM.Shrinkwrap.outdated?(dir)
+      refute NPM.Lockfile.Shrinkwrap.outdated?(dir)
     end
 
     @tag :tmp_dir
@@ -120,12 +120,12 @@ defmodule NPM.ShrinkwrapTest do
       File.write!(Path.join(dir, "package-lock.json"), :json.encode(lock))
       File.write!(Path.join(dir, "npm-shrinkwrap.json"), :json.encode(shrink))
 
-      assert NPM.Shrinkwrap.outdated?(dir)
+      assert NPM.Lockfile.Shrinkwrap.outdated?(dir)
     end
 
     @tag :tmp_dir
     test "true when files missing", %{tmp_dir: dir} do
-      assert NPM.Shrinkwrap.outdated?(dir)
+      assert NPM.Lockfile.Shrinkwrap.outdated?(dir)
     end
   end
 
@@ -134,13 +134,13 @@ defmodule NPM.ShrinkwrapTest do
     test "removes shrinkwrap file", %{tmp_dir: dir} do
       path = Path.join(dir, "npm-shrinkwrap.json")
       File.write!(path, "{}")
-      assert :ok = NPM.Shrinkwrap.remove(dir)
+      assert :ok = NPM.Lockfile.Shrinkwrap.remove(dir)
       refute File.exists?(path)
     end
 
     @tag :tmp_dir
     test "ok when file doesn't exist", %{tmp_dir: dir} do
-      assert :ok = NPM.Shrinkwrap.remove(dir)
+      assert :ok = NPM.Lockfile.Shrinkwrap.remove(dir)
     end
   end
 
@@ -156,8 +156,8 @@ defmodule NPM.ShrinkwrapTest do
       }
 
       File.write!(Path.join(dir, "package-lock.json"), :json.encode(lock_data))
-      :ok = NPM.Shrinkwrap.create(dir)
-      {:ok, shrink} = NPM.Shrinkwrap.read(dir)
+      :ok = NPM.Lockfile.Shrinkwrap.create(dir)
+      {:ok, shrink} = NPM.Lockfile.Shrinkwrap.read(dir)
       assert shrink["packages"]["react"]["version"] == "18.2.0"
       assert shrink["packages"]["lodash"]["version"] == "4.17.21"
     end
@@ -168,7 +168,7 @@ defmodule NPM.ShrinkwrapTest do
       shrinkwrap = %{"a" => "1.0.0", "b" => "2.0.0"}
       installed = %{"a" => %{version: "1.0.1"}}
 
-      mismatches = NPM.Shrinkwrap.verify(shrinkwrap, installed)
+      mismatches = NPM.Lockfile.Shrinkwrap.verify(shrinkwrap, installed)
       types = Map.new(mismatches, &{&1.name, &1.type})
       assert types["a"] == :version_mismatch
       assert types["b"] == :missing

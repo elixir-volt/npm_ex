@@ -1,4 +1,4 @@
-defmodule NPM.LockfileStats do
+defmodule NPM.Lockfile.Stats do
   @moduledoc """
   Computes statistics about the lockfile itself.
   """

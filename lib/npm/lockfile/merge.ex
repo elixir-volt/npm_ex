@@ -1,4 +1,4 @@
-defmodule NPM.LockMerge do
+defmodule NPM.Lockfile.Merge do
   @moduledoc """
   Merge two lockfiles, preferring entries from the newer lockfile.
 

@@ -1,4 +1,4 @@
-defmodule NPM.LockfileCheck do
+defmodule NPM.Lockfile.Check do
   @moduledoc """
   Validates lockfile consistency against package.json dependencies.
   """

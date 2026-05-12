@@ -39,7 +39,7 @@ defmodule NPM.Milestone2500Test do
         "b" => %{version: "2.0", integrity: "sha512-y", dependencies: %{}}
       }
 
-      stats = NPM.LockfileStats.content_stats(lockfile)
+      stats = NPM.Lockfile.Stats.content_stats(lockfile)
       report = NPM.Report.dependency_summary(lockfile)
       assert stats.total_packages == report.total
     end

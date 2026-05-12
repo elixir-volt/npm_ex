@@ -65,15 +65,15 @@ defmodule NPM.EdgeCases2Test do
 
   describe "PackageLock edge cases" do
     test "version 2 detected" do
-      assert 2 = NPM.PackageLock.version(%{"lockfileVersion" => 2})
+      assert 2 = NPM.Lockfile.PackageLock.version(%{"lockfileVersion" => 2})
     end
 
     test "invalid version number" do
-      assert nil == NPM.PackageLock.version(%{"lockfileVersion" => 99})
+      assert nil == NPM.Lockfile.PackageLock.version(%{"lockfileVersion" => 99})
     end
 
     test "requires_npm7 for v2" do
-      assert NPM.PackageLock.requires_npm7?(%{"lockfileVersion" => 2})
+      assert NPM.Lockfile.PackageLock.requires_npm7?(%{"lockfileVersion" => 2})
     end
   end
 

@@ -126,7 +126,7 @@ defmodule NPM.EdgeCases5Test do
   describe "LockfileCheck edge cases" do
     test "format_results missing only" do
       result = %{valid: false, missing: ["a", "b"], extraneous: [], mismatched: []}
-      formatted = NPM.LockfileCheck.format_results(result)
+      formatted = NPM.Lockfile.Check.format_results(result)
       assert formatted =~ "Missing: a, b"
     end
   end

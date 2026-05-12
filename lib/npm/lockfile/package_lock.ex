@@ -1,4 +1,4 @@
-defmodule NPM.PackageLock do
+defmodule NPM.Lockfile.PackageLock do
   @moduledoc """
   Reads and analyzes npm's package-lock.json format.
 

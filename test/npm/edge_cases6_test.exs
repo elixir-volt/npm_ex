@@ -12,7 +12,7 @@ defmodule NPM.EdgeCases6Test do
   describe "Migration + PackageLock" do
     test "lockfile v3 needs npm 9+" do
       assert 3 = NPM.Migration.lockfile_version("9.0.0")
-      assert NPM.PackageLock.requires_npm7?(%{"lockfileVersion" => 3})
+      assert NPM.Lockfile.PackageLock.requires_npm7?(%{"lockfileVersion" => 3})
     end
   end
 
@@ -44,7 +44,7 @@ defmodule NPM.EdgeCases6Test do
         "b" => %{version: "2.0"}
       }
 
-      stats = NPM.LockfileStats.content_stats(lockfile)
+      stats = NPM.Lockfile.Stats.content_stats(lockfile)
       assert stats.with_integrity == 1
 
       chain =
