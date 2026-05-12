@@ -57,14 +57,68 @@ defmodule NPM.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w[lib priv mix.exs README.md LICENSE CHANGELOG.md]
+      files: ~w[lib priv guides mix.exs README.md LICENSE CHANGELOG.md]
     ]
   end
 
   defp docs do
     [
-      main: "NPM",
-      extras: ["README.md", "CHANGELOG.md"],
+      main: "readme",
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "guides/introduction/getting-started.md",
+        "guides/introduction/why-npm-ex.md",
+        "guides/workflows/dependencies.md",
+        "guides/workflows/ci.md",
+        "guides/workflows/runtime-install.md",
+        "guides/security/supply-chain-safety.md",
+        "guides/security/malicious-package-audits.md",
+        "guides/reference/configuration.md",
+        "guides/reference/mix-tasks.md",
+        "guides/cheatsheets/cli.cheatmd",
+        "guides/cheatsheets/configuration.cheatmd"
+      ],
+      groups_for_extras: [
+        Introduction: ~r/guides\/introduction\//,
+        Workflows: ~r/guides\/workflows\//,
+        Security: ~r/guides\/security\//,
+        Reference: ~r/guides\/reference\//,
+        Cheatsheets: ~r/guides\/cheatsheets\//
+      ],
+      groups_for_modules: [
+        Core: [NPM, NPM.Config, NPM.Cache, NPM.Lockfile],
+        "Package Metadata": [NPM.Package.JSON, NPM.Package.Manifest, NPM.Package.Spec],
+        Dependencies: [
+          NPM.Dependency.Graph,
+          NPM.Dependency.Dedupe,
+          NPM.Dependency.Outdated,
+          NPM.Dependency.Peer
+        ],
+        Install: [NPM.Install.Linker, NPM.Install.Lifecycle, NPM.Install.ScriptInstall],
+        Security: [
+          NPM.Security.Audit,
+          NPM.Security.Compromised,
+          NPM.Security.ExoticDeps,
+          NPM.Security.RegistryPolicy
+        ],
+        Registry: [
+          NPM.Registry,
+          NPM.Registry.URL,
+          NPM.Registry.Mirror,
+          NPM.Registry.Scope,
+          NPM.Registry.Token
+        ],
+        Node: [NPM.Node.Exec, NPM.Node.Runner, NPM.Node.Bin, NPM.Node.BinResolver],
+        Diagnostics: [NPM.Diagnostics, NPM.Diagnostics.Doctor, NPM.Diagnostics.Health],
+        "Mix Tasks": [
+          Mix.Tasks.Npm.Install,
+          Mix.Tasks.Npm.Ci,
+          Mix.Tasks.Npm.Audit,
+          Mix.Tasks.Npm.Verify,
+          Mix.Tasks.Npm.Exec
+        ]
+      ],
       source_ref: "v#{@version}"
     ]
   end
