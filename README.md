@@ -117,6 +117,17 @@ This blocks install-time credential stealers that rely on postinstall hooks read
 
 `npm_ex` is not npm, so it keeps its own lockfile. `package.json` is the shared manifest; `npm.lock` is the reproducibility file for the `npm_ex` installer.
 
+## Module organization
+
+The main public API is `NPM`. Supporting APIs are grouped by domain:
+
+- `NPM.Package.*` — package.json, manifests, package metadata, repository, license, funding, and quality helpers
+- `NPM.Dependency.*` — dependency graphs, ranges, conflicts, peers, outdated checks, dedupe, and usage checks
+- `NPM.Lockfile.*` — lockfile validation, stats, merge, package-lock, and shrinkwrap helpers
+- `NPM.Security.*` — audit, CVE, provenance, supply-chain, and exotic dependency policy helpers
+- `NPM.Diagnostics.*` — project diagnostics, doctor, environment, engine, and health checks
+- `NPM.NodeModules.*` — node_modules path helpers
+
 ## Configuration
 
 Set environment variables to customize behavior:
