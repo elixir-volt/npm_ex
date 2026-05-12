@@ -11,7 +11,7 @@ Resolve, fetch, cache, and link npm packages directly from Mix.
 
 ```elixir
 def deps do
-  [{:npm, "~> 0.4.0"}]
+  [{:npm, "~> 0.6.1"}]
 end
 ```
 
@@ -106,6 +106,12 @@ mix npm.config
 8. Locks versions in `npm.lock` for reproducible installs
 9. Warns about unmet peer dependencies and deprecated packages
 10. Retries failed downloads with exponential backoff
+
+## Supply-chain safety
+
+`npm_ex` does not run package lifecycle hooks automatically. Packages with `preinstall`, `install`, `postinstall`, or `prepare` scripts are still installed, but their hooks are ignored and reported as warnings. Tarball paths are also validated before extraction so package contents cannot escape the cache directory.
+
+This blocks install-time credential stealers that rely on postinstall hooks reading files like `.env` and exfiltrating them during dependency installation.
 
 ## Why `npm.lock` instead of `package-lock.json`?
 

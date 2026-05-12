@@ -28,6 +28,26 @@ defmodule NPM.LockfileTest do
       assert read_back["lodash"].integrity == "sha512-abc123=="
       assert read_back["lodash"].tarball =~ "lodash-4.17.21.tgz"
       assert read_back["lodash"].dependencies == %{}
+      assert read_back["lodash"].has_install_script == false
+    end
+
+    @tag :tmp_dir
+    test "preserves install script metadata", %{tmp_dir: dir} do
+      path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "native-pkg" => %{
+          version: "1.0.0",
+          integrity: "sha512-abc==",
+          tarball: "https://registry.npmjs.org/native-pkg/-/native-pkg-1.0.0.tgz",
+          dependencies: %{},
+          has_install_script: true
+        }
+      }
+
+      assert :ok = NPM.Lockfile.write(lockfile, path)
+      assert {:ok, read_back} = NPM.Lockfile.read(path)
+      assert read_back["native-pkg"].has_install_script == true
     end
 
     @tag :tmp_dir

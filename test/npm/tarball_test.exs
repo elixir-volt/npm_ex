@@ -85,6 +85,22 @@ defmodule NPM.TarballTest do
       assert {:ok, 1} = NPM.Tarball.extract(tgz, dir)
       assert File.read!(Path.join(dir, "index.js")) == "no prefix"
     end
+
+    @tag :tmp_dir
+    test "rejects paths escaping the destination", %{tmp_dir: dir} do
+      tgz = create_test_tgz(%{"package/../evil.txt" => "owned"})
+
+      assert {:error, {:unsafe_path, "package/../evil.txt"}} = NPM.Tarball.extract(tgz, dir)
+      refute File.exists?(Path.join(Path.dirname(dir), "evil.txt"))
+    end
+
+    @tag :tmp_dir
+    test "rejects absolute paths", %{tmp_dir: dir} do
+      tgz = create_test_tgz(%{"/tmp/npm-ex-evil.txt" => "owned"})
+
+      assert {:error, {:unsafe_path, "/tmp/npm-ex-evil.txt"}} = NPM.Tarball.extract(tgz, dir)
+      refute File.exists?("/tmp/npm-ex-evil.txt")
+    end
   end
 
   describe "Tarball.extract edge cases" do

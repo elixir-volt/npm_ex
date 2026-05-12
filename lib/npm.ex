@@ -318,6 +318,7 @@ defmodule NPM do
       :ok ->
         ms = div(link_us, 1000)
         Mix.shell().info(NPM.DepsOutput.format_summary(map_size(lockfile), ms))
+        warn_ignored_install_scripts(lockfile)
         Mix.shell().info(NPM.DepsOutput.format_lockfile(lockfile))
         :ok
 
@@ -338,7 +339,8 @@ defmodule NPM do
            integrity: info.dist.integrity,
            tarball: info.dist.tarball,
            dependencies: info.dependencies,
-           optional_dependencies: info.optional_dependencies
+           optional_dependencies: info.optional_dependencies,
+           has_install_script: info.has_install_script
          }}
       end
 
@@ -364,7 +366,8 @@ defmodule NPM do
           integrity: info.dist.integrity,
           tarball: info.dist.tarball,
           dependencies: info.dependencies,
-          optional_dependencies: Map.get(info, :optional_dependencies, %{})
+          optional_dependencies: Map.get(info, :optional_dependencies, %{}),
+          has_install_script: Map.get(info, :has_install_script, false)
         })
 
       :error ->
@@ -402,6 +405,20 @@ defmodule NPM do
           :ok
       end
     end)
+  end
+
+  defp warn_ignored_install_scripts(lockfile) do
+    packages =
+      lockfile
+      |> Enum.filter(fn {_name, entry} -> Map.get(entry, :has_install_script, false) end)
+      |> Enum.map_join(", ", fn {name, entry} -> "#{name}@#{entry.version}" end)
+
+    if packages != "" do
+      Mix.shell().info(
+        "npm WARN ignored lifecycle scripts for #{packages}. " <>
+          "npm_ex never runs preinstall/install/postinstall hooks automatically."
+      )
+    end
   end
 
   defp check_deprecated(name, version, info) do

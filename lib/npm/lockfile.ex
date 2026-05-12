@@ -13,7 +13,8 @@ defmodule NPM.Lockfile do
           integrity: String.t(),
           tarball: String.t(),
           dependencies: %{String.t() => String.t()},
-          optional_dependencies: %{String.t() => String.t()}
+          optional_dependencies: %{String.t() => String.t()},
+          has_install_script: boolean()
         }
 
   @type t :: %{String.t() => entry()}
@@ -54,7 +55,8 @@ defmodule NPM.Lockfile do
          integrity: Map.get(info, "integrity", ""),
          tarball: Map.get(info, "tarball", ""),
          dependencies: Map.get(info, "dependencies", %{}),
-         optional_dependencies: Map.get(info, "optional_dependencies", %{})
+         optional_dependencies: Map.get(info, "optional_dependencies", %{}),
+         has_install_script: Map.get(info, "has_install_script", false)
        }}
     end
   end
@@ -109,7 +111,8 @@ defmodule NPM.Lockfile do
          "integrity" => entry.integrity,
          "tarball" => entry.tarball,
          "dependencies" => entry.dependencies,
-         "optional_dependencies" => Map.get(entry, :optional_dependencies, %{})
+         "optional_dependencies" => Map.get(entry, :optional_dependencies, %{}),
+         "has_install_script" => Map.get(entry, :has_install_script, false)
        }}
     end
   end

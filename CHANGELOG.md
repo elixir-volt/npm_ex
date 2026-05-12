@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1
+
+- Harden tarball extraction against path traversal and absolute-path entries
+- Preserve install-script metadata in `npm.lock`
+- Warn when dependencies declare ignored lifecycle scripts
+- Document that `npm_ex` does not run package lifecycle hooks automatically, mitigating install-time credential stealers
+
 ## 0.6.0
 
 - Move resolution modules under `NPM.Resolution`: `PackageResolver`, `Exports`, and `Conditional`

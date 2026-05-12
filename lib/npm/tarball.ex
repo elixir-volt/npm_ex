@@ -60,18 +60,56 @@ defmodule NPM.Tarball do
 
     case :erl_tar.extract({:binary, tgz_data}, [:compressed, :memory]) do
       {:ok, entries} ->
-        Enum.each(entries, &write_entry(&1, dest_dir))
-        {:ok, length(entries)}
+        with {:ok, files} <- safe_entries(entries, dest_dir) do
+          Enum.each(files, &write_entry/1)
+          {:ok, length(files)}
+        end
 
       {:error, reason} ->
         {:error, {:extract, reason}}
     end
   end
 
-  defp write_entry({path, content}, dest_dir) do
-    rel_path = strip_prefix(to_string(path))
-    full_path = Path.join(dest_dir, rel_path)
+  defp safe_entries(entries, dest_dir) do
+    Enum.reduce_while(entries, {:ok, []}, fn {path, content}, {:ok, acc} ->
+      original_path = to_string(path)
+      rel_path = strip_prefix(original_path)
 
+      case safe_path(dest_dir, rel_path) do
+        {:ok, full_path} -> {:cont, {:ok, [{full_path, content} | acc]}}
+        {:error, reason} -> {:halt, {:error, {reason, original_path}}}
+      end
+    end)
+    |> case do
+      {:ok, files} -> {:ok, Enum.reverse(files)}
+      error -> error
+    end
+  end
+
+  defp safe_path(dest_dir, rel_path) do
+    dest = Path.expand(dest_dir)
+    full_path = Path.expand(rel_path, dest)
+
+    cond do
+      rel_path in ["", "."] ->
+        {:error, :unsafe_path}
+
+      unsafe_segments?(Path.split(rel_path)) ->
+        {:error, :unsafe_path}
+
+      not inside_dir?(full_path, dest) ->
+        {:error, :unsafe_path}
+
+      true ->
+        {:ok, full_path}
+    end
+  end
+
+  defp unsafe_segments?(segments), do: Enum.any?(segments, &(&1 in ["..", ""]))
+
+  defp inside_dir?(path, dir), do: path == dir or String.starts_with?(path, dir <> "/")
+
+  defp write_entry({full_path, content}) do
     full_path |> Path.dirname() |> File.mkdir_p!()
     File.write!(full_path, content)
   end

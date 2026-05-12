@@ -78,7 +78,8 @@ defmodule NPM.ScriptInstall do
          integrity: info.dist.integrity,
          tarball: info.dist.tarball,
          dependencies: info.dependencies,
-         optional_dependencies: info.optional_dependencies
+         optional_dependencies: info.optional_dependencies,
+         has_install_script: info.has_install_script
        }}
     end
   end
