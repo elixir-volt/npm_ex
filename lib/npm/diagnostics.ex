@@ -83,14 +83,14 @@ defmodule NPM.Diagnostics do
   defp check_npmrc(issues, dir) do
     npmrc_path = Path.join(dir, ".npmrc")
 
-    case File.exists?(npmrc_path) && NPM.Npmrc.read(npmrc_path) do
+    case File.exists?(npmrc_path) && NPM.Config.Npmrc.read(npmrc_path) do
       {:ok, config} -> check_npmrc_auth(issues, config)
       _ -> issues
     end
   end
 
   defp check_npmrc_auth(issues, config) do
-    if NPM.Npmrc.has_auth?(config) do
+    if NPM.Config.Npmrc.has_auth?(config) do
       [
         %{
           level: :warning,

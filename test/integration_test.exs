@@ -163,7 +163,7 @@ defmodule NPM.IntegrationTest do
       assert read_lock["is-number"].version =~ ~r/^7\./
 
       # Link to node_modules
-      assert :ok = NPM.Linker.link(lockfile, nm_dir)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir)
 
       # Verify cache populated
       assert NPM.Cache.cached?("is-number", lockfile["is-number"].version)
@@ -206,11 +206,11 @@ defmodule NPM.IntegrationTest do
         end
 
       # First install populates cache
-      assert :ok = NPM.Linker.link(lockfile, nm1)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm1)
       assert File.exists?(Path.join([nm1, "is-number", "package.json"]))
 
       # Second install reuses cache (would fail if HTTP is required)
-      assert :ok = NPM.Linker.link(lockfile, nm2)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm2)
       assert File.exists?(Path.join([nm2, "is-number", "package.json"]))
 
       System.delete_env("NPM_EX_CACHE_DIR")
@@ -239,7 +239,7 @@ defmodule NPM.IntegrationTest do
            }}
         end
 
-      assert :ok = NPM.Linker.link(lockfile, nm_dir)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir)
 
       # All resolved packages should be in node_modules
       for {name, _version} <- resolved do
@@ -414,7 +414,7 @@ defmodule NPM.IntegrationTest do
       {:ok, resolved} = NPM.Resolver.resolve(%{"is-number" => "7.0.0"})
 
       lockfile = build_lockfile(resolved)
-      assert :ok = NPM.Linker.link(lockfile, nm_dir)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir)
 
       # is-number doesn't have bin, but verify structure is correct
       assert File.exists?(Path.join([nm_dir, "is-number", "package.json"]))
@@ -680,8 +680,8 @@ defmodule NPM.IntegrationTest do
       {:ok, restored} = NPM.Lockfile.read(lock_path)
 
       # Both original and restored produce identical node_modules
-      assert :ok = NPM.Linker.link(lockfile, nm1)
-      assert :ok = NPM.Linker.link(restored, nm2)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm1)
+      assert :ok = NPM.Install.Linker.link(restored, nm2)
 
       for {name, _} <- resolved do
         pkg1 = Path.join([nm1, name, "package.json"]) |> File.read!()
@@ -704,7 +704,7 @@ defmodule NPM.IntegrationTest do
       {:ok, resolved} = NPM.Resolver.resolve(%{"accepts" => "~1.3.8"})
 
       lockfile = build_lockfile(resolved)
-      assert :ok = NPM.Linker.link(lockfile, nm_dir)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir)
 
       for pkg <- ["accepts", "mime-types", "negotiator", "mime-db"] do
         pkg_json_path = Path.join([nm_dir, pkg, "package.json"])
@@ -728,7 +728,7 @@ defmodule NPM.IntegrationTest do
       assert map_size(resolved) == 1
 
       lockfile = build_lockfile(resolved)
-      assert :ok = NPM.Linker.link(lockfile, nm_dir)
+      assert :ok = NPM.Install.Linker.link(lockfile, nm_dir)
 
       chalk_pkg = Path.join([nm_dir, "chalk", "package.json"]) |> File.read!() |> :json.decode()
       assert chalk_pkg["name"] == "chalk"

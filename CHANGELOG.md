@@ -10,6 +10,8 @@
 - Move package metadata helpers under `NPM.Package.*`
 - Route JSON decoding through `NPM.JSON` across library modules
 - Move health, doctor, environment, and engine checks under `NPM.Diagnostics.*`
+- Move registry and `.npmrc` helpers under `NPM.Registry.*` and `NPM.Config.*`
+- Move install/runtime helpers under `NPM.Install.*` and `NPM.Node.*`
 - Enforce registry origin allowlists for packuments and tarballs
 - Record dependency security policy in `npm.lock` and invalidate locks generated with weaker policy
 - Block direct exotic dependencies unless their exact specs are listed in `exotic_deps`
@@ -43,7 +45,7 @@
 - Fix dead code in `NPM.PeerDeps` version matching (redundant boolean case)
 - Fix `NPM.FileSize.by_extension/1` dead `||` branch (`Path.extname` never returns nil)
 - Fix `NPM.DepSort.install_order/1` dead `{:error, :cycle}` branch
-- Fix crash in `NPM.Linker` nested version resolution on unparseable versions
+- Fix crash in `NPM.Install.Linker` nested version resolution on unparseable versions
 - Replace blanket `rescue _` with specific exception types across the codebase
 - Flatten nesting in `expand_all_optional_deps`, `solver_dependencies`, `select_group`
 - Bump ex_dna `~> 1.1` → `~> 1.3`
@@ -84,7 +86,7 @@
 
 ## 0.4.3
 
-- Fix `mix npm.exec` to resolve binaries via `NPM.Exec.which/2` and run them through Node instead of shell string spawning
+- Fix `mix npm.exec` to resolve binaries via `NPM.Node.Exec.which/2` and run them through Node instead of shell string spawning
 - Preserve `optional_dependencies` in `npm.lock`
 - Skip linking missing optional packages instead of crashing during install
 - Add focused test coverage for exec environment, cached Node runner execution, optional runtime linking, and resolver optional dependency handling
@@ -184,7 +186,7 @@
 - `NPM.BundleAnalysis` — bundle-friendliness scoring
 - `NPM.ImportMap` — browser import map generation
 - `NPM.TypesCompanion` — suggest @types/* companion packages
-- `NPM.ScriptRunner` — script analysis and pattern detection
+- `NPM.Install.ScriptRunner` — script analysis and pattern detection
 - `NPM.ReleaseNotes` — changelog version extraction
 
 ### Security & Supply Chain
@@ -197,9 +199,9 @@
 
 ### Configuration
 
-- `NPM.Npmrc` — .npmrc file parsing
-- `NPM.NpmrcMerge` — multi-layer .npmrc resolution (project → user → global)
-- `NPM.RegistryUrl` — registry URL resolution with scope support
+- `NPM.Config.Npmrc` — .npmrc file parsing
+- `NPM.Config.Npmrc.Merge` — multi-layer .npmrc resolution (project → user → global)
+- `NPM.Registry.URL` — registry URL resolution with scope support
 - `NPM.InstallStrategy` — hoisted/nested/isolated install strategies
 - `NPM.Workspaces` — workspace configuration and glob matching
 - `NPM.Migration` — npm version migration guidance

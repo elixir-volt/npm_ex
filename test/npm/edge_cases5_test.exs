@@ -15,12 +15,12 @@ defmodule NPM.EdgeCases5Test do
 
   describe "Npmrc edge cases" do
     test "semicolon comments" do
-      config = NPM.Npmrc.parse("; comment\nregistry=https://npm.com")
+      config = NPM.Config.Npmrc.parse("; comment\nregistry=https://npm.com")
       assert config["registry"] == "https://npm.com"
     end
 
     test "merge preserves unique keys" do
-      merged = NPM.Npmrc.merge([%{"a" => "1"}, %{"b" => "2"}])
+      merged = NPM.Config.Npmrc.merge([%{"a" => "1"}, %{"b" => "2"}])
       assert merged["a"] == "1"
       assert merged["b"] == "2"
     end

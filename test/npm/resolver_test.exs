@@ -84,7 +84,7 @@ defmodule NPM.ResolverTest do
       File.write!(Path.join(bin_dir, "aaa"), "#!/bin/sh")
       File.write!(Path.join(bin_dir, "mmm"), "#!/bin/sh")
 
-      bins = NPM.BinResolver.list(nm)
+      bins = NPM.Node.BinResolver.list(nm)
       names = Enum.map(bins, &elem(&1, 0))
       assert names == ["aaa", "mmm", "zzz"]
     end
@@ -105,7 +105,7 @@ defmodule NPM.ResolverTest do
     test "available? returns false for missing .bin dir", %{tmp_dir: dir} do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
-      refute NPM.BinResolver.available?("anything", nm)
+      refute NPM.Node.BinResolver.available?("anything", nm)
     end
   end
 
@@ -148,7 +148,7 @@ defmodule NPM.ResolverTest do
       link = Path.join(bin_dir, "eslint")
       File.ln_s!(target, link)
 
-      {:ok, resolved} = NPM.BinResolver.find("eslint", nm)
+      {:ok, resolved} = NPM.Node.BinResolver.find("eslint", nm)
       assert String.contains?(resolved, "eslint")
     end
   end
@@ -162,7 +162,7 @@ defmodule NPM.ResolverTest do
       File.write!(Path.join(bin_dir, "jest"), "#!/bin/sh")
       File.write!(Path.join(bin_dir, "tsc"), "#!/bin/sh")
 
-      bins = NPM.BinResolver.list(nm)
+      bins = NPM.Node.BinResolver.list(nm)
       names = Enum.map(bins, &elem(&1, 0))
       assert "jest" in names
       assert "tsc" in names
@@ -175,7 +175,7 @@ defmodule NPM.ResolverTest do
       File.mkdir_p!(bin_dir)
       File.write!(Path.join(bin_dir, "eslint"), "#!/bin/sh")
 
-      assert {:ok, path} = NPM.BinResolver.find("eslint", nm)
+      assert {:ok, path} = NPM.Node.BinResolver.find("eslint", nm)
       assert String.contains?(path, "eslint")
     end
 
@@ -184,7 +184,7 @@ defmodule NPM.ResolverTest do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
 
-      assert :error = NPM.BinResolver.find("nonexistent", nm)
+      assert :error = NPM.Node.BinResolver.find("nonexistent", nm)
     end
 
     @tag :tmp_dir
@@ -194,8 +194,8 @@ defmodule NPM.ResolverTest do
       File.mkdir_p!(bin_dir)
       File.write!(Path.join(bin_dir, "prettier"), "#!/bin/sh")
 
-      assert NPM.BinResolver.available?("prettier", nm)
-      refute NPM.BinResolver.available?("missing", nm)
+      assert NPM.Node.BinResolver.available?("prettier", nm)
+      refute NPM.Node.BinResolver.available?("missing", nm)
     end
 
     @tag :tmp_dir
@@ -203,7 +203,7 @@ defmodule NPM.ResolverTest do
       nm = Path.join(dir, "node_modules")
       File.mkdir_p!(nm)
 
-      assert NPM.BinResolver.list(nm) == []
+      assert NPM.Node.BinResolver.list(nm) == []
     end
   end
 

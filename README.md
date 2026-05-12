@@ -126,6 +126,10 @@ The main public API is `NPM`. Supporting APIs are grouped by domain:
 - `NPM.Lockfile.*` — lockfile validation, stats, merge, package-lock, and shrinkwrap helpers
 - `NPM.Security.*` — audit, CVE, provenance, supply-chain, and exotic dependency policy helpers
 - `NPM.Diagnostics.*` — project diagnostics, doctor, environment, engine, and health checks
+- `NPM.Registry.*` — registry URLs, mirrors, scoped registries, and tokens
+- `NPM.Config.*` — `.npmrc` parsing and multi-layer config resolution
+- `NPM.Install.*` — linking, pruning, rebuilding, lifecycle/script metadata, CI, and runtime install helpers
+- `NPM.Node.*` — Node execution and binary resolution helpers
 - `NPM.NodeModules.*` — node_modules path helpers
 
 ## Configuration

@@ -156,8 +156,8 @@ defmodule NPM.EdgeCases6Test do
 
   describe "Npmrc + RegistryUrl" do
     test "parsed registry used for URL" do
-      config = NPM.Npmrc.parse("registry=https://custom.registry.io")
-      url = NPM.RegistryUrl.package_url("lodash", config["registry"])
+      config = NPM.Config.Npmrc.parse("registry=https://custom.registry.io")
+      url = NPM.Registry.URL.package_url("lodash", config["registry"])
       assert url =~ "custom.registry.io"
     end
   end

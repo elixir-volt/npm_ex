@@ -38,14 +38,14 @@ defmodule NPM do
   """
   @spec install(map(), keyword()) :: :ok
   def install(deps, opts) when is_map(deps) do
-    NPM.ScriptInstall.install(deps, opts)
+    NPM.Install.ScriptInstall.install(deps, opts)
   end
 
   @doc """
   Returns whether `NPM.install/2` has been called in this VM.
   """
   @spec installed? :: boolean()
-  defdelegate installed?, to: NPM.ScriptInstall
+  defdelegate installed?, to: NPM.Install.ScriptInstall
 
   @doc """
   Returns the root directory of the current `NPM.install/2` installation.
@@ -53,7 +53,7 @@ defmodule NPM do
   Raises if `NPM.install/2` has not been called.
   """
   @spec install_dir! :: String.t()
-  defdelegate install_dir!, to: NPM.ScriptInstall
+  defdelegate install_dir!, to: NPM.Install.ScriptInstall
 
   @doc """
   Returns the `node_modules` path of the current `NPM.install/2` installation.
@@ -61,7 +61,7 @@ defmodule NPM do
   Raises if `NPM.install/2` has not been called.
   """
   @spec node_modules_dir! :: String.t()
-  defdelegate node_modules_dir!, to: NPM.ScriptInstall
+  defdelegate node_modules_dir!, to: NPM.Install.ScriptInstall
 
   @doc """
   Install all dependencies from `package.json` (project context).
@@ -312,7 +312,7 @@ defmodule NPM do
 
   defp link_and_nest(lockfile, nested_info, flat) do
     with :ok <- link_from_lockfile(lockfile) do
-      if nested_info != %{}, do: NPM.Linker.link_nested(nested_info, flat, @node_modules)
+      if nested_info != %{}, do: NPM.Install.Linker.link_nested(nested_info, flat, @node_modules)
       :ok
     end
   end
@@ -325,7 +325,7 @@ defmodule NPM do
       Mix.shell().info("Fetching #{to_fetch} package#{if to_fetch != 1, do: "s", else: ""}...")
     end
 
-    {link_us, result} = :timer.tc(fn -> NPM.Linker.link(lockfile, @node_modules) end)
+    {link_us, result} = :timer.tc(fn -> NPM.Install.Linker.link(lockfile, @node_modules) end)
 
     case result do
       :ok ->

@@ -85,7 +85,7 @@ defmodule NPM.EdgeCases4Test do
   describe "PackageFiles + Bin" do
     test "bin file is an entry point" do
       data = %{"name" => "cli", "bin" => "./dist/cli.js", "main" => "./dist/index.js"}
-      assert NPM.Bin.has_bin?(data)
+      assert NPM.Node.Bin.has_bin?(data)
       entries = NPM.Package.Files.entry_points(data)
       assert "./dist/index.js" in entries
     end
@@ -106,7 +106,7 @@ defmodule NPM.EdgeCases4Test do
     test "custom publish registry" do
       data = %{"publishConfig" => %{"registry" => "https://npm.pkg.github.com"}}
       registry = NPM.Package.PublishConfig.registry(data)
-      url = NPM.RegistryUrl.package_url("my-pkg", registry)
+      url = NPM.Registry.URL.package_url("my-pkg", registry)
       assert url =~ "npm.pkg.github.com"
     end
   end

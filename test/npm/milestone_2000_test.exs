@@ -56,7 +56,7 @@ defmodule NPM.Milestone2000Test do
 
       NPM.Lockfile.write(%{}, Path.join(dir, "npm.lock"))
 
-      {:error, errors} = NPM.CI.validate(dir)
+      {:error, errors} = NPM.Install.CI.validate(dir)
       missing = Enum.filter(errors, &match?({:missing_dep, _}, &1))
       assert length(missing) == 3
     end
@@ -66,8 +66,8 @@ defmodule NPM.Milestone2000Test do
     test "scoped package bin extraction" do
       data = %{"name" => "@myorg/cli", "bin" => %{"mycli" => "./dist/cli.js"}}
       assert NPM.Scope.scoped?(data["name"])
-      assert NPM.Bin.has_bin?(data)
-      assert ["mycli"] = NPM.Bin.commands(data)
+      assert NPM.Node.Bin.has_bin?(data)
+      assert ["mycli"] = NPM.Node.Bin.commands(data)
     end
   end
 

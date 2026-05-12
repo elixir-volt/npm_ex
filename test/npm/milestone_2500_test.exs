@@ -122,7 +122,7 @@ defmodule NPM.Milestone2500Test do
   describe "Bin + DepPath" do
     test "bin path resolution" do
       data = %{"name" => "eslint", "bin" => %{"eslint" => "./bin/eslint.js"}}
-      cmds = NPM.Bin.commands(data)
+      cmds = NPM.Node.Bin.commands(data)
       path = NPM.NodeModules.Path.bin_path(hd(cmds))
       assert path =~ ".bin/eslint"
     end

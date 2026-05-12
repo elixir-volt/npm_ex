@@ -3,11 +3,11 @@ defmodule NPM.EdgeCases3Test do
 
   describe "Bin edge cases" do
     test "string bin without name falls back to empty" do
-      assert %{} = NPM.Bin.extract(%{"bin" => "./index.js"})
+      assert %{} = NPM.Node.Bin.extract(%{"bin" => "./index.js"})
     end
 
     test "count for string bin" do
-      assert 1 = NPM.Bin.count(%{"name" => "pkg", "bin" => "./cli.js"})
+      assert 1 = NPM.Node.Bin.count(%{"name" => "pkg", "bin" => "./cli.js"})
     end
   end
 

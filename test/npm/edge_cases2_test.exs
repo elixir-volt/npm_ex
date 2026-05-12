@@ -172,7 +172,7 @@ defmodule NPM.EdgeCases2Test do
   describe "CI edge cases" do
     test "format_errors with multiple missing deps" do
       errors = [{:missing_dep, "a"}, {:missing_dep, "b"}]
-      formatted = NPM.CI.format_errors(errors)
+      formatted = NPM.Install.CI.format_errors(errors)
       assert formatted =~ "a"
       assert formatted =~ "b"
     end

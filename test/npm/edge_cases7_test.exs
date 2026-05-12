@@ -27,12 +27,12 @@ defmodule NPM.EdgeCases7Test do
   describe "ScriptRunner edge cases" do
     test "eslint detection without lint script" do
       data = %{"scripts" => %{"check" => "eslint src/"}}
-      patterns = NPM.ScriptRunner.detect_patterns(data)
+      patterns = NPM.Install.ScriptRunner.detect_patterns(data)
       assert :has_lint in patterns
     end
 
     test "empty patterns for no scripts" do
-      assert [] = NPM.ScriptRunner.detect_patterns(%{})
+      assert [] = NPM.Install.ScriptRunner.detect_patterns(%{})
     end
   end
 

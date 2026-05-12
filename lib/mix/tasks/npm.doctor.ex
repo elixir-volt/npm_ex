@@ -54,7 +54,7 @@ defmodule Mix.Tasks.Npm.Doctor do
 
   defp check_lifecycle do
     if File.exists?("node_modules") do
-      scripts = NPM.Lifecycle.detect_all("node_modules")
+      scripts = NPM.Install.Lifecycle.detect_all("node_modules")
 
       if map_size(scripts) > 0 do
         names = Map.keys(scripts) |> Enum.join(", ")
