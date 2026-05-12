@@ -6,6 +6,8 @@ defmodule NPM.Dependency.Peer.Check do
   peer dependencies and reports compatibility issues.
   """
 
+  alias NPM.Dependency.Peer
+
   @type issue :: %{
           package: String.t(),
           peer: String.t(),
@@ -37,10 +39,11 @@ defmodule NPM.Dependency.Peer.Check do
   @spec check_peers(map(), map()) :: [issue()]
   def check_peers(pkg_data, lockfile) do
     name = pkg_data["name"] || "unknown"
-    peers = pkg_data["peerDependencies"] || %{}
-    optional = peer_optional_set(pkg_data)
+    optional = Peer.optional_peers(pkg_data)
 
-    Enum.flat_map(peers, fn {peer, range} ->
+    pkg_data
+    |> Peer.extract()
+    |> Enum.flat_map(fn {peer, range} ->
       check_peer(name, peer, range, lockfile, MapSet.member?(optional, peer))
     end)
   end
@@ -112,16 +115,13 @@ defmodule NPM.Dependency.Peer.Check do
   defp read_and_check_peers(pkg_dir, name, lockfile) do
     pkg_json = Path.join(pkg_dir, "package.json")
 
-    case File.read(pkg_json) do
-      {:ok, content} ->
-        data = :json.decode(content) |> Map.put("name", name)
-        check_peers(data, lockfile)
+    case NPM.JSON.read_file(pkg_json) do
+      {:ok, data} when is_map(data) ->
+        data |> Map.put("name", name) |> check_peers(lockfile)
 
       _ ->
         []
     end
-  rescue
-    _ -> []
   end
 
   defp check_peer(package, peer, range, lockfile, is_optional) do
@@ -150,19 +150,6 @@ defmodule NPM.Dependency.Peer.Check do
     end
   rescue
     _ -> []
-  end
-
-  defp peer_optional_set(pkg_data) do
-    case pkg_data["peerDependenciesMeta"] do
-      meta when is_map(meta) ->
-        meta
-        |> Enum.filter(fn {_k, v} -> is_map(v) and v["optional"] == true end)
-        |> Enum.map(&elem(&1, 0))
-        |> MapSet.new()
-
-      _ ->
-        MapSet.new()
-    end
   end
 
   defp format_issue(%{status: :missing} = i) do
