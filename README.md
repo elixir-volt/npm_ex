@@ -3,181 +3,128 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/npm.svg)](https://hex.pm/packages/npm)
 [![CI](https://github.com/elixir-volt/npm_ex/actions/workflows/ci.yml/badge.svg)](https://github.com/elixir-volt/npm_ex/actions/workflows/ci.yml)
 
-npm package manager for Elixir — no Node.js required.
+npm package management for Elixir — resolve, fetch, cache, and link npm packages from Mix without requiring Node.js for installation.
 
-Resolve, fetch, cache, and link npm packages directly from Mix.
+```sh
+mix npm.install lodash
+mix npm.exec eslint .
+```
+
+`npm_ex` reads `package.json`, resolves npm semver with PubGrub, writes `npm.lock`, and links packages into `node_modules/`.
+
+## Why npm_ex
+
+Elixir projects increasingly need JavaScript packages for assets, formatters, linters, browser libraries, and runtime integrations. npm_ex keeps that workflow inside Mix:
+
+- no `npm install` step required for dependency resolution or linking
+- reproducible installs through `npm.lock`
+- global package cache in `~/.npm_ex/cache/`
+- npm registry auth, mirrors, scoped registries, peer/deprecation warnings
+- CI-friendly Mix tasks for install, verify, audit, outdated, tree, and exec
 
 ## Installation
 
 ```elixir
 def deps do
-  [{:npm, "~> 0.6.1"}]
+  [{:npm, "~> 0.7.0"}]
 end
 ```
 
-## Usage
+```sh
+mix npm.init
+mix npm.install lodash
+```
+
+## Common workflows
 
 ```sh
-# Initialize a new package.json
-mix npm.init
-
-# Install all deps from package.json
+# Install and maintain dependencies
 mix npm.install
-
-# Add a package (latest)
-mix npm.install lodash
-
-# Add with version range
 mix npm.install lodash@^4.0
-
-# Scoped packages
-mix npm.install @types/node@^20
-
-# Add as dev dependency
 mix npm.install eslint --save-dev
-
-# Pin exact version (no ^ prefix)
-mix npm.install lodash --save-exact
-
-# Production install (skip devDependencies)
-mix npm.install --production
-
-# Remove a package
+mix npm.update
 mix npm.remove lodash
 
-# Update packages
-mix npm.update            # Update all
-mix npm.update lodash     # Update specific
-
-# List installed packages
-mix npm.list
-
-# Show dependency tree
-mix npm.tree
-
-# Show outdated packages
-mix npm.outdated
-
-# Explain why a package is installed
-mix npm.why accepts
-
-# Show package info from the registry
-mix npm.info express
-
-# Search the registry
-mix npm.search react
-
-# Run a script from package.json
-mix npm.run build
-
-# Execute a binary from node_modules/.bin
-mix npm.exec eslint .
-
-# Fetch locked deps without re-resolving
-mix npm.get
-
-# CI mode — fail if lockfile is stale
+# CI / reproducibility
 mix npm.install --frozen
 mix npm.ci
+mix npm.verify
 
-# Verify installation state
-mix npm.check
+# Inspect dependency state
+mix npm.list
+mix npm.tree
+mix npm.why accepts
+mix npm.outdated
 
-# Clean node_modules
-mix npm.clean
+# Run scripts and binaries
+mix npm.run build
+mix npm.exec eslint .
 
-# Cache management
+# Registry, cache, and config
+mix npm.info express
+mix npm.search react
 mix npm.cache status
-mix npm.cache clean
-
-# Show configuration
 mix npm.config
 ```
 
-## How it works
+## How installs work
 
-1. Reads dependencies from `package.json` (supports `dependencies`, `devDependencies`, `overrides`)
-2. Resolves the full dependency tree using [PubGrub](https://hex.pm/packages/hex_solver) with [npm semver](https://hex.pm/packages/npm_semver)
-3. Downloads tarballs from the npm registry with SHA-512/SHA-256/SHA-1 integrity verification
-4. Caches packages globally in `~/.npm_ex/cache/` — download once, reuse across projects
-5. Links into `node_modules/` via symlinks (macOS/Linux) or copies (Windows)
-6. Creates `node_modules/.bin/` with executable symlinks from package `bin` fields
-7. Prunes stale packages from `node_modules/` on re-install
-8. Locks versions in `npm.lock` for reproducible installs
-9. Warns about unmet peer dependencies and deprecated packages
-10. Retries failed downloads with exponential backoff
+1. Read `package.json` dependencies, dev dependencies, optional dependencies, and overrides.
+2. Resolve the full dependency tree using [hex_solver](https://hex.pm/packages/hex_solver) and [npm_semver](https://hex.pm/packages/npm_semver).
+3. Fetch registry packuments and tarballs with integrity verification.
+4. Store package contents in the global cache.
+5. Link packages into `node_modules/` and write `npm.lock`.
+
+`npm_ex` uses its own `npm.lock` because it is not npm. `package.json` remains the shared manifest; `npm.lock` records npm_ex's resolved dependency graph and security policy.
 
 ## Supply-chain safety
 
-`npm_ex` does not run package lifecycle hooks automatically. Packages with `preinstall`, `install`, `postinstall`, or `prepare` scripts are still installed, but their hooks are ignored and reported as warnings. Tarball paths are also validated before extraction so package contents cannot escape the cache directory.
+npm_ex is intentionally conservative around install-time code execution:
 
-This blocks install-time credential stealers that rely on postinstall hooks reading files like `.env` and exfiltrating them during dependency installation.
+- package lifecycle hooks are **not executed automatically**
+- packages declaring `preinstall`, `install`, `postinstall`, or `prepare` are installed but reported as warnings
+- tarball paths are validated before extraction to prevent cache escapes
+- transitive git, URL, GitHub shorthand, and `file:` dependencies are blocked by default
+- direct exotic dependencies require an explicit `exotic_deps` allowlist entry
+- registry origins and redirects are policy checked
+- newly created packages and freshly published versions can warn during install
 
-Known-malicious package checks can be run through `mix npm.audit` against OSV.dev or a local OSV-format database for packages already recorded in `npm.lock`:
+This blocks common install-time credential stealers that rely on postinstall hooks reading files like `.env` and exfiltrating secrets during dependency installation.
+
+## Auditing malicious packages
+
+`mix npm.audit` supports npm vulnerability checks and OSV/OpenSSF malicious-package intelligence:
 
 ```sh
+# npm registry vulnerability audit
+mix npm.audit
+
+# Strict online OSV malicious-package gate
 mix npm.audit --osv
-mix npm.audit --osv --lockfile npm.lock --format json
-mix npm.audit --osv --write-cache
-mix npm.audit --osv --write priv/security/compromised_packages.json
-mix npm.audit --compromised
-mix npm.audit --compromised --db priv/security/compromised_packages.json
-```
 
-The optional OSV `--write-cache` flag merges matching malicious-package advisories into the shared global npm_ex security cache (`~/.npm_ex/security/compromised_packages.json` by default) that `mix npm.audit --compromised` and `NPM.Security.Compromised` can use offline. `--write path` can still write or merge a project-local database. Compromised-package audit modes exit non-zero when matches are found unless the compromised-package policy is set to `warn` or `off`. Online OSV audit mode fails closed when OSV cannot be queried; the library-level `NPM.Security.Compromised.check/2` remains tolerant for callers that prefer best-effort checks.
-
-Recommended CI patterns:
-
-```sh
-# Deterministic offline gate using the shared cache or configured DB.
-mix npm.audit --compromised
-
-# Scheduled or developer-run intelligence refresh for the current lockfile.
+# Refresh the shared local malicious-package cache for the current lockfile
 mix npm.audit --osv --write-cache --policy warn
 
-# Strict online gate for the current lockfile.
-mix npm.audit --osv
+# Deterministic offline gate using the shared cache or configured DB
+mix npm.audit --compromised
 ```
 
-OpenSSF/OSV is the default-compatible open data source because OpenSSF malicious-package reports are published in OSV format and available through OSV.dev. Socket, Snyk, and Phylum provide valuable proprietary intelligence or install-time firewall workflows; they fit best as external scanners/proxies or future optional integrations rather than default `npm_ex` install dependencies.
+`--write-cache` merges matching OSV advisories into `~/.npm_ex/security/compromised_packages.json` by default. `mix npm.audit --osv` fails closed when OSV cannot be queried; `mix npm.audit --compromised` is offline and deterministic.
 
-## Why `npm.lock` instead of `package-lock.json`?
-
-`npm_ex` is not npm, so it keeps its own lockfile. `package.json` is the shared manifest; `npm.lock` is the reproducibility file for the `npm_ex` installer.
-
-## Module organization
-
-The main public API is `NPM`. Supporting APIs are grouped by domain:
-
-- `NPM.Package.*` — package.json, manifests, package metadata, repository, license, funding, and quality helpers
-- `NPM.Dependency.*` — dependency graphs, ranges, conflicts, peers, outdated checks, dedupe, and usage checks
-- `NPM.Lockfile.*` — lockfile validation, stats, merge, package-lock, and shrinkwrap helpers
-- `NPM.Security.*` — audit, CVE, compromised-package, provenance, supply-chain, and exotic dependency policy helpers
-- `NPM.Diagnostics.*` — project diagnostics, doctor, environment, engine, and health checks
-- `NPM.Registry.*` — registry URLs, mirrors, scoped registries, and tokens
-- `NPM.Config.*` — `.npmrc` parsing and multi-layer config resolution
-- `NPM.Install.*` — linking, pruning, rebuilding, lifecycle/script metadata, CI, and runtime install helpers
-- `NPM.Node.*` — Node execution and binary resolution helpers
-- `NPM.NodeModules.*` — node_modules path helpers
+OpenSSF/OSV is the default-compatible open data source. Socket, Snyk, and Phylum provide valuable proprietary intelligence or install-time firewall workflows; they fit best as external scanners/proxies or future optional integrations rather than default npm_ex install dependencies.
 
 ## Configuration
 
-Set environment variables to customize behavior:
+Most projects only need the defaults. Use `mix npm.config` to inspect effective settings.
 
-- `NPM_REGISTRY` — custom registry URL (default: `https://registry.npmjs.org`)
-- `NPM_TOKEN` — authentication token for private registries
-- `NPM_MIRROR` — registry mirror URL
-- `NPM_INSTALL_DIR` — custom `NPM.install/2` runtime install directory
-- `NPM_EX_CACHE_DIR` — custom cache directory (default: `~/.npm_ex/`)
-- `NPM_EX_BLOCK_EXOTIC_SUBDEPS` — block transitive git, file, and URL dependencies (default: `true`)
-- `NPM_EX_EXOTIC_DEPS` — comma-separated allowlist for direct exotic dependency specs (default: empty)
-- `NPM_EX_ALLOWED_REGISTRIES` — comma-separated registry origins allowed for packuments and tarballs (default: registry + mirror)
-- `NPM_EX_ALLOW_REGISTRY_REDIRECTS` — allow registry HTTP redirects (default: `false`)
-- `NPM_EX_PACKAGE_AGE_WARNING_DAYS` — warn for packages created more recently than this many days (default: `7`)
-- `NPM_EX_VERSION_AGE_WARNING_DAYS` — warn for versions published more recently than this many days (default: `3`)
-- `NPM_EX_COMPROMISED_DB_PATH` — local OSV-format compromised-package database path (default: `~/.npm_ex/security/compromised_packages.json`)
-- `NPM_EX_COMPROMISED_SOURCES` — comma-separated compromised-package sources (default: `local`; online OSV checks are explicit)
-- `NPM_EX_COMPROMISED_POLICY` — `error`, `warn`, or `off` for security task findings (default: `error`)
+Common environment variables:
+
+- `NPM_REGISTRY`, `NPM_TOKEN`, `NPM_MIRROR`
+- `NPM_EX_CACHE_DIR`, `NPM_INSTALL_DIR`
+- `NPM_EX_BLOCK_EXOTIC_SUBDEPS`, `NPM_EX_EXOTIC_DEPS`
+- `NPM_EX_ALLOWED_REGISTRIES`, `NPM_EX_ALLOW_REGISTRY_REDIRECTS`
+- `NPM_EX_PACKAGE_AGE_WARNING_DAYS`, `NPM_EX_VERSION_AGE_WARNING_DAYS`
+- `NPM_EX_COMPROMISED_DB_PATH`, `NPM_EX_COMPROMISED_POLICY`
 
 Elixir application config is also supported:
 
@@ -185,9 +132,7 @@ Elixir application config is also supported:
 config :npm,
   registry: "https://registry.npmjs.org",
   token: System.get_env("NPM_TOKEN"),
-  mirror: "https://registry.npmmirror.com",
-  cache_dir: "/path/to/.npm_ex",
-  install_dir: "/path/to/npm-installs",
+  cache_dir: Path.expand("~/.npm_ex"),
   block_exotic_subdeps: true,
   exotic_deps: [],
   allowed_registries: ["https://registry.npmjs.org"],
@@ -195,9 +140,18 @@ config :npm,
   package_age_warning_days: 7,
   version_age_warning_days: 3,
   compromised_db_path: Path.expand("~/.npm_ex/security/compromised_packages.json"),
-  compromised_sources: [:local],
   compromised_policy: :error
 ```
+
+## API organization
+
+The main public API is `NPM`. Supporting modules are grouped by domain: `NPM.Package.*`, `NPM.Dependency.*`, `NPM.Lockfile.*`, `NPM.Security.*`, `NPM.Registry.*`, `NPM.Config.*`, `NPM.Install.*`, `NPM.Node.*`, `NPM.NodeModules.*`, and `NPM.Diagnostics.*`.
+
+See `CHANGELOG.md` for the 0.7 migration map from older pre-namespace module names.
+
+## Documentation
+
+Full API documentation is available on [HexDocs](https://hexdocs.pm/npm).
 
 ## License
 
