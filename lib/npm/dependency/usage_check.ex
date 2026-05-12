@@ -18,9 +18,8 @@ defmodule NPM.Dependency.UsageCheck do
   def check(project_dir) do
     pkg_path = Path.join(project_dir, "package.json")
 
-    case File.read(pkg_path) do
-      {:ok, content} ->
-        data = :json.decode(content)
+    case NPM.JSON.read_file(pkg_path) do
+      {:ok, data} when is_map(data) ->
         declared = extract_declared(data)
         used = scan_imports(project_dir)
 
@@ -29,6 +28,9 @@ defmodule NPM.Dependency.UsageCheck do
            unused: find_unused(declared, used),
            missing: find_missing(declared, used)
          }}
+
+      {:ok, _} ->
+        {:error, :invalid_package_json}
 
       {:error, reason} ->
         {:error, reason}
