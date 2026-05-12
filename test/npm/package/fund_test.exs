@@ -1,4 +1,4 @@
-defmodule NPM.FundTest do
+defmodule NPM.Package.FundTest do
   use ExUnit.Case, async: true
 
   describe "extract funding from string" do
@@ -9,7 +9,7 @@ defmodule NPM.FundTest do
         "funding" => "https://opencollective.com/pkg"
       }
 
-      [entry] = NPM.Fund.extract(data)
+      [entry] = NPM.Package.Fund.extract(data)
       assert entry.package == "pkg"
       assert entry.url == "https://opencollective.com/pkg"
       assert entry.type == nil
@@ -24,7 +24,7 @@ defmodule NPM.FundTest do
         "funding" => %{"type" => "opencollective", "url" => "https://opencollective.com/express"}
       }
 
-      [entry] = NPM.Fund.extract(data)
+      [entry] = NPM.Package.Fund.extract(data)
       assert entry.type == "opencollective"
       assert entry.url == "https://opencollective.com/express"
     end
@@ -41,7 +41,7 @@ defmodule NPM.FundTest do
         ]
       }
 
-      entries = NPM.Fund.extract(data)
+      entries = NPM.Package.Fund.extract(data)
       assert length(entries) == 2
       urls = Enum.map(entries, & &1.url)
       assert "https://opencollective.com/webpack" in urls
@@ -51,11 +51,11 @@ defmodule NPM.FundTest do
 
   describe "extract with no funding" do
     test "returns empty list" do
-      assert [] = NPM.Fund.extract(%{"name" => "pkg", "version" => "1.0.0"})
+      assert [] = NPM.Package.Fund.extract(%{"name" => "pkg", "version" => "1.0.0"})
     end
 
     test "returns empty for missing name" do
-      assert [] = NPM.Fund.extract(%{})
+      assert [] = NPM.Package.Fund.extract(%{})
     end
   end
 
@@ -70,7 +70,7 @@ defmodule NPM.FundTest do
         ~s({"name":"funded-pkg","version":"1.0.0","funding":"https://example.com/fund"})
       )
 
-      entries = NPM.Fund.collect(nm)
+      entries = NPM.Package.Fund.collect(nm)
       assert length(entries) == 1
       assert hd(entries).url == "https://example.com/fund"
     end
@@ -85,11 +85,12 @@ defmodule NPM.FundTest do
         ~s({"name":"no-fund","version":"1.0.0"})
       )
 
-      assert [] = NPM.Fund.collect(nm)
+      assert [] = NPM.Package.Fund.collect(nm)
     end
 
     test "returns empty for nonexistent directory" do
-      assert [] = NPM.Fund.collect("/tmp/nonexistent_#{System.unique_integer([:positive])}")
+      assert [] =
+               NPM.Package.Fund.collect("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
   end
 
@@ -101,7 +102,7 @@ defmodule NPM.FundTest do
         %{package: "c", version: "1.0.0", type: nil, url: "https://github.com/sponsors/y"}
       ]
 
-      grouped = NPM.Fund.group_by_url(entries)
+      grouped = NPM.Package.Fund.group_by_url(entries)
       assert length(grouped["https://opencollective.com/x"]) == 2
       assert length(grouped["https://github.com/sponsors/y"]) == 1
     end
@@ -115,14 +116,14 @@ defmodule NPM.FundTest do
         %{package: "c", version: "1.0.0", type: "opencollective", url: "https://oc.com/a"}
       ]
 
-      s = NPM.Fund.summary(entries)
+      s = NPM.Package.Fund.summary(entries)
       assert s.packages_with_funding == 3
       assert s.unique_urls == 2
       assert s.types == ["github", "opencollective"]
     end
 
     test "empty list" do
-      s = NPM.Fund.summary([])
+      s = NPM.Package.Fund.summary([])
       assert s.packages_with_funding == 0
       assert s.unique_urls == 0
     end
@@ -131,7 +132,7 @@ defmodule NPM.FundTest do
   describe "extract invalid funding structure" do
     test "funding as number is ignored" do
       data = %{"name" => "pkg", "version" => "1.0.0", "funding" => 42}
-      assert [] = NPM.Fund.extract(data)
+      assert [] = NPM.Package.Fund.extract(data)
     end
 
     test "list with mixed valid and invalid entries" do
@@ -145,14 +146,14 @@ defmodule NPM.FundTest do
         ]
       }
 
-      entries = NPM.Fund.extract(data)
+      entries = NPM.Package.Fund.extract(data)
       assert length(entries) == 2
     end
   end
 
   describe "group_by_url empty list" do
     test "returns empty map" do
-      assert %{} = NPM.Fund.group_by_url([])
+      assert %{} = NPM.Package.Fund.group_by_url([])
     end
   end
 end

@@ -1,4 +1,4 @@
-defmodule NPM.PackageSpecTest do
+defmodule NPM.Package.SpecTest do
   use ExUnit.Case, async: true
 
   alias Mix.Tasks.Npm.Install, as: NpmInstall
@@ -60,170 +60,170 @@ defmodule NPM.PackageSpecTest do
 
   describe "PackageSpec.parse" do
     test "plain name" do
-      spec = NPM.PackageSpec.parse("lodash")
+      spec = NPM.Package.Spec.parse("lodash")
       assert spec.name == "lodash"
       assert spec.range == nil
       assert spec.type == :registry
     end
 
     test "name with range" do
-      spec = NPM.PackageSpec.parse("lodash@^4.0")
+      spec = NPM.Package.Spec.parse("lodash@^4.0")
       assert spec.name == "lodash"
       assert spec.range == "^4.0"
       assert spec.type == :registry
     end
 
     test "scoped package" do
-      spec = NPM.PackageSpec.parse("@babel/core@7.0.0")
+      spec = NPM.Package.Spec.parse("@babel/core@7.0.0")
       assert spec.name == "@babel/core"
       assert spec.range == "7.0.0"
       assert spec.type == :registry
     end
 
     test "scoped without range" do
-      spec = NPM.PackageSpec.parse("@scope/pkg")
+      spec = NPM.Package.Spec.parse("@scope/pkg")
       assert spec.name == "@scope/pkg"
       assert spec.range == nil
       assert spec.type == :registry
     end
 
     test "alias" do
-      spec = NPM.PackageSpec.parse("npm:react@^18.0")
+      spec = NPM.Package.Spec.parse("npm:react@^18.0")
       assert spec.name == "react"
       assert spec.range == "^18.0"
       assert spec.type == :alias
     end
 
     test "file reference" do
-      spec = NPM.PackageSpec.parse("file:../local")
+      spec = NPM.Package.Spec.parse("file:../local")
       assert spec.type == :file
     end
 
     test "git reference" do
-      spec = NPM.PackageSpec.parse("git+https://github.com/user/repo")
+      spec = NPM.Package.Spec.parse("git+https://github.com/user/repo")
       assert spec.type == :git
     end
 
     test "github shorthand" do
-      spec = NPM.PackageSpec.parse("github:user/repo")
+      spec = NPM.Package.Spec.parse("github:user/repo")
       assert spec.type == :git
     end
 
     test "http URL" do
-      spec = NPM.PackageSpec.parse("https://example.com/pkg.tgz")
+      spec = NPM.Package.Spec.parse("https://example.com/pkg.tgz")
       assert spec.type == :url
     end
   end
 
   describe "PackageSpec.registry?" do
     test "registry spec" do
-      spec = NPM.PackageSpec.parse("lodash@^4.0")
-      assert NPM.PackageSpec.registry?(spec)
+      spec = NPM.Package.Spec.parse("lodash@^4.0")
+      assert NPM.Package.Spec.registry?(spec)
     end
 
     test "non-registry spec" do
-      spec = NPM.PackageSpec.parse("file:../local")
-      refute NPM.PackageSpec.registry?(spec)
+      spec = NPM.Package.Spec.parse("file:../local")
+      refute NPM.Package.Spec.registry?(spec)
     end
   end
 
   describe "PackageSpec.to_string" do
     test "with range" do
-      spec = NPM.PackageSpec.parse("lodash@^4.0")
-      assert NPM.PackageSpec.to_string(spec) == "lodash@^4.0"
+      spec = NPM.Package.Spec.parse("lodash@^4.0")
+      assert NPM.Package.Spec.to_string(spec) == "lodash@^4.0"
     end
 
     test "without range" do
-      spec = NPM.PackageSpec.parse("lodash")
-      assert NPM.PackageSpec.to_string(spec) == "lodash"
+      spec = NPM.Package.Spec.parse("lodash")
+      assert NPM.Package.Spec.to_string(spec) == "lodash"
     end
   end
 
   describe "PackageSpec: edge case patterns" do
     test "version with prerelease" do
-      spec = NPM.PackageSpec.parse("pkg@1.0.0-beta.1")
+      spec = NPM.Package.Spec.parse("pkg@1.0.0-beta.1")
       assert spec.name == "pkg"
       assert spec.range == "1.0.0-beta.1"
     end
 
     test "scoped package without version" do
-      spec = NPM.PackageSpec.parse("@scope/pkg")
+      spec = NPM.Package.Spec.parse("@scope/pkg")
       assert spec.name == "@scope/pkg"
       assert spec.type == :registry
     end
 
     test "url spec" do
-      spec = NPM.PackageSpec.parse("https://github.com/user/repo/archive/main.tar.gz")
+      spec = NPM.Package.Spec.parse("https://github.com/user/repo/archive/main.tar.gz")
       assert spec.type == :url
     end
   end
 
   describe "PackageSpec: tag and latest patterns" do
     test "bare name with @latest" do
-      spec = NPM.PackageSpec.parse("lodash@latest")
+      spec = NPM.Package.Spec.parse("lodash@latest")
       assert spec.name == "lodash"
       assert spec.range == "latest"
     end
 
     test "bare name defaults to registry type" do
-      spec = NPM.PackageSpec.parse("express")
+      spec = NPM.Package.Spec.parse("express")
       assert spec.type == :registry
     end
   end
 
   describe "PackageSpec: git spec patterns" do
     test "git+https URL" do
-      spec = NPM.PackageSpec.parse("git+https://github.com/user/repo.git")
+      spec = NPM.Package.Spec.parse("git+https://github.com/user/repo.git")
       assert spec.type == :git
     end
 
     test "git+ssh URL" do
-      spec = NPM.PackageSpec.parse("git+ssh://git@github.com:user/repo.git")
+      spec = NPM.Package.Spec.parse("git+ssh://git@github.com:user/repo.git")
       assert spec.type == :git
     end
   end
 
   describe "PackageSpec: real specifier patterns from npm" do
     test "npm install react" do
-      spec = NPM.PackageSpec.parse("react")
+      spec = NPM.Package.Spec.parse("react")
       assert spec.name == "react"
       assert spec.type == :registry
       assert spec.range == nil
     end
 
     test "npm install react@^18.0.0" do
-      spec = NPM.PackageSpec.parse("react@^18.0.0")
+      spec = NPM.Package.Spec.parse("react@^18.0.0")
       assert spec.name == "react"
       assert spec.range == "^18.0.0"
     end
 
     test "npm install @babel/core@7.0.0" do
-      spec = NPM.PackageSpec.parse("@babel/core@7.0.0")
+      spec = NPM.Package.Spec.parse("@babel/core@7.0.0")
       assert spec.name == "@babel/core"
       assert spec.range == "7.0.0"
     end
 
     test "npm install file:../local-pkg" do
-      spec = NPM.PackageSpec.parse("file:../local-pkg")
+      spec = NPM.Package.Spec.parse("file:../local-pkg")
       assert spec.type == :file
     end
 
     test "npm install github:user/repo" do
-      spec = NPM.PackageSpec.parse("github:user/repo")
+      spec = NPM.Package.Spec.parse("github:user/repo")
       assert spec.type == :git
     end
   end
 
   describe "PackageSpec: parse URL spec" do
     test "https tarball URL" do
-      spec = NPM.PackageSpec.parse("https://registry.npmjs.org/react/-/react-18.2.0.tgz")
+      spec = NPM.Package.Spec.parse("https://registry.npmjs.org/react/-/react-18.2.0.tgz")
       assert spec.type == :url
     end
   end
 
   describe "PackageSpec: parse file spec" do
     test "file: prefix" do
-      spec = NPM.PackageSpec.parse("file:./local-pkg")
+      spec = NPM.Package.Spec.parse("file:./local-pkg")
       assert spec.type == :file
     end
   end

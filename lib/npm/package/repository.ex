@@ -1,4 +1,4 @@
-defmodule NPM.Repository do
+defmodule NPM.Package.Repository do
   @moduledoc """
   Repository field parsing and URL generation from package.json.
   """

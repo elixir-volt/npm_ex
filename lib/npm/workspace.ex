@@ -16,7 +16,7 @@ defmodule NPM.Workspace do
   def discover(root_dir \\ ".") do
     pkg_path = Path.join(root_dir, "package.json")
 
-    with {:ok, workspaces} <- NPM.PackageJSON.read_workspaces(pkg_path),
+    with {:ok, workspaces} <- NPM.Package.JSON.read_workspaces(pkg_path),
          packages <- resolve_workspaces(workspaces, root_dir) do
       {:ok, packages}
     end
@@ -69,7 +69,7 @@ defmodule NPM.Workspace do
   """
   @spec workspace_root?(String.t()) :: boolean()
   def workspace_root?(dir \\ ".") do
-    case NPM.PackageJSON.read_workspaces(Path.join(dir, "package.json")) do
+    case NPM.Package.JSON.read_workspaces(Path.join(dir, "package.json")) do
       {:ok, ws} when ws != [] -> true
       _ -> false
     end
@@ -77,7 +77,7 @@ defmodule NPM.Workspace do
 
   defp resolve_workspaces(patterns, base_dir) do
     patterns
-    |> NPM.PackageJSON.expand_workspaces(base_dir)
+    |> NPM.Package.JSON.expand_workspaces(base_dir)
     |> Enum.flat_map(&read_workspace_package/1)
   end
 

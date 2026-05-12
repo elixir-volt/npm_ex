@@ -1,4 +1,4 @@
-defmodule NPM.PackageJSON do
+defmodule NPM.Package.JSON do
   @moduledoc """
   Read and write `package.json` files.
   """

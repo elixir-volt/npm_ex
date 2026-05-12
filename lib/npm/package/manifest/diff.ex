@@ -1,4 +1,4 @@
-defmodule NPM.ManifestDiff do
+defmodule NPM.Package.Manifest.Diff do
   @moduledoc """
   Diffs two package.json manifests to determine what changed.
   """

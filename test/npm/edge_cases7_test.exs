@@ -5,21 +5,21 @@ defmodule NPM.EdgeCases7Test do
     test "diff with nil scripts" do
       old = %{"dependencies" => %{"a" => "^1.0"}}
       new = %{"dependencies" => %{"a" => "^1.0"}}
-      d = NPM.ManifestDiff.diff(old, new)
+      d = NPM.Package.Manifest.Diff.diff(old, new)
       assert d.scripts.added == []
     end
 
     test "diff detects name change" do
       old = %{"name" => "old-name"}
       new = %{"name" => "new-name"}
-      d = NPM.ManifestDiff.diff(old, new)
+      d = NPM.Package.Manifest.Diff.diff(old, new)
       assert d.name_changed
     end
 
     test "diff top-level field changes" do
       old = %{"description" => "old"}
       new = %{"description" => "new", "license" => "MIT"}
-      d = NPM.ManifestDiff.diff(old, new)
+      d = NPM.Package.Manifest.Diff.diff(old, new)
       assert "license" in d.fields.added
     end
   end

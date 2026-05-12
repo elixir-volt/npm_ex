@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Npm.Why do
     Application.ensure_all_started(:req)
 
     with {:ok, lockfile} <- NPM.Lockfile.read(),
-         {:ok, deps} <- NPM.PackageJSON.read() do
+         {:ok, deps} <- NPM.Package.JSON.read() do
       explain(name, lockfile, deps)
     end
   end

@@ -7,6 +7,7 @@
 - Move dependency analysis modules under `NPM.Dependency.*` and node_modules path helpers under `NPM.NodeModules.Path`
 - Move supply-chain security helpers under `NPM.Security.*`
 - Move lockfile helper modules under `NPM.Lockfile.*`
+- Move package metadata helpers under `NPM.Package.*`
 
 ## 0.6.1
 
@@ -156,7 +157,7 @@
 - `NPM.PackageUpdate` — compute available major/minor/patch updates
 - `NPM.OutdatedReport` — npm outdated-style table formatting
 - `NPM.SnapshotDiff` — lockfile snapshot comparison
-- `NPM.ManifestDiff` — diff two package.json files
+- `NPM.Package.Manifest.Diff` — diff two package.json files
 - `NPM.IntegrityCheck` — verify installed packages match lockfile
 - `NPM.LockfileCheck` / `NPM.LockfileStats` — lockfile validation and metrics
 
@@ -165,15 +166,15 @@
 - `NPM.Validate` — package.json schema validation
 - `NPM.Engines` / `NPM.NodeVersion` — engine constraints and .nvmrc/.tool-versions parsing
 - `NPM.Compat` — Node.js version compatibility checking
-- `NPM.Funding` — funding field parsing
+- `NPM.Package.Funding` — funding field parsing
 - `NPM.TypeField` — module type detection (ESM/CJS)
 - `NPM.SideEffects` — tree-shaking side-effects field
 - `NPM.Conditional` — conditional exports/imports resolution
 - `NPM.Exports` / `NPM.TypesResolution` — package exports and types resolution
-- `NPM.PublishConfig` — publish configuration
+- `NPM.Package.PublishConfig` — publish configuration
 - `NPM.Corepack` — packageManager field parsing
-- `NPM.PackageQuality` — metadata quality scoring
-- `NPM.PackageFiles` — files field and .npmignore analysis
+- `NPM.Package.Quality` — metadata quality scoring
+- `NPM.Package.Files` — files field and .npmignore analysis
 - `NPM.BundleAnalysis` — bundle-friendliness scoring
 - `NPM.ImportMap` — browser import map generation
 - `NPM.TypesCompanion` — suggest @types/* companion packages

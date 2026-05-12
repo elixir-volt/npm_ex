@@ -61,9 +61,9 @@ defmodule NPM.EdgeCases4Test do
         "funding" => "https://github.com/sponsors/johndoe"
       }
 
-      assert NPM.People.has_author?(data)
-      assert NPM.Funding.has_funding?(data)
-      assert ["https://github.com/sponsors/johndoe"] = NPM.Funding.urls(data)
+      assert NPM.Package.People.has_author?(data)
+      assert NPM.Package.Funding.has_funding?(data)
+      assert ["https://github.com/sponsors/johndoe"] = NPM.Package.Funding.urls(data)
     end
   end
 
@@ -86,7 +86,7 @@ defmodule NPM.EdgeCases4Test do
     test "bin file is an entry point" do
       data = %{"name" => "cli", "bin" => "./dist/cli.js", "main" => "./dist/index.js"}
       assert NPM.Bin.has_bin?(data)
-      entries = NPM.PackageFiles.entry_points(data)
+      entries = NPM.Package.Files.entry_points(data)
       assert "./dist/index.js" in entries
     end
   end
@@ -105,7 +105,7 @@ defmodule NPM.EdgeCases4Test do
   describe "RegistryUrl + PublishConfig" do
     test "custom publish registry" do
       data = %{"publishConfig" => %{"registry" => "https://npm.pkg.github.com"}}
-      registry = NPM.PublishConfig.registry(data)
+      registry = NPM.Package.PublishConfig.registry(data)
       url = NPM.RegistryUrl.package_url("my-pkg", registry)
       assert url =~ "npm.pkg.github.com"
     end

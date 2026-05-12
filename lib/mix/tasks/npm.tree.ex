@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Npm.Tree do
     Application.ensure_all_started(:req)
 
     with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <-
-           NPM.PackageJSON.read_all(),
+           NPM.Package.JSON.read_all(),
          {:ok, lockfile} <- NPM.Lockfile.read() do
       if lockfile == %{} do
         Mix.shell().info("No packages installed.")

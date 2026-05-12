@@ -74,7 +74,7 @@ defmodule NPM do
   """
   @spec install(keyword()) :: :ok | {:error, term()}
   def install(opts \\ []) when is_list(opts) do
-    case NPM.PackageJSON.read_all() do
+    case NPM.Package.JSON.read_all() do
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps, optional_dependencies: opt_deps}} ->
         all_deps =
           if opts[:production] do
@@ -102,7 +102,7 @@ defmodule NPM do
     range = if range == "latest", do: resolve_latest(name, opts), else: range
 
     with range_str when is_binary(range_str) <- range,
-         :ok <- NPM.PackageJSON.add_dep(name, range_str, "package.json", opts) do
+         :ok <- NPM.Package.JSON.add_dep(name, range_str, "package.json", opts) do
       install([])
     end
   end
@@ -112,7 +112,7 @@ defmodule NPM do
   """
   @spec remove(String.t()) :: :ok | {:error, term()}
   def remove(name) do
-    with :ok <- NPM.PackageJSON.remove_dep(name) do
+    with :ok <- NPM.Package.JSON.remove_dep(name) do
       install([])
     end
   end
@@ -124,7 +124,7 @@ defmodule NPM do
   """
   @spec update :: :ok | {:error, term()}
   def update do
-    case NPM.PackageJSON.read_all() do
+    case NPM.Package.JSON.read_all() do
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} ->
         do_install(Map.merge(deps, dev_deps), [])
 
@@ -140,7 +140,7 @@ defmodule NPM do
   """
   @spec update(String.t()) :: :ok | {:error, term()}
   def update(name) do
-    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.PackageJSON.read_all(),
+    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.Package.JSON.read_all(),
          {:ok, lockfile} <- NPM.Lockfile.read() do
       all_deps = Map.merge(deps, dev_deps)
 
@@ -267,7 +267,7 @@ defmodule NPM do
   end
 
   defp resolve_and_install(deps, old_lockfile) do
-    {:ok, overrides} = NPM.PackageJSON.read_overrides()
+    {:ok, overrides} = NPM.Package.JSON.read_overrides()
 
     {resolve_us, result} =
       :timer.tc(fn ->

@@ -28,7 +28,7 @@ defmodule NPM.Milestone2500Test do
       }
 
       assert NPM.Validate.valid?(data)
-      assert NPM.PackageQuality.score(data) >= 80
+      assert NPM.Package.Quality.score(data) >= 80
     end
   end
 

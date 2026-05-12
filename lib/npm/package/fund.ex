@@ -1,4 +1,4 @@
-defmodule NPM.Fund do
+defmodule NPM.Package.Fund do
   @moduledoc """
   Discovers and aggregates funding information from installed packages.
 

@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Npm.Stats do
   def run([]) do
     Application.ensure_all_started(:req)
 
-    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.PackageJSON.read_all(),
+    with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.Package.JSON.read_all(),
          {:ok, lockfile} when lockfile != %{} <- NPM.Lockfile.read() do
       all_deps = Map.merge(deps, dev_deps)
       adj = Graph.adjacency_list(lockfile)

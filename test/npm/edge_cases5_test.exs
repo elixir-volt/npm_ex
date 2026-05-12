@@ -113,7 +113,7 @@ defmodule NPM.EdgeCases5Test do
 
   describe "PublishConfig edge cases" do
     test "non-string publishConfig ignored" do
-      assert %{} = NPM.PublishConfig.extract(%{"publishConfig" => "invalid"})
+      assert %{} = NPM.Package.PublishConfig.extract(%{"publishConfig" => "invalid"})
     end
   end
 
@@ -134,12 +134,12 @@ defmodule NPM.EdgeCases5Test do
   describe "PackageFiles edge cases" do
     test "string exports in entry_points" do
       data = %{"exports" => "./dist/index.js"}
-      entries = NPM.PackageFiles.entry_points(data)
+      entries = NPM.Package.Files.entry_points(data)
       assert "./dist/index.js" in entries
     end
 
     test "COPYING always included" do
-      assert NPM.PackageFiles.always_included?("COPYING")
+      assert NPM.Package.Files.always_included?("COPYING")
     end
   end
 end

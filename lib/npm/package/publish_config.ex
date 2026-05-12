@@ -1,4 +1,4 @@
-defmodule NPM.PublishConfig do
+defmodule NPM.Package.PublishConfig do
   @moduledoc """
   Parses the `publishConfig` field from package.json.
 

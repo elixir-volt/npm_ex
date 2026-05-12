@@ -1,4 +1,4 @@
-defmodule NPM.License do
+defmodule NPM.Package.License do
   @moduledoc """
   Scans and reports licenses across the dependency tree.
 

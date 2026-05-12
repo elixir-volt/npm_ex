@@ -1,10 +1,10 @@
-defmodule NPM.PackageJsonTest do
+defmodule NPM.Package.JSONTest do
   use ExUnit.Case, async: true
 
   describe "PackageJSON.read" do
     @tag :tmp_dir
     test "returns empty deps for missing file", %{tmp_dir: dir} do
-      assert {:ok, %{}} = NPM.PackageJSON.read(Path.join(dir, "package.json"))
+      assert {:ok, %{}} = NPM.Package.JSON.read(Path.join(dir, "package.json"))
     end
 
     @tag :tmp_dir
@@ -12,7 +12,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"dependencies": {"lodash": "^4.17.0"}}))
 
-      assert {:ok, %{"lodash" => "^4.17.0"}} = NPM.PackageJSON.read(path)
+      assert {:ok, %{"lodash" => "^4.17.0"}} = NPM.Package.JSON.read(path)
     end
 
     @tag :tmp_dir
@@ -20,7 +20,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "my-app", "version": "1.0.0"}))
 
-      assert {:ok, %{}} = NPM.PackageJSON.read(path)
+      assert {:ok, %{}} = NPM.Package.JSON.read(path)
     end
   end
 
@@ -29,18 +29,18 @@ defmodule NPM.PackageJsonTest do
     test "creates file and reads back", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      assert :ok = NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
-      assert {:ok, %{"lodash" => "^4.17.0"}} = NPM.PackageJSON.read(path)
+      assert :ok = NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
+      assert {:ok, %{"lodash" => "^4.17.0"}} = NPM.Package.JSON.read(path)
     end
 
     @tag :tmp_dir
     test "preserves existing deps", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
-      NPM.PackageJSON.add_dep("express", "^5.0.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
+      NPM.Package.JSON.add_dep("express", "^5.0.0", path)
 
-      assert {:ok, deps} = NPM.PackageJSON.read(path)
+      assert {:ok, deps} = NPM.Package.JSON.read(path)
       assert deps["lodash"] == "^4.17.0"
       assert deps["express"] == "^5.0.0"
     end
@@ -49,10 +49,10 @@ defmodule NPM.PackageJsonTest do
     test "updates existing dep version", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
-      NPM.PackageJSON.add_dep("lodash", "^4.18.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.18.0", path)
 
-      assert {:ok, %{"lodash" => "^4.18.0"}} = NPM.PackageJSON.read(path)
+      assert {:ok, %{"lodash" => "^4.18.0"}} = NPM.Package.JSON.read(path)
     end
 
     @tag :tmp_dir
@@ -60,7 +60,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "my-app", "version": "1.0.0"}))
 
-      NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
 
       content = File.read!(path) |> :json.decode()
       assert content["name"] == "my-app"
@@ -72,9 +72,9 @@ defmodule NPM.PackageJsonTest do
     test "handles scoped package names", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("@types/node", "^20.0.0", path)
+      NPM.Package.JSON.add_dep("@types/node", "^20.0.0", path)
 
-      assert {:ok, %{"@types/node" => "^20.0.0"}} = NPM.PackageJSON.read(path)
+      assert {:ok, %{"@types/node" => "^20.0.0"}} = NPM.Package.JSON.read(path)
     end
   end
 
@@ -83,11 +83,11 @@ defmodule NPM.PackageJsonTest do
     test "removes existing dep", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
-      NPM.PackageJSON.add_dep("express", "^5.0.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
+      NPM.Package.JSON.add_dep("express", "^5.0.0", path)
 
-      assert :ok = NPM.PackageJSON.remove_dep("lodash", path)
-      assert {:ok, deps} = NPM.PackageJSON.read(path)
+      assert :ok = NPM.Package.JSON.remove_dep("lodash", path)
+      assert {:ok, deps} = NPM.Package.JSON.read(path)
       refute Map.has_key?(deps, "lodash")
       assert deps["express"] == "^5.0.0"
     end
@@ -95,19 +95,19 @@ defmodule NPM.PackageJsonTest do
     @tag :tmp_dir
     test "returns error for missing dep", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
-      NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
 
-      assert {:error, {:not_found, "express"}} = NPM.PackageJSON.remove_dep("express", path)
+      assert {:error, {:not_found, "express"}} = NPM.Package.JSON.remove_dep("express", path)
     end
 
     @tag :tmp_dir
     test "removes scoped package", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("@types/node", "^20.0.0", path)
-      assert :ok = NPM.PackageJSON.remove_dep("@types/node", path)
+      NPM.Package.JSON.add_dep("@types/node", "^20.0.0", path)
+      assert :ok = NPM.Package.JSON.remove_dep("@types/node", path)
 
-      assert {:ok, %{}} = NPM.PackageJSON.read(path)
+      assert {:ok, %{}} = NPM.Package.JSON.read(path)
     end
 
     @tag :tmp_dir
@@ -115,7 +115,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "app", "dependencies": {"lodash": "^4.0"}}))
 
-      NPM.PackageJSON.remove_dep("lodash", path)
+      NPM.Package.JSON.remove_dep("lodash", path)
 
       content = File.read!(path) |> :json.decode()
       assert content["name"] == "app"
@@ -126,7 +126,7 @@ defmodule NPM.PackageJsonTest do
   describe "PackageJSON.read_scripts" do
     @tag :tmp_dir
     test "returns empty map for missing file", %{tmp_dir: dir} do
-      assert {:ok, %{}} = NPM.PackageJSON.read_scripts(Path.join(dir, "package.json"))
+      assert {:ok, %{}} = NPM.Package.JSON.read_scripts(Path.join(dir, "package.json"))
     end
 
     @tag :tmp_dir
@@ -137,7 +137,7 @@ defmodule NPM.PackageJsonTest do
         "scripts": {"build": "tsc", "test": "jest", "lint": "eslint ."}
       }))
 
-      assert {:ok, scripts} = NPM.PackageJSON.read_scripts(path)
+      assert {:ok, scripts} = NPM.Package.JSON.read_scripts(path)
       assert scripts == %{"build" => "tsc", "test" => "jest", "lint" => "eslint ."}
     end
 
@@ -146,14 +146,14 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "my-app"}))
 
-      assert {:ok, %{}} = NPM.PackageJSON.read_scripts(path)
+      assert {:ok, %{}} = NPM.Package.JSON.read_scripts(path)
     end
   end
 
   describe "PackageJSON.read_workspaces" do
     @tag :tmp_dir
     test "returns empty list for missing file", %{tmp_dir: dir} do
-      assert {:ok, []} = NPM.PackageJSON.read_workspaces(Path.join(dir, "package.json"))
+      assert {:ok, []} = NPM.Package.JSON.read_workspaces(Path.join(dir, "package.json"))
     end
 
     @tag :tmp_dir
@@ -161,7 +161,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"workspaces": ["packages/*", "apps/*"]}))
 
-      assert {:ok, ["packages/*", "apps/*"]} = NPM.PackageJSON.read_workspaces(path)
+      assert {:ok, ["packages/*", "apps/*"]} = NPM.Package.JSON.read_workspaces(path)
     end
 
     @tag :tmp_dir
@@ -169,7 +169,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"workspaces": {"packages": ["packages/*"]}}))
 
-      assert {:ok, ["packages/*"]} = NPM.PackageJSON.read_workspaces(path)
+      assert {:ok, ["packages/*"]} = NPM.Package.JSON.read_workspaces(path)
     end
 
     @tag :tmp_dir
@@ -177,7 +177,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "my-app"}))
 
-      assert {:ok, []} = NPM.PackageJSON.read_workspaces(path)
+      assert {:ok, []} = NPM.Package.JSON.read_workspaces(path)
     end
   end
 
@@ -194,93 +194,93 @@ defmodule NPM.PackageJsonTest do
       # directory without package.json should be excluded
       File.mkdir_p!(Path.join([dir, "packages", "c"]))
 
-      result = NPM.PackageJSON.expand_workspaces(["packages/*"], dir)
+      result = NPM.Package.JSON.expand_workspaces(["packages/*"], dir)
       assert length(result) == 2
     end
 
     @tag :tmp_dir
     test "returns empty list for no matches", %{tmp_dir: dir} do
-      result = NPM.PackageJSON.expand_workspaces(["nonexistent/*"], dir)
+      result = NPM.Package.JSON.expand_workspaces(["nonexistent/*"], dir)
       assert result == []
     end
   end
 
   describe "PackageJSON.file_dep?" do
     test "recognizes file: prefix" do
-      assert NPM.PackageJSON.file_dep?("file:../my-lib")
-      assert NPM.PackageJSON.file_dep?("file:./local-pkg")
+      assert NPM.Package.JSON.file_dep?("file:../my-lib")
+      assert NPM.Package.JSON.file_dep?("file:./local-pkg")
     end
 
     test "rejects non-file deps" do
-      refute NPM.PackageJSON.file_dep?("^4.0.0")
-      refute NPM.PackageJSON.file_dep?("latest")
-      refute NPM.PackageJSON.file_dep?("~1.2.3")
+      refute NPM.Package.JSON.file_dep?("^4.0.0")
+      refute NPM.Package.JSON.file_dep?("latest")
+      refute NPM.Package.JSON.file_dep?("~1.2.3")
     end
   end
 
   describe "PackageJSON.resolve_file_dep" do
     test "resolves relative path" do
-      result = NPM.PackageJSON.resolve_file_dep("file:../my-lib", "/home/user/project")
+      result = NPM.Package.JSON.resolve_file_dep("file:../my-lib", "/home/user/project")
       assert result == "/home/user/my-lib"
     end
 
     test "resolves current dir path" do
-      result = NPM.PackageJSON.resolve_file_dep("file:./packages/core", "/home/user/project")
+      result = NPM.Package.JSON.resolve_file_dep("file:./packages/core", "/home/user/project")
       assert result == "/home/user/project/packages/core"
     end
   end
 
   describe "PackageJSON.git_dep?" do
     test "recognizes git+https URLs" do
-      assert NPM.PackageJSON.git_dep?("git+https://github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("git+https://github.com/user/repo.git")
     end
 
     test "recognizes git+ssh URLs" do
-      assert NPM.PackageJSON.git_dep?("git+ssh://git@github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("git+ssh://git@github.com/user/repo.git")
     end
 
     test "recognizes github: shorthand" do
-      assert NPM.PackageJSON.git_dep?("github:user/repo")
+      assert NPM.Package.JSON.git_dep?("github:user/repo")
     end
 
     test "recognizes git:// URLs" do
-      assert NPM.PackageJSON.git_dep?("git://github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("git://github.com/user/repo.git")
     end
 
     test "recognizes .git suffix" do
-      assert NPM.PackageJSON.git_dep?("https://github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("https://github.com/user/repo.git")
     end
 
     test "rejects regular ranges" do
-      refute NPM.PackageJSON.git_dep?("^4.0.0")
-      refute NPM.PackageJSON.git_dep?("latest")
-      refute NPM.PackageJSON.git_dep?("~1.0")
+      refute NPM.Package.JSON.git_dep?("^4.0.0")
+      refute NPM.Package.JSON.git_dep?("latest")
+      refute NPM.Package.JSON.git_dep?("~1.0")
     end
   end
 
   describe "PackageJSON.url_dep?" do
     test "recognizes http tgz URLs" do
-      assert NPM.PackageJSON.url_dep?("http://example.com/pkg-1.0.0.tgz")
+      assert NPM.Package.JSON.url_dep?("http://example.com/pkg-1.0.0.tgz")
     end
 
     test "recognizes https tar.gz URLs" do
-      assert NPM.PackageJSON.url_dep?("https://example.com/pkg.tar.gz")
+      assert NPM.Package.JSON.url_dep?("https://example.com/pkg.tar.gz")
     end
 
     test "rejects non-tarball URLs" do
-      refute NPM.PackageJSON.url_dep?("https://example.com/page")
+      refute NPM.Package.JSON.url_dep?("https://example.com/page")
     end
 
     test "rejects regular ranges" do
-      refute NPM.PackageJSON.url_dep?("^4.0.0")
-      refute NPM.PackageJSON.url_dep?("latest")
+      refute NPM.Package.JSON.url_dep?("^4.0.0")
+      refute NPM.Package.JSON.url_dep?("latest")
     end
   end
 
   describe "PackageJSON.read_overrides" do
     @tag :tmp_dir
     test "returns empty map for missing file", %{tmp_dir: dir} do
-      assert {:ok, %{}} = NPM.PackageJSON.read_overrides(Path.join(dir, "package.json"))
+      assert {:ok, %{}} = NPM.Package.JSON.read_overrides(Path.join(dir, "package.json"))
     end
 
     @tag :tmp_dir
@@ -291,7 +291,7 @@ defmodule NPM.PackageJsonTest do
         "overrides": {"lodash": "4.17.21", "semver": "7.6.0"}
       }))
 
-      assert {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      assert {:ok, overrides} = NPM.Package.JSON.read_overrides(path)
       assert overrides == %{"lodash" => "4.17.21", "semver" => "7.6.0"}
     end
 
@@ -300,7 +300,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"dependencies": {"lodash": "^4.0"}}))
 
-      assert {:ok, %{}} = NPM.PackageJSON.read_overrides(path)
+      assert {:ok, %{}} = NPM.Package.JSON.read_overrides(path)
     end
   end
 
@@ -309,9 +309,9 @@ defmodule NPM.PackageJsonTest do
     test "adds to optionalDependencies", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("fsevents", "^2.3.0", path, optional: true)
+      NPM.Package.JSON.add_dep("fsevents", "^2.3.0", path, optional: true)
 
-      {:ok, %{optional_dependencies: opt_deps}} = NPM.PackageJSON.read_all(path)
+      {:ok, %{optional_dependencies: opt_deps}} = NPM.Package.JSON.read_all(path)
       assert opt_deps == %{"fsevents" => "^2.3.0"}
     end
 
@@ -325,7 +325,7 @@ defmodule NPM.PackageJsonTest do
         "optionalDependencies": {"c": "^3.0"}
       }))
 
-      {:ok, result} = NPM.PackageJSON.read_all(path)
+      {:ok, result} = NPM.Package.JSON.read_all(path)
       assert result.dependencies == %{"a" => "^1.0"}
       assert result.dev_dependencies == %{"b" => "^2.0"}
       assert result.optional_dependencies == %{"c" => "^3.0"}
@@ -340,9 +340,9 @@ defmodule NPM.PackageJsonTest do
         "optionalDependencies": {"fsevents": "^2.3.0"}
       }))
 
-      assert :ok = NPM.PackageJSON.remove_dep("fsevents", path)
+      assert :ok = NPM.Package.JSON.remove_dep("fsevents", path)
 
-      {:ok, %{optional_dependencies: opt_deps}} = NPM.PackageJSON.read_all(path)
+      {:ok, %{optional_dependencies: opt_deps}} = NPM.Package.JSON.read_all(path)
       assert opt_deps == %{}
     end
   end
@@ -351,7 +351,7 @@ defmodule NPM.PackageJsonTest do
     @tag :tmp_dir
     test "returns empty groups for missing file", %{tmp_dir: dir} do
       assert {:ok, %{dependencies: %{}, dev_dependencies: %{}}} =
-               NPM.PackageJSON.read_all(Path.join(dir, "package.json"))
+               NPM.Package.JSON.read_all(Path.join(dir, "package.json"))
     end
 
     @tag :tmp_dir
@@ -364,7 +364,7 @@ defmodule NPM.PackageJsonTest do
       }))
 
       assert {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-               NPM.PackageJSON.read_all(path)
+               NPM.Package.JSON.read_all(path)
 
       assert deps == %{"lodash" => "^4.17.0"}
       assert dev_deps == %{"eslint" => "^9.0.0"}
@@ -376,7 +376,7 @@ defmodule NPM.PackageJsonTest do
       File.write!(path, ~s({"name": "my-app"}))
 
       assert {:ok, %{dependencies: %{}, dev_dependencies: %{}}} =
-               NPM.PackageJSON.read_all(path)
+               NPM.Package.JSON.read_all(path)
     end
 
     @tag :tmp_dir
@@ -385,7 +385,7 @@ defmodule NPM.PackageJsonTest do
       File.write!(path, ~s({"devDependencies": {"jest": "^29.0.0"}}))
 
       assert {:ok, %{dependencies: %{}, dev_dependencies: %{"jest" => "^29.0.0"}}} =
-               NPM.PackageJSON.read_all(path)
+               NPM.Package.JSON.read_all(path)
     end
   end
 
@@ -394,10 +394,10 @@ defmodule NPM.PackageJsonTest do
     test "adds to devDependencies when dev: true", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      assert :ok = NPM.PackageJSON.add_dep("eslint", "^9.0.0", path, dev: true)
+      assert :ok = NPM.Package.JSON.add_dep("eslint", "^9.0.0", path, dev: true)
 
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert deps == %{}
       assert dev_deps == %{"eslint" => "^9.0.0"}
@@ -407,10 +407,10 @@ defmodule NPM.PackageJsonTest do
     test "adds to dependencies by default", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      assert :ok = NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
+      assert :ok = NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
 
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert deps == %{"lodash" => "^4.17.0"}
       assert dev_deps == %{}
@@ -420,11 +420,11 @@ defmodule NPM.PackageJsonTest do
     test "preserves both groups independently", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("lodash", "^4.17.0", path)
-      NPM.PackageJSON.add_dep("eslint", "^9.0.0", path, dev: true)
+      NPM.Package.JSON.add_dep("lodash", "^4.17.0", path)
+      NPM.Package.JSON.add_dep("eslint", "^9.0.0", path, dev: true)
 
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert deps == %{"lodash" => "^4.17.0"}
       assert dev_deps == %{"eslint" => "^9.0.0"}
@@ -441,10 +441,10 @@ defmodule NPM.PackageJsonTest do
         "devDependencies": {"eslint": "^9.0"}
       }))
 
-      assert :ok = NPM.PackageJSON.remove_dep("eslint", path)
+      assert :ok = NPM.Package.JSON.remove_dep("eslint", path)
 
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert deps == %{"lodash" => "^4.0"}
       assert dev_deps == %{}
@@ -459,10 +459,10 @@ defmodule NPM.PackageJsonTest do
         "devDependencies": {"pkg": "^2.0"}
       }))
 
-      assert :ok = NPM.PackageJSON.remove_dep("pkg", path)
+      assert :ok = NPM.Package.JSON.remove_dep("pkg", path)
 
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert deps == %{}
       assert dev_deps == %{"pkg" => "^2.0"}
@@ -474,21 +474,21 @@ defmodule NPM.PackageJsonTest do
     test "add deps to both groups, remove from each, verify", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("lodash", "^4.0", path)
-      NPM.PackageJSON.add_dep("express", "^5.0", path)
-      NPM.PackageJSON.add_dep("eslint", "^9.0", path, dev: true)
-      NPM.PackageJSON.add_dep("jest", "^29.0", path, dev: true)
+      NPM.Package.JSON.add_dep("lodash", "^4.0", path)
+      NPM.Package.JSON.add_dep("express", "^5.0", path)
+      NPM.Package.JSON.add_dep("eslint", "^9.0", path, dev: true)
+      NPM.Package.JSON.add_dep("jest", "^29.0", path, dev: true)
 
       {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert map_size(deps) == 2
       assert map_size(dev_deps) == 2
 
-      NPM.PackageJSON.remove_dep("express", path)
+      NPM.Package.JSON.remove_dep("express", path)
 
       {:ok, %{dependencies: deps2, dev_dependencies: dev_deps2}} =
-        NPM.PackageJSON.read_all(path)
+        NPM.Package.JSON.read_all(path)
 
       assert map_size(deps2) == 1
       assert deps2["lodash"] == "^4.0"
@@ -506,13 +506,13 @@ defmodule NPM.PackageJsonTest do
         "devDependencies": {"jest": "^29.0"}
       }))
 
-      assert {:ok, scripts} = NPM.PackageJSON.read_scripts(path)
+      assert {:ok, scripts} = NPM.Package.JSON.read_scripts(path)
       assert scripts == %{"build" => "tsc"}
 
-      assert {:ok, deps} = NPM.PackageJSON.read(path)
+      assert {:ok, deps} = NPM.Package.JSON.read(path)
       assert deps == %{"lodash" => "^4.0"}
 
-      assert {:ok, %{dev_dependencies: dev_deps}} = NPM.PackageJSON.read_all(path)
+      assert {:ok, %{dev_dependencies: dev_deps}} = NPM.Package.JSON.read_all(path)
       assert dev_deps == %{"jest" => "^29.0"}
     end
   end
@@ -529,7 +529,7 @@ defmodule NPM.PackageJsonTest do
         "license": "MIT"
       }))
 
-      NPM.PackageJSON.add_dep("lodash", "^4.0", path)
+      NPM.Package.JSON.add_dep("lodash", "^4.0", path)
 
       content = File.read!(path) |> :json.decode()
       assert content["name"] == "my-project"
@@ -548,7 +548,7 @@ defmodule NPM.PackageJsonTest do
         "dependencies": {"react": "^18.0"}
       }))
 
-      NPM.PackageJSON.add_dep("jest", "^29.0", path, dev: true)
+      NPM.Package.JSON.add_dep("jest", "^29.0", path, dev: true)
 
       content = File.read!(path) |> :json.decode()
       assert content["scripts"]["build"] == "tsc"
@@ -563,11 +563,11 @@ defmodule NPM.PackageJsonTest do
     test "adding dev dep doesn't affect dependencies", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
 
-      NPM.PackageJSON.add_dep("react", "^18.0", path)
-      NPM.PackageJSON.add_dep("jest", "^29.0", path, dev: true)
-      NPM.PackageJSON.add_dep("fsevents", "^2.3", path, optional: true)
+      NPM.Package.JSON.add_dep("react", "^18.0", path)
+      NPM.Package.JSON.add_dep("jest", "^29.0", path, dev: true)
+      NPM.Package.JSON.add_dep("fsevents", "^2.3", path, optional: true)
 
-      {:ok, result} = NPM.PackageJSON.read_all(path)
+      {:ok, result} = NPM.Package.JSON.read_all(path)
       assert result.dependencies == %{"react" => "^18.0"}
       assert result.dev_dependencies == %{"jest" => "^29.0"}
       assert result.optional_dependencies == %{"fsevents" => "^2.3"}
@@ -580,7 +580,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, "not json{{{")
 
-      assert {:error, %Jason.DecodeError{}} = NPM.PackageJSON.read(path)
+      assert {:error, %Jason.DecodeError{}} = NPM.Package.JSON.read(path)
     end
   end
 
@@ -599,7 +599,7 @@ defmodule NPM.PackageJsonTest do
       File.write!(Path.join(apps_b, "package.json"), ~s({"name":"api"}))
       File.write!(Path.join(pkgs_a, "package.json"), ~s({"name":"core"}))
 
-      result = NPM.PackageJSON.expand_workspaces(["apps/*", "packages/*"], dir)
+      result = NPM.Package.JSON.expand_workspaces(["apps/*", "packages/*"], dir)
       assert length(result) == 3
     end
   end
@@ -615,7 +615,7 @@ defmodule NPM.PackageJsonTest do
         "optionalDependencies": {"c": "^3.0"}
       }))
 
-      {:ok, deps} = NPM.PackageJSON.read(path)
+      {:ok, deps} = NPM.Package.JSON.read(path)
       assert deps == %{"a" => "^1.0"}
       refute Map.has_key?(deps, "b")
       refute Map.has_key?(deps, "c")
@@ -624,11 +624,11 @@ defmodule NPM.PackageJsonTest do
 
   describe "PackageJSON.file_dep edge cases" do
     test "file:. is a file dep" do
-      assert NPM.PackageJSON.file_dep?("file:.")
+      assert NPM.Package.JSON.file_dep?("file:.")
     end
 
     test "file: with absolute path" do
-      assert NPM.PackageJSON.file_dep?("file:/absolute/path")
+      assert NPM.Package.JSON.file_dep?("file:/absolute/path")
     end
   end
 
@@ -638,7 +638,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"bundleDependencies": ["lodash", "express"]}))
 
-      assert {:ok, ["lodash", "express"]} = NPM.PackageJSON.read_bundle_deps(path)
+      assert {:ok, ["lodash", "express"]} = NPM.Package.JSON.read_bundle_deps(path)
     end
 
     @tag :tmp_dir
@@ -646,7 +646,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"bundledDependencies": ["chalk"]}))
 
-      assert {:ok, ["chalk"]} = NPM.PackageJSON.read_bundle_deps(path)
+      assert {:ok, ["chalk"]} = NPM.Package.JSON.read_bundle_deps(path)
     end
 
     @tag :tmp_dir
@@ -655,7 +655,7 @@ defmodule NPM.PackageJsonTest do
 
       File.write!(path, ~s({"bundleDependencies": true, "dependencies": {"a": "1", "b": "2"}}))
 
-      assert {:ok, names} = NPM.PackageJSON.read_bundle_deps(path)
+      assert {:ok, names} = NPM.Package.JSON.read_bundle_deps(path)
       assert "a" in names
       assert "b" in names
     end
@@ -665,12 +665,12 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "test"}))
 
-      assert {:ok, []} = NPM.PackageJSON.read_bundle_deps(path)
+      assert {:ok, []} = NPM.Package.JSON.read_bundle_deps(path)
     end
 
     @tag :tmp_dir
     test "returns empty for missing file", %{tmp_dir: dir} do
-      assert {:ok, []} = NPM.PackageJSON.read_bundle_deps(Path.join(dir, "nope.json"))
+      assert {:ok, []} = NPM.Package.JSON.read_bundle_deps(Path.join(dir, "nope.json"))
     end
   end
 
@@ -680,7 +680,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"resolutions": {"lodash": "4.17.21", "**/@types/node": "20.0.0"}}))
 
-      assert {:ok, resolutions} = NPM.PackageJSON.read_resolutions(path)
+      assert {:ok, resolutions} = NPM.Package.JSON.read_resolutions(path)
       assert resolutions["lodash"] == "4.17.21"
       assert resolutions["**/@types/node"] == "20.0.0"
     end
@@ -690,12 +690,12 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "app"}))
 
-      assert {:ok, %{}} = NPM.PackageJSON.read_resolutions(path)
+      assert {:ok, %{}} = NPM.Package.JSON.read_resolutions(path)
     end
 
     @tag :tmp_dir
     test "returns empty for missing file", %{tmp_dir: dir} do
-      assert {:ok, %{}} = NPM.PackageJSON.read_resolutions(Path.join(dir, "missing.json"))
+      assert {:ok, %{}} = NPM.Package.JSON.read_resolutions(Path.join(dir, "missing.json"))
     end
   end
 
@@ -705,7 +705,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"dependencies": {"react": "^18.0"}}))
 
-      result = NPM.PackageJSON.remove_dep("nonexistent", path)
+      result = NPM.Package.JSON.remove_dep("nonexistent", path)
       assert {:error, {:not_found, "nonexistent"}} = result
     end
   end
@@ -718,7 +718,7 @@ defmodule NPM.PackageJsonTest do
       File.mkdir_p!(Path.join(dir, "packages/invalid"))
       # No package.json in invalid
 
-      result = NPM.PackageJSON.expand_workspaces(["packages/*"], dir)
+      result = NPM.Package.JSON.expand_workspaces(["packages/*"], dir)
       valid_names = Enum.map(result, &Path.basename/1)
       assert "valid" in valid_names
       refute "invalid" in valid_names
@@ -731,7 +731,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name":"test","version":"1.0.0"}))
 
-      :ok = NPM.PackageJSON.add_dep("lodash", "^4.0.0", path)
+      :ok = NPM.Package.JSON.add_dep("lodash", "^4.0.0", path)
       content = File.read!(path)
       # Should be parseable JSON
       data = :json.decode(content)
@@ -751,7 +751,7 @@ defmodule NPM.PackageJsonTest do
         "optionalDependencies": {"c": "^3.0"}
       }))
 
-      {:ok, result} = NPM.PackageJSON.read_all(path)
+      {:ok, result} = NPM.Package.JSON.read_all(path)
       assert is_map(result.dependencies)
       assert is_map(result.dev_dependencies)
       assert is_map(result.optional_dependencies)
@@ -765,7 +765,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "minimal"}))
 
-      {:ok, result} = NPM.PackageJSON.read_all(path)
+      {:ok, result} = NPM.Package.JSON.read_all(path)
       assert result.dependencies == %{}
       assert result.dev_dependencies == %{}
       assert result.optional_dependencies == %{}
@@ -782,7 +782,7 @@ defmodule NPM.PackageJsonTest do
         "overrides": {"ms": "2.1.3", "debug": "^4.0"}
       }))
 
-      {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      {:ok, overrides} = NPM.Package.JSON.read_overrides(path)
       assert overrides["ms"] == "2.1.3"
       assert overrides["debug"] == "^4.0"
     end
@@ -792,7 +792,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"dependencies": {"lodash": "^4.0"}}))
 
-      {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      {:ok, overrides} = NPM.Package.JSON.read_overrides(path)
       assert overrides == %{}
     end
   end
@@ -808,7 +808,7 @@ defmodule NPM.PackageJsonTest do
         "peerDependencies": {"react": "^18.0"}
       }))
 
-      {:ok, result} = NPM.PackageJSON.read_all(path)
+      {:ok, result} = NPM.Package.JSON.read_all(path)
       assert result.dependencies["lodash"] == "^4.0"
     end
   end
@@ -819,7 +819,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"workspaces": ["packages/*", "apps/*"]}))
 
-      assert {:ok, patterns} = NPM.PackageJSON.read_workspaces(path)
+      assert {:ok, patterns} = NPM.Package.JSON.read_workspaces(path)
       assert "packages/*" in patterns
       assert "apps/*" in patterns
     end
@@ -829,7 +829,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"workspaces": {"packages": ["packages/*"]}}))
 
-      assert {:ok, patterns} = NPM.PackageJSON.read_workspaces(path)
+      assert {:ok, patterns} = NPM.Package.JSON.read_workspaces(path)
       assert "packages/*" in patterns
     end
 
@@ -846,7 +846,7 @@ defmodule NPM.PackageJsonTest do
       # Non-workspace dir (no package.json)
       File.mkdir_p!(Path.join(dir, "packages/not-a-pkg"))
 
-      result = NPM.PackageJSON.expand_workspaces(["packages/*"], dir)
+      result = NPM.Package.JSON.expand_workspaces(["packages/*"], dir)
       assert length(result) == 2
     end
   end
@@ -857,7 +857,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "test"}))
 
-      :ok = NPM.PackageJSON.add_dep("lodash", "^4.0.0", path)
+      :ok = NPM.Package.JSON.add_dep("lodash", "^4.0.0", path)
       data = path |> File.read!() |> :json.decode()
       assert data["dependencies"]["lodash"] == "^4.0.0"
     end
@@ -867,7 +867,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"dependencies": {"react": "^18.0"}}))
 
-      :ok = NPM.PackageJSON.add_dep("lodash", "^4.0.0", path)
+      :ok = NPM.Package.JSON.add_dep("lodash", "^4.0.0", path)
       data = path |> File.read!() |> :json.decode()
       assert data["dependencies"]["react"] == "^18.0"
       assert data["dependencies"]["lodash"] == "^4.0.0"
@@ -878,7 +878,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"dependencies": {"lodash": "^4.0", "react": "^18.0"}}))
 
-      :ok = NPM.PackageJSON.remove_dep("lodash", path)
+      :ok = NPM.Package.JSON.remove_dep("lodash", path)
       data = path |> File.read!() |> :json.decode()
       refute Map.has_key?(data["dependencies"], "lodash")
       assert data["dependencies"]["react"] == "^18.0"
@@ -889,7 +889,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "test"}))
 
-      :ok = NPM.PackageJSON.add_dep("jest", "^29.0", path, dev: true)
+      :ok = NPM.Package.JSON.add_dep("jest", "^29.0", path, dev: true)
       data = path |> File.read!() |> :json.decode()
       assert data["devDependencies"]["jest"] == "^29.0"
       assert is_nil(data["dependencies"])
@@ -900,7 +900,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "test"}))
 
-      :ok = NPM.PackageJSON.add_dep("fsevents", "^2.0", path, optional: true)
+      :ok = NPM.Package.JSON.add_dep("fsevents", "^2.0", path, optional: true)
       data = path |> File.read!() |> :json.decode()
       assert data["optionalDependencies"]["fsevents"] == "^2.0"
     end
@@ -908,66 +908,66 @@ defmodule NPM.PackageJsonTest do
 
   describe "PackageJSON: file_dep? classification" do
     test "file: prefix is a file dep" do
-      assert NPM.PackageJSON.file_dep?("file:../lib")
-      assert NPM.PackageJSON.file_dep?("file:./local-pkg")
+      assert NPM.Package.JSON.file_dep?("file:../lib")
+      assert NPM.Package.JSON.file_dep?("file:./local-pkg")
     end
 
     test "non file: is not a file dep" do
-      refute NPM.PackageJSON.file_dep?("^1.0.0")
-      refute NPM.PackageJSON.file_dep?("~1.0.0")
-      refute NPM.PackageJSON.file_dep?("*")
+      refute NPM.Package.JSON.file_dep?("^1.0.0")
+      refute NPM.Package.JSON.file_dep?("~1.0.0")
+      refute NPM.Package.JSON.file_dep?("*")
     end
   end
 
   describe "PackageJSON: git_dep? classification" do
     test "git+https URL is git dep" do
-      assert NPM.PackageJSON.git_dep?("git+https://github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("git+https://github.com/user/repo.git")
     end
 
     test "git:// URL is git dep" do
-      assert NPM.PackageJSON.git_dep?("git://github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("git://github.com/user/repo.git")
     end
 
     test "github: shorthand is git dep" do
-      assert NPM.PackageJSON.git_dep?("github:user/repo")
+      assert NPM.Package.JSON.git_dep?("github:user/repo")
     end
 
     test "URL containing .git is git dep" do
-      assert NPM.PackageJSON.git_dep?("https://github.com/user/repo.git")
+      assert NPM.Package.JSON.git_dep?("https://github.com/user/repo.git")
     end
 
     test "semver range is not git dep" do
-      refute NPM.PackageJSON.git_dep?("^1.0.0")
-      refute NPM.PackageJSON.git_dep?(">=2.0.0")
+      refute NPM.Package.JSON.git_dep?("^1.0.0")
+      refute NPM.Package.JSON.git_dep?(">=2.0.0")
     end
   end
 
   describe "PackageJSON: url_dep? classification" do
     test "https tgz URL is url dep" do
-      assert NPM.PackageJSON.url_dep?("https://example.com/pkg.tgz")
+      assert NPM.Package.JSON.url_dep?("https://example.com/pkg.tgz")
     end
 
     test "http tgz URL is url dep" do
-      assert NPM.PackageJSON.url_dep?("http://example.com/pkg.tar.gz")
+      assert NPM.Package.JSON.url_dep?("http://example.com/pkg.tar.gz")
     end
 
     test "non-tarball URL is not url dep" do
-      refute NPM.PackageJSON.url_dep?("https://example.com/page")
+      refute NPM.Package.JSON.url_dep?("https://example.com/page")
     end
 
     test "semver range is not url dep" do
-      refute NPM.PackageJSON.url_dep?("^1.0.0")
+      refute NPM.Package.JSON.url_dep?("^1.0.0")
     end
   end
 
   describe "PackageJSON: resolve_file_dep" do
     test "resolves relative path" do
-      path = NPM.PackageJSON.resolve_file_dep("file:./lib", "/home/user/project")
+      path = NPM.Package.JSON.resolve_file_dep("file:./lib", "/home/user/project")
       assert path == "/home/user/project/lib"
     end
 
     test "resolves parent path" do
-      path = NPM.PackageJSON.resolve_file_dep("file:../shared", "/home/user/project")
+      path = NPM.Package.JSON.resolve_file_dep("file:../shared", "/home/user/project")
       assert path == "/home/user/shared"
     end
   end
@@ -986,7 +986,7 @@ defmodule NPM.PackageJsonTest do
         }
       }))
 
-      {:ok, scripts} = NPM.PackageJSON.read_scripts(path)
+      {:ok, scripts} = NPM.Package.JSON.read_scripts(path)
       assert scripts["test"] == "vitest"
       assert scripts["build"] == "tsc"
       assert scripts["start"] == "node index.js"
@@ -997,7 +997,7 @@ defmodule NPM.PackageJsonTest do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name": "test-pkg"}))
 
-      {:ok, scripts} = NPM.PackageJSON.read_scripts(path)
+      {:ok, scripts} = NPM.Package.JSON.read_scripts(path)
       assert scripts == %{}
     end
   end
@@ -1007,7 +1007,7 @@ defmodule NPM.PackageJsonTest do
     test "reads workspaces array from package.json", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"workspaces":["packages/*","apps/*"]}))
-      {:ok, workspaces} = NPM.PackageJSON.read_workspaces(path)
+      {:ok, workspaces} = NPM.Package.JSON.read_workspaces(path)
       assert workspaces == ["packages/*", "apps/*"]
     end
 
@@ -1015,7 +1015,7 @@ defmodule NPM.PackageJsonTest do
     test "returns empty for no workspaces", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name":"no-ws"}))
-      {:ok, workspaces} = NPM.PackageJSON.read_workspaces(path)
+      {:ok, workspaces} = NPM.Package.JSON.read_workspaces(path)
       assert workspaces == []
     end
   end
@@ -1025,7 +1025,7 @@ defmodule NPM.PackageJsonTest do
     test "reads overrides from package.json", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"overrides":{"ms":"2.1.3"}}))
-      {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      {:ok, overrides} = NPM.Package.JSON.read_overrides(path)
       assert overrides["ms"] == "2.1.3"
     end
 
@@ -1033,7 +1033,7 @@ defmodule NPM.PackageJsonTest do
     test "returns empty map when no overrides", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"name":"no-overrides"}))
-      {:ok, overrides} = NPM.PackageJSON.read_overrides(path)
+      {:ok, overrides} = NPM.Package.JSON.read_overrides(path)
       assert overrides == %{}
     end
   end
@@ -1043,7 +1043,7 @@ defmodule NPM.PackageJsonTest do
     test "reads resolutions from package.json", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"resolutions":{"lodash":"4.17.21"}}))
-      {:ok, resolutions} = NPM.PackageJSON.read_resolutions(path)
+      {:ok, resolutions} = NPM.Package.JSON.read_resolutions(path)
       assert resolutions["lodash"] == "4.17.21"
     end
   end
@@ -1053,7 +1053,7 @@ defmodule NPM.PackageJsonTest do
     test "reads bundleDependencies from package.json", %{tmp_dir: dir} do
       path = Path.join(dir, "package.json")
       File.write!(path, ~s({"bundleDependencies":["a","b"]}))
-      {:ok, bundle} = NPM.PackageJSON.read_bundle_deps(path)
+      {:ok, bundle} = NPM.Package.JSON.read_bundle_deps(path)
       assert bundle == ["a", "b"]
     end
   end
@@ -1071,7 +1071,7 @@ defmodule NPM.PackageJsonTest do
         "optionalDependencies": {"d": "^4"}
       }))
 
-      {:ok, data} = NPM.PackageJSON.read_all(path)
+      {:ok, data} = NPM.Package.JSON.read_all(path)
       assert data.dependencies["a"] == "^1"
       assert data.dev_dependencies["b"] == "^2"
       assert data.optional_dependencies["d"] == "^4"

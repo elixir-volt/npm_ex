@@ -1,55 +1,57 @@
-defmodule NPM.LicenseTest do
+defmodule NPM.Package.LicenseTest do
   use ExUnit.Case, async: true
 
   describe "extract license" do
     test "string license field" do
-      assert "MIT" == NPM.License.extract(%{"license" => "MIT"})
+      assert "MIT" == NPM.Package.License.extract(%{"license" => "MIT"})
     end
 
     test "object license field" do
-      assert "Apache-2.0" == NPM.License.extract(%{"license" => %{"type" => "Apache-2.0"}})
+      assert "Apache-2.0" ==
+               NPM.Package.License.extract(%{"license" => %{"type" => "Apache-2.0"}})
     end
 
     test "legacy licenses array" do
-      assert "ISC" == NPM.License.extract(%{"licenses" => [%{"type" => "ISC", "url" => "..."}]})
+      assert "ISC" ==
+               NPM.Package.License.extract(%{"licenses" => [%{"type" => "ISC", "url" => "..."}]})
     end
 
     test "missing license" do
-      assert nil == NPM.License.extract(%{"name" => "pkg"})
+      assert nil == NPM.Package.License.extract(%{"name" => "pkg"})
     end
 
     test "empty map" do
-      assert nil == NPM.License.extract(%{})
+      assert nil == NPM.Package.License.extract(%{})
     end
   end
 
   describe "permissive?" do
     test "MIT is permissive" do
-      assert NPM.License.permissive?("MIT")
+      assert NPM.Package.License.permissive?("MIT")
     end
 
     test "ISC is permissive" do
-      assert NPM.License.permissive?("ISC")
+      assert NPM.Package.License.permissive?("ISC")
     end
 
     test "BSD-3-Clause is permissive" do
-      assert NPM.License.permissive?("BSD-3-Clause")
+      assert NPM.Package.License.permissive?("BSD-3-Clause")
     end
 
     test "Apache-2.0 is permissive" do
-      assert NPM.License.permissive?("Apache-2.0")
+      assert NPM.Package.License.permissive?("Apache-2.0")
     end
 
     test "GPL-3.0 is not permissive" do
-      refute NPM.License.permissive?("GPL-3.0")
+      refute NPM.Package.License.permissive?("GPL-3.0")
     end
 
     test "nil is not permissive" do
-      refute NPM.License.permissive?(nil)
+      refute NPM.Package.License.permissive?(nil)
     end
 
     test "LGPL-2.1 is not permissive" do
-      refute NPM.License.permissive?("LGPL-2.1")
+      refute NPM.Package.License.permissive?("LGPL-2.1")
     end
   end
 
@@ -62,7 +64,7 @@ defmodule NPM.LicenseTest do
         %{package: "d", version: "1.0.0", license: "ISC"}
       ]
 
-      result = NPM.License.non_permissive(entries)
+      result = NPM.Package.License.non_permissive(entries)
       names = Enum.map(result, & &1.package)
       assert "b" in names
       assert "c" in names
@@ -80,7 +82,7 @@ defmodule NPM.LicenseTest do
         %{package: "d", version: "1.0.0", license: nil}
       ]
 
-      grouped = NPM.License.group_by_license(entries)
+      grouped = NPM.Package.License.group_by_license(entries)
       assert length(grouped["MIT"]) == 2
       assert length(grouped["ISC"]) == 1
       assert length(grouped["UNKNOWN"]) == 1
@@ -96,7 +98,7 @@ defmodule NPM.LicenseTest do
         %{package: "d", version: "1.0.0", license: nil}
       ]
 
-      s = NPM.License.summary(entries)
+      s = NPM.Package.License.summary(entries)
       assert s.total == 4
       assert s.permissive == 2
       assert s.non_permissive == 1
@@ -106,7 +108,7 @@ defmodule NPM.LicenseTest do
     end
 
     test "empty entries" do
-      s = NPM.License.summary([])
+      s = NPM.Package.License.summary([])
       assert s.total == 0
     end
   end
@@ -120,7 +122,7 @@ defmodule NPM.LicenseTest do
         %{package: "d", version: "1.0.0", license: nil}
       ]
 
-      violations = NPM.License.check_policy(entries, ["MIT", "ISC"])
+      violations = NPM.Package.License.check_policy(entries, ["MIT", "ISC"])
       names = Enum.map(violations, & &1.package)
       assert "b" in names
       assert "d" in names
@@ -132,7 +134,7 @@ defmodule NPM.LicenseTest do
         %{package: "a", version: "1.0.0", license: "MIT"}
       ]
 
-      assert [] = NPM.License.check_policy(entries, ["MIT"])
+      assert [] = NPM.Package.License.check_policy(entries, ["MIT"])
     end
   end
 
@@ -147,7 +149,7 @@ defmodule NPM.LicenseTest do
         ~s({"name":"my-pkg","version":"2.0.0","license":"MIT"})
       )
 
-      entries = NPM.License.scan(nm)
+      entries = NPM.Package.License.scan(nm)
       assert length(entries) == 1
       assert hd(entries).license == "MIT"
     end
@@ -162,44 +164,45 @@ defmodule NPM.LicenseTest do
         ~s({"name":"no-lic","version":"1.0.0"})
       )
 
-      [entry] = NPM.License.scan(nm)
+      [entry] = NPM.Package.License.scan(nm)
       assert entry.license == nil
     end
 
     test "returns empty for nonexistent directory" do
-      assert [] = NPM.License.scan("/tmp/nonexistent_#{System.unique_integer([:positive])}")
+      assert [] =
+               NPM.Package.License.scan("/tmp/nonexistent_#{System.unique_integer([:positive])}")
     end
   end
 
   describe "extract number license" do
     test "license as number is nil" do
-      assert nil == NPM.License.extract(%{"license" => 42})
+      assert nil == NPM.Package.License.extract(%{"license" => 42})
     end
   end
 
   describe "check_policy with empty policy" do
     test "everything violates empty allowed list" do
       entries = [%{package: "a", version: "1.0.0", license: "MIT"}]
-      violations = NPM.License.check_policy(entries, [])
+      violations = NPM.Package.License.check_policy(entries, [])
       assert length(violations) == 1
     end
   end
 
   describe "more permissive licenses" do
     test "0BSD is permissive" do
-      assert NPM.License.permissive?("0BSD")
+      assert NPM.Package.License.permissive?("0BSD")
     end
 
     test "CC0-1.0 is permissive" do
-      assert NPM.License.permissive?("CC0-1.0")
+      assert NPM.Package.License.permissive?("CC0-1.0")
     end
 
     test "Unlicense is permissive" do
-      assert NPM.License.permissive?("Unlicense")
+      assert NPM.Package.License.permissive?("Unlicense")
     end
 
     test "AGPL-3.0 is not permissive" do
-      refute NPM.License.permissive?("AGPL-3.0")
+      refute NPM.Package.License.permissive?("AGPL-3.0")
     end
   end
 end

@@ -1,4 +1,4 @@
-defmodule NPM.Manifest do
+defmodule NPM.Package.Manifest do
   @moduledoc """
   Generate a complete package manifest from `package.json`.
 

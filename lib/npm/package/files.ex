@@ -1,4 +1,4 @@
-defmodule NPM.PackageFiles do
+defmodule NPM.Package.Files do
   @moduledoc """
   Analyzes which files would be included when publishing a package.
 

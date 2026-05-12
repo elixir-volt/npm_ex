@@ -1,4 +1,4 @@
-defmodule NPM.PackageSpec do
+defmodule NPM.Package.Spec do
   @moduledoc """
   Parse npm package specifiers into structured data.
 

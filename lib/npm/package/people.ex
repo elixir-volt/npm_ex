@@ -1,4 +1,4 @@
-defmodule NPM.People do
+defmodule NPM.Package.People do
   @moduledoc """
   Extracts and analyzes author/contributor information from packages.
   """

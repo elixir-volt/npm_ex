@@ -32,7 +32,7 @@ defmodule NPM.EdgeCases6Test do
     test "invalid package has low quality" do
       data = %{}
       refute NPM.Validate.valid?(data)
-      score = NPM.PackageQuality.score(data)
+      score = NPM.Package.Quality.score(data)
       assert score <= 5
     end
   end
@@ -129,8 +129,8 @@ defmodule NPM.EdgeCases6Test do
         "repository" => "user/repo"
       }
 
-      assert NPM.Funding.has_funding?(data)
-      assert NPM.Repository.has_repository?(data)
+      assert NPM.Package.Funding.has_funding?(data)
+      assert NPM.Package.Repository.has_repository?(data)
     end
   end
 
@@ -150,7 +150,7 @@ defmodule NPM.EdgeCases6Test do
     test "tree-shakeable with files whitelist" do
       data = %{"sideEffects" => false, "files" => ["dist/"]}
       assert NPM.SideEffects.tree_shakeable?(data)
-      assert NPM.PackageFiles.has_whitelist?(data)
+      assert NPM.Package.Files.has_whitelist?(data)
     end
   end
 

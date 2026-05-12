@@ -1,4 +1,4 @@
-defmodule NPM.PackageQuality do
+defmodule NPM.Package.Quality do
   @moduledoc """
   Scores individual package quality based on metadata completeness.
   """

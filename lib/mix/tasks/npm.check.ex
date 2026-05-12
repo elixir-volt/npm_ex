@@ -41,7 +41,7 @@ defmodule Mix.Tasks.Npm.Check do
 
   defp check_package_json do
     if File.exists?("package.json") do
-      case NPM.PackageJSON.read() do
+      case NPM.Package.JSON.read() do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, "package.json is invalid: #{inspect(reason)}"}
       end

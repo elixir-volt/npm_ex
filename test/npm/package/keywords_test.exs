@@ -1,4 +1,4 @@
-defmodule NPM.KeywordsTest do
+defmodule NPM.Package.KeywordsTest do
   use ExUnit.Case, async: true
 
   @packages [
@@ -9,27 +9,28 @@ defmodule NPM.KeywordsTest do
 
   describe "extract" do
     test "extracts keywords array" do
-      assert ["ui", "framework"] = NPM.Keywords.extract(%{"keywords" => ["ui", "framework"]})
+      assert ["ui", "framework"] =
+               NPM.Package.Keywords.extract(%{"keywords" => ["ui", "framework"]})
     end
 
     test "empty for no keywords" do
-      assert [] = NPM.Keywords.extract(%{"name" => "pkg"})
+      assert [] = NPM.Package.Keywords.extract(%{"name" => "pkg"})
     end
 
     test "empty for non-list keywords" do
-      assert [] = NPM.Keywords.extract(%{"keywords" => "not-a-list"})
+      assert [] = NPM.Package.Keywords.extract(%{"keywords" => "not-a-list"})
     end
   end
 
   describe "most_common" do
     test "returns most frequent keywords" do
-      common = NPM.Keywords.most_common(@packages, 3)
+      common = NPM.Package.Keywords.most_common(@packages, 3)
       assert {"ui", 2} in common
       assert {"framework", 2} in common
     end
 
     test "empty for no packages" do
-      assert [] = NPM.Keywords.most_common([], 5)
+      assert [] = NPM.Package.Keywords.most_common([], 5)
     end
   end
 
@@ -41,7 +42,7 @@ defmodule NPM.KeywordsTest do
         {"lodash", Enum.at(@packages, 2)}
       ]
 
-      result = NPM.Keywords.search(packages, "ui")
+      result = NPM.Package.Keywords.search(packages, "ui")
       assert "react" in result
       assert "vue" in result
       refute "lodash" in result
@@ -49,12 +50,12 @@ defmodule NPM.KeywordsTest do
 
     test "case insensitive search" do
       packages = [{"react", %{"keywords" => ["UI"]}}]
-      assert ["react"] = NPM.Keywords.search(packages, "ui")
+      assert ["react"] = NPM.Package.Keywords.search(packages, "ui")
     end
 
     test "no matches" do
       packages = [{"react", hd(@packages)}]
-      assert [] = NPM.Keywords.search(packages, "nonexistent")
+      assert [] = NPM.Package.Keywords.search(packages, "nonexistent")
     end
   end
 
@@ -66,7 +67,7 @@ defmodule NPM.KeywordsTest do
         {"rxjs", %{"keywords" => ["reactive"]}}
       ]
 
-      groups = NPM.Keywords.group_by_keyword(packages)
+      groups = NPM.Package.Keywords.group_by_keyword(packages)
       assert length(groups["ui"]) == 2
       assert length(groups["reactive"]) == 2
     end
@@ -74,11 +75,11 @@ defmodule NPM.KeywordsTest do
 
   describe "unique_count" do
     test "counts unique keywords" do
-      assert 6 = NPM.Keywords.unique_count(@packages)
+      assert 6 = NPM.Package.Keywords.unique_count(@packages)
     end
 
     test "zero for no packages" do
-      assert 0 = NPM.Keywords.unique_count([])
+      assert 0 = NPM.Package.Keywords.unique_count([])
     end
   end
 end

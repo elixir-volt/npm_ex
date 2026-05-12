@@ -89,7 +89,7 @@ defmodule NPM.Milestone2000Test do
     test "normalized author can be extracted by People" do
       data = %{"author" => "John Doe <john@example.com> (https://john.dev)"}
       normalized = NPM.Normalize.normalize(data)
-      author = NPM.People.author(normalized)
+      author = NPM.Package.People.author(normalized)
       assert author["name"] == "John Doe"
       assert author["email"] == "john@example.com"
     end
@@ -125,7 +125,7 @@ defmodule NPM.Milestone2000Test do
       }
 
       git_url = NPM.GitInfo.repo_url(data)
-      repo_info = NPM.Repository.extract(data)
+      repo_info = NPM.Package.Repository.extract(data)
       assert git_url == repo_info.url
     end
   end

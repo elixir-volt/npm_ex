@@ -3,7 +3,7 @@ defmodule NPM.AliasTest do
 
   describe "PackageSpec + Alias integration" do
     test "alias parsed via spec matches direct parse" do
-      spec = NPM.PackageSpec.parse("npm:react@^18.0.0")
+      spec = NPM.Package.Spec.parse("npm:react@^18.0.0")
       assert spec.type == :alias
       assert spec.name == "react"
 

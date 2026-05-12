@@ -1,4 +1,4 @@
-defmodule NPM.Keywords do
+defmodule NPM.Package.Keywords do
   @moduledoc """
   Analyzes package keywords for search and categorization.
 

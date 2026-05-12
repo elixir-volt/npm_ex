@@ -1,4 +1,4 @@
-defmodule NPM.Funding do
+defmodule NPM.Package.Funding do
   @moduledoc """
   Parses the `funding` field from package.json.
 

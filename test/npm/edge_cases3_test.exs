@@ -20,27 +20,27 @@ defmodule NPM.EdgeCases3Test do
         ]
       }
 
-      result = NPM.People.contributors(data)
+      result = NPM.Package.People.contributors(data)
       assert length(result) == 2
       assert hd(result)["name"] == "Alice"
     end
 
     test "all with only contributors" do
       data = %{"contributors" => [%{"name" => "Solo"}]}
-      assert length(NPM.People.all(data)) == 1
+      assert length(NPM.Package.People.all(data)) == 1
     end
   end
 
   describe "Repository edge cases" do
     test "ssh protocol cleaned" do
       data = %{"repository" => %{"type" => "git", "url" => "ssh://git@github.com/user/repo.git"}}
-      repo = NPM.Repository.extract(data)
+      repo = NPM.Package.Repository.extract(data)
       assert repo.url == "https://github.com/user/repo"
     end
 
     test "clone_url adds .git" do
       data = %{"repository" => "user/repo"}
-      url = NPM.Repository.clone_url(data)
+      url = NPM.Package.Repository.clone_url(data)
       assert String.ends_with?(url, ".git")
     end
   end
@@ -53,13 +53,13 @@ defmodule NPM.EdgeCases3Test do
         %{"keywords" => ["a"]}
       ]
 
-      result = NPM.Keywords.most_common(packages, 1)
+      result = NPM.Package.Keywords.most_common(packages, 1)
       assert length(result) == 1
       assert elem(hd(result), 0) == "a"
     end
 
     test "group_by_keyword empty" do
-      assert %{} = NPM.Keywords.group_by_keyword([])
+      assert %{} = NPM.Package.Keywords.group_by_keyword([])
     end
   end
 
