@@ -4,6 +4,7 @@
 
 - Block transitive git, file, and URL dependency specs from published package metadata by default
 - Add `config :npm` support for registry, token, mirror, cache dir, install dir, and exotic subdependency policy
+- Move dependency analysis modules under `NPM.Dependency.*` and node_modules path helpers under `NPM.NodeModules.Path`
 
 ## 0.6.1
 

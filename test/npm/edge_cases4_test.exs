@@ -36,7 +36,7 @@ defmodule NPM.EdgeCases4Test do
       }
 
       assert [] = NPM.LockfileCheck.mismatched(pkg, lockfile)
-      assert :exact = NPM.DepRange.classify("4.17.21")
+      assert :exact = NPM.Dependency.Range.classify("4.17.21")
     end
   end
 
@@ -127,12 +127,12 @@ defmodule NPM.EdgeCases4Test do
 
   describe "DepRange edge cases" do
     test "classify tilde with space" do
-      assert :tilde = NPM.DepRange.classify("~1.2.3")
+      assert :tilde = NPM.Dependency.Range.classify("~1.2.3")
     end
 
     test "summarize all pinned" do
       deps = %{"a" => "1.0.0", "b" => "2.0.0"}
-      sum = NPM.DepRange.summary(deps)
+      sum = NPM.Dependency.Range.summary(deps)
       assert sum.pinned_pct == 100.0
     end
   end

@@ -43,23 +43,23 @@ defmodule NPM.EdgeCases7Test do
         "peerDependencies" => %{"react" => "^18.0"}
       }
 
-      conflicts = NPM.DepConflict.find(data)
+      conflicts = NPM.Dependency.Conflict.find(data)
       assert length(conflicts) == 1
     end
 
     test "empty package data" do
-      assert [] = NPM.DepConflict.find(%{})
-      refute NPM.DepConflict.conflicts?(%{})
+      assert [] = NPM.Dependency.Conflict.find(%{})
+      refute NPM.Dependency.Conflict.conflicts?(%{})
     end
   end
 
   describe "PackageUpdate edge cases" do
     test "handles pre-release versions" do
-      assert :current = NPM.PackageUpdate.update_type("invalid", "also-invalid")
+      assert :current = NPM.Dependency.Update.update_type("invalid", "also-invalid")
     end
 
     test "major jump from 0.x to 1.x" do
-      assert :major = NPM.PackageUpdate.update_type("0.9.0", "1.0.0")
+      assert :major = NPM.Dependency.Update.update_type("0.9.0", "1.0.0")
     end
   end
 

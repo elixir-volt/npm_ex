@@ -7,7 +7,7 @@ defmodule NPM.Milestone2500Test do
       new = %{"lodash" => %{version: "4.17.21"}}
       diff = NPM.SnapshotDiff.diff(old, new)
       assert hd(diff.updated).to == "4.17.21"
-      assert :current = NPM.DepFreshness.classify("4.17.21", "4.17.21")
+      assert :current = NPM.Dependency.Freshness.classify("4.17.21", "4.17.21")
     end
   end
 
@@ -84,28 +84,28 @@ defmodule NPM.Milestone2500Test do
 
   describe "DepRange + DepFreshness" do
     test "pinned deps are easier to track freshness" do
-      assert :exact = NPM.DepRange.classify("4.17.21")
-      assert :current = NPM.DepFreshness.classify("4.17.21", "4.17.21")
+      assert :exact = NPM.Dependency.Range.classify("4.17.21")
+      assert :current = NPM.Dependency.Freshness.classify("4.17.21", "4.17.21")
     end
   end
 
   describe "DepFreshness additional" do
     test "same major different patch is current" do
-      assert :current = NPM.DepFreshness.classify("4.17.0", "4.17.5")
+      assert :current = NPM.Dependency.Freshness.classify("4.17.0", "4.17.5")
     end
 
     test "group returns empty map for empty list" do
-      assert %{} = NPM.DepFreshness.group([])
+      assert %{} = NPM.Dependency.Freshness.group([])
     end
 
     test "format empty groups" do
-      assert "" = NPM.DepFreshness.format(%{})
+      assert "" = NPM.Dependency.Freshness.format(%{})
     end
   end
 
   describe "LockfileCheck + DepRange" do
     test "file dep not checked by semver" do
-      assert :file = NPM.DepRange.classify("file:../local")
+      assert :file = NPM.Dependency.Range.classify("file:../local")
     end
   end
 
@@ -123,7 +123,7 @@ defmodule NPM.Milestone2500Test do
     test "bin path resolution" do
       data = %{"name" => "eslint", "bin" => %{"eslint" => "./bin/eslint.js"}}
       cmds = NPM.Bin.commands(data)
-      path = NPM.DepPath.bin_path(hd(cmds))
+      path = NPM.NodeModules.Path.bin_path(hd(cmds))
       assert path =~ ".bin/eslint"
     end
   end

@@ -12,7 +12,7 @@ defmodule NPM.SupplyChain do
   @spec assess(map(), map()) :: map()
   def assess(pkg_data, lockfile) do
     total = map_size(lockfile)
-    phantoms = NPM.PhantomDep.count(pkg_data, lockfile)
+    phantoms = NPM.Dependency.Phantom.count(pkg_data, lockfile)
 
     integrity_count =
       Enum.count(lockfile, fn {_, entry} ->

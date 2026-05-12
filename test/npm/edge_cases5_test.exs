@@ -57,12 +57,12 @@ defmodule NPM.EdgeCases5Test do
   describe "PhantomDep edge cases" do
     test "includes optionalDependencies in declared" do
       pkg = %{"optionalDependencies" => %{"fsevents" => "^2.0"}}
-      refute NPM.PhantomDep.phantom?("fsevents", pkg)
+      refute NPM.Dependency.Phantom.phantom?("fsevents", pkg)
     end
 
     test "includes peerDependencies in declared" do
       pkg = %{"peerDependencies" => %{"react" => "^18.0"}}
-      refute NPM.PhantomDep.phantom?("react", pkg)
+      refute NPM.Dependency.Phantom.phantom?("react", pkg)
     end
   end
 
@@ -94,19 +94,19 @@ defmodule NPM.EdgeCases5Test do
 
   describe "DepPath edge cases" do
     test "nested scoped package" do
-      path = NPM.DepPath.nested("express", "@types/express")
+      path = NPM.NodeModules.Path.nested("express", "@types/express")
       assert path == "node_modules/express/node_modules/@types/express"
     end
 
     test "custom node_modules bin" do
-      assert "custom_nm/.bin/tsc" = NPM.DepPath.bin_path("tsc", "custom_nm")
+      assert "custom_nm/.bin/tsc" = NPM.NodeModules.Path.bin_path("tsc", "custom_nm")
     end
   end
 
   describe "DepStats edge cases" do
     test "format with no scopes" do
-      stats = NPM.DepStats.compute(%{"lodash" => %{version: "4.17.21"}})
-      formatted = NPM.DepStats.format(stats)
+      stats = NPM.Dependency.Stats.compute(%{"lodash" => %{version: "4.17.21"}})
+      formatted = NPM.Dependency.Stats.format(stats)
       assert formatted =~ "Top scopes: none"
     end
   end

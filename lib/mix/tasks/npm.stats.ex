@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Npm.Stats do
 
   use Mix.Task
 
-  alias NPM.DepGraph
+  alias NPM.Dependency.Graph
 
   @impl true
   def run([]) do
@@ -21,15 +21,15 @@ defmodule Mix.Tasks.Npm.Stats do
     with {:ok, %{dependencies: deps, dev_dependencies: dev_deps}} <- NPM.PackageJSON.read_all(),
          {:ok, lockfile} when lockfile != %{} <- NPM.Lockfile.read() do
       all_deps = Map.merge(deps, dev_deps)
-      adj = DepGraph.adjacency_list(lockfile)
-      fin = DepGraph.fan_in(adj)
-      fout = DepGraph.fan_out(adj)
+      adj = Graph.adjacency_list(lockfile)
+      fin = Graph.fan_in(adj)
+      fout = Graph.fan_out(adj)
 
       Mix.shell().info("NPM dependency statistics:")
       Mix.shell().info("  Total packages:   #{map_size(lockfile)}")
       Mix.shell().info("  Direct deps:      #{map_size(all_deps)}")
       Mix.shell().info("  Transitive deps:  #{map_size(lockfile) - map_size(all_deps)}")
-      Mix.shell().info("  Leaf packages:    #{length(DepGraph.leaves(adj))}")
+      Mix.shell().info("  Leaf packages:    #{length(Graph.leaves(adj))}")
 
       print_top("Most depended on", fin)
       print_top("Most dependencies", fout)

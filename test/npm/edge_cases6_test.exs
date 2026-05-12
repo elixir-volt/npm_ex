@@ -76,7 +76,7 @@ defmodule NPM.EdgeCases6Test do
   describe "DepStats + Scope" do
     test "top_scopes works with single scope" do
       lockfile = %{"@types/node" => %{version: "18.0.0"}}
-      scopes = NPM.DepStats.top_scopes(lockfile)
+      scopes = NPM.Dependency.Stats.top_scopes(lockfile)
       assert [{"types", 1}] = scopes
     end
   end
@@ -85,7 +85,7 @@ defmodule NPM.EdgeCases6Test do
     test "phantom dep has a range type in lockfile" do
       pkg = %{"dependencies" => %{"express" => "^4.18"}}
       lockfile = %{"express" => %{version: "4.18.2"}, "debug" => %{version: "4.3.4"}}
-      phantoms = NPM.PhantomDep.detect(pkg, lockfile)
+      phantoms = NPM.Dependency.Phantom.detect(pkg, lockfile)
       assert "debug" in phantoms
     end
   end
@@ -112,7 +112,7 @@ defmodule NPM.EdgeCases6Test do
     test "valid peer deps format" do
       data = %{"name" => "pkg", "version" => "1.0.0", "peerDependencies" => %{"react" => "^18.0"}}
       assert NPM.Validate.valid?(data)
-      peers = NPM.PeerDep.extract(data)
+      peers = NPM.Dependency.Peer.extract(data)
       assert peers["react"] == "^18.0"
     end
   end
