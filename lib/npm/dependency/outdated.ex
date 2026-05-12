@@ -48,6 +48,39 @@ defmodule NPM.Dependency.Outdated do
   end
 
   @doc """
+  Classifies an update type.
+  """
+  @spec update_type(String.t(), String.t()) :: :major | :minor | :patch | :current
+  def update_type(current, latest) do
+    case NPM.SemverUtil.update_type(current, latest) do
+      :none -> :current
+      type when type in [:major, :minor, :patch] -> type
+      _ -> :current
+    end
+  end
+
+  @doc """
+  Computes all available updates from `{name, current, latest}` tuples.
+  """
+  @spec compute([{String.t(), String.t(), String.t()}]) :: [map()]
+  def compute(packages) do
+    packages
+    |> Enum.map(fn {name, current, latest} ->
+      %{name: name, current: current, latest: latest, type: update_type(current, latest)}
+    end)
+    |> Enum.reject(&(&1.type == :current))
+    |> Enum.sort_by(fn update -> {type_order(update.type), update.name} end)
+  end
+
+  @doc """
+  Groups updates by type.
+  """
+  @spec group_by_type([map()]) :: map()
+  def group_by_type(updates) do
+    Enum.group_by(updates, & &1.type)
+  end
+
+  @doc """
   Filters outdated entries by update type.
   """
   @spec filter_by_type([outdated_entry()], :major | :minor | :patch) :: [outdated_entry()]
@@ -66,22 +99,41 @@ defmodule NPM.Dependency.Outdated do
   @doc """
   Returns a summary of outdated packages.
   """
-  @spec summary([outdated_entry()]) :: %{
+  @spec summary([outdated_entry()] | [map()]) :: %{
           total: non_neg_integer(),
           major: non_neg_integer(),
           minor: non_neg_integer(),
           patch: non_neg_integer()
         }
   def summary(entries) do
+    grouped = group_by_type(entries)
+
     %{
       total: length(entries),
-      major: Enum.count(entries, &(&1.type == :major)),
-      minor: Enum.count(entries, &(&1.type == :minor)),
-      patch: Enum.count(entries, &(&1.type == :patch))
+      major: length(Map.get(grouped, :major, [])),
+      minor: length(Map.get(grouped, :minor, [])),
+      patch: length(Map.get(grouped, :patch, []))
     }
+  end
+
+  @doc """
+  Formats updates for display.
+  """
+  @spec format([map()]) :: String.t()
+  def format([]), do: "All packages are up to date."
+
+  def format(updates) do
+    Enum.map_join(updates, "\n", fn update ->
+      "#{update.name}: #{update.current} → #{update.latest} (#{update.type})"
+    end)
   end
 
   defp available_versions(latest) do
     [latest]
   end
+
+  defp type_order(:major), do: 0
+  defp type_order(:minor), do: 1
+  defp type_order(:patch), do: 2
+  defp type_order(_), do: 3
 end

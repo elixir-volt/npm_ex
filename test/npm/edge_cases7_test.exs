@@ -55,11 +55,11 @@ defmodule NPM.EdgeCases7Test do
 
   describe "PackageUpdate edge cases" do
     test "handles pre-release versions" do
-      assert :current = NPM.Dependency.Update.update_type("invalid", "also-invalid")
+      assert :current = NPM.Dependency.Outdated.update_type("invalid", "also-invalid")
     end
 
     test "major jump from 0.x to 1.x" do
-      assert :major = NPM.Dependency.Update.update_type("0.9.0", "1.0.0")
+      assert :major = NPM.Dependency.Outdated.update_type("0.9.0", "1.0.0")
     end
   end
 
