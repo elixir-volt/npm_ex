@@ -68,6 +68,43 @@ defmodule NPM.Config do
     end
   end
 
+  @doc "Allowed direct exotic dependency specs."
+  @spec exotic_deps :: [String.t()]
+  def exotic_deps do
+    env_list("NPM_EX_EXOTIC_DEPS") || Application.get_env(:npm, :exotic_deps, [])
+  end
+
+  @doc "Registry origins allowed for packuments and tarballs."
+  @spec allowed_registries :: [String.t()]
+  def allowed_registries do
+    env_list("NPM_EX_ALLOWED_REGISTRIES") ||
+      Application.get_env(:npm, :allowed_registries) ||
+      [registry(), mirror_url()]
+  end
+
+  @doc "Whether HTTP redirects to different registry origins are allowed."
+  @spec allow_registry_redirects? :: boolean()
+  def allow_registry_redirects? do
+    case System.get_env("NPM_EX_ALLOW_REGISTRY_REDIRECTS") do
+      nil -> Application.get_env(:npm, :allow_registry_redirects, false)
+      value -> truthy?(value)
+    end
+  end
+
+  @doc "Warn when a package was created fewer than this many days ago."
+  @spec package_age_warning_days :: non_neg_integer()
+  def package_age_warning_days do
+    env_integer("NPM_EX_PACKAGE_AGE_WARNING_DAYS") ||
+      Application.get_env(:npm, :package_age_warning_days, 7)
+  end
+
+  @doc "Warn when a package version was published fewer than this many days ago."
+  @spec version_age_warning_days :: non_neg_integer()
+  def version_age_warning_days do
+    env_integer("NPM_EX_VERSION_AGE_WARNING_DAYS") ||
+      Application.get_env(:npm, :version_age_warning_days, 3)
+  end
+
   @doc """
   Read a value from `.npmrc` files.
 
@@ -150,5 +187,25 @@ defmodule NPM.Config do
 
   defp truthy?(value) when is_binary(value) do
     (value |> String.trim() |> String.downcase()) in ~w(1 true yes on)
+  end
+
+  defp env_list(name) do
+    case System.get_env(name) do
+      nil -> nil
+      value -> value |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+    end
+  end
+
+  defp env_integer(name) do
+    case System.get_env(name) do
+      nil ->
+        nil
+
+      value ->
+        case Integer.parse(String.trim(value)) do
+          {int, ""} when int >= 0 -> int
+          _ -> nil
+        end
+    end
   end
 end

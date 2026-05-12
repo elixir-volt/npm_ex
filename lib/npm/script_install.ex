@@ -44,6 +44,7 @@ defmodule NPM.ScriptInstall do
   end
 
   defp do_install(deps, id, force?) do
+    validate_direct_exotic_deps!(deps)
     dir = install_dir(id)
 
     if force?, do: File.rm_rf!(dir)
@@ -51,7 +52,8 @@ defmodule NPM.ScriptInstall do
     nm_dir = Path.join(dir, "node_modules")
     lockfile_path = Path.join(dir, "npm.lock")
 
-    if not force? and File.exists?(lockfile_path) and node_modules_intact?(lockfile_path, nm_dir) do
+    if not force? and File.exists?(lockfile_path) and lockfile_policy_current?(lockfile_path) and
+         node_modules_intact?(lockfile_path, nm_dir) do
       :persistent_term.put(@state_key, {id, dir})
       :ok
     else
@@ -81,6 +83,7 @@ defmodule NPM.ScriptInstall do
     for {name, version_str} <- resolved, into: %{} do
       {:ok, packument} = NPM.Registry.get_packument(name)
       info = Map.fetch!(packument.versions, version_str)
+      warn_age_heuristics(name, version_str, info)
 
       {name,
        %{
@@ -94,6 +97,21 @@ defmodule NPM.ScriptInstall do
     end
   end
 
+  defp lockfile_policy_current?(lockfile_path) do
+    case NPM.Lockfile.read_policy(lockfile_path) do
+      {:ok, policy} -> NPM.Lockfile.policy_matches?(policy)
+      _ -> false
+    end
+  end
+
+  defp warn_age_heuristics(name, version, info) do
+    info
+    |> NPM.Security.Age.warnings()
+    |> Enum.each(fn warning ->
+      Mix.shell().info("Warning: #{NPM.Security.Age.format(name, version, warning)}")
+    end)
+  end
+
   defp node_modules_intact?(lockfile_path, nm_dir) do
     case NPM.Lockfile.read(lockfile_path) do
       {:ok, lockfile} when lockfile != %{} ->
@@ -104,6 +122,10 @@ defmodule NPM.ScriptInstall do
       _ ->
         false
     end
+  end
+
+  defp validate_direct_exotic_deps!(deps) do
+    Enum.each(deps, fn {name, spec} -> NPM.Security.ExoticDeps.validate_direct!(name, spec) end)
   end
 
   defp cache_id(deps) do

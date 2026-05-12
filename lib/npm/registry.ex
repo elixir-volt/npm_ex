@@ -24,6 +24,8 @@ defmodule NPM.Registry do
           cpu: [String.t()],
           has_install_script: boolean(),
           deprecated: String.t() | nil,
+          created_at: String.t() | nil,
+          published_at: String.t() | nil,
           dist: %{
             tarball: String.t(),
             integrity: String.t(),
@@ -57,7 +59,14 @@ defmodule NPM.Registry do
   end
 
   defp fetch_with_retry(package, url, headers, retries_left) do
-    result = Req.get(url, headers: headers, decode_body: false)
+    NPM.Security.RegistryPolicy.validate_url!(url)
+
+    result =
+      Req.get(url,
+        headers: headers,
+        decode_body: false,
+        redirect: NPM.Config.allow_registry_redirects?()
+      )
 
     case classify_result(result) do
       {:ok, body} ->
@@ -101,16 +110,20 @@ defmodule NPM.Registry do
   defp decode_body(body) when is_map(body), do: body
 
   defp parse_packument(data) do
+    times = Map.get(data, "time", %{})
+
     versions =
       for {version_str, info} <- Map.get(data, "versions", %{}), into: %{} do
-        {version_str, parse_version_info(info)}
+        {version_str, parse_version_info(info, times)}
       end
 
     %{name: Map.get(data, "name", ""), versions: versions}
   end
 
-  defp parse_version_info(info) do
+  defp parse_version_info(info, times) do
     dist = Map.get(info, "dist", %{})
+    tarball = Map.get(dist, "tarball", "")
+    NPM.Security.RegistryPolicy.validate_url!(tarball)
 
     %{
       dependencies: Map.get(info, "dependencies", %{}),
@@ -123,8 +136,10 @@ defmodule NPM.Registry do
       cpu: Map.get(info, "cpu", []),
       has_install_script: Map.get(info, "hasInstallScript", false),
       deprecated: Map.get(info, "deprecated", nil),
+      created_at: Map.get(times, "created"),
+      published_at: Map.get(times, Map.get(info, "version", "")),
       dist: %{
-        tarball: Map.get(dist, "tarball", ""),
+        tarball: tarball,
         integrity: Map.get(dist, "integrity", ""),
         file_count: Map.get(dist, "fileCount"),
         unpacked_size: Map.get(dist, "unpackedSize")

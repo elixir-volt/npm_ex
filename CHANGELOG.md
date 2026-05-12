@@ -3,13 +3,17 @@
 ## Unreleased
 
 - Block transitive git, file, and URL dependency specs from published package metadata by default
-- Add `config :npm` support for registry, token, mirror, cache dir, install dir, and exotic subdependency policy
+- Add `config :npm` support for registry, token, mirror, cache dir, install dir, registry policy, package age warnings, and exotic dependency policy
 - Move dependency analysis modules under `NPM.Dependency.*` and node_modules path helpers under `NPM.NodeModules.Path`
 - Move supply-chain security helpers under `NPM.Security.*`
 - Move lockfile helper modules under `NPM.Lockfile.*`
 - Move package metadata helpers under `NPM.Package.*`
 - Route JSON decoding through `NPM.JSON` across library modules
 - Move health, doctor, environment, and engine checks under `NPM.Diagnostics.*`
+- Enforce registry origin allowlists for packuments and tarballs
+- Record dependency security policy in `npm.lock` and invalidate locks generated with weaker policy
+- Block direct exotic dependencies unless their exact specs are listed in `exotic_deps`
+- Warn when registry metadata shows newly created packages or freshly published versions
 
 ## 0.6.1
 

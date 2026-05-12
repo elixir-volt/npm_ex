@@ -222,11 +222,11 @@ defmodule NPM do
         {:error, :no_lockfile}
 
       {:ok, lockfile} ->
-        if lockfile_matches?(lockfile, deps) do
+        if lockfile_matches?(lockfile, deps) and lockfile_policy_current?() do
           link_from_lockfile(lockfile)
         else
           Mix.shell().error(
-            "npm.lock is out of date with package.json.\n" <>
+            "npm.lock is out of date with package.json or current security policy.\n" <>
               "Run `mix npm.install` to update the lockfile."
           )
 
@@ -235,6 +235,13 @@ defmodule NPM do
 
       error ->
         error
+    end
+  end
+
+  defp lockfile_policy_current? do
+    case NPM.Lockfile.read_policy() do
+      {:ok, policy} -> NPM.Lockfile.policy_matches?(policy)
+      _ -> false
     end
   end
 
@@ -249,15 +256,21 @@ defmodule NPM do
   end
 
   defp full_install(deps) do
+    validate_direct_exotic_deps!(deps)
     {:ok, old_lockfile} = NPM.Lockfile.read()
 
     if old_lockfile != %{} and lockfile_matches?(old_lockfile, deps) and
+         lockfile_policy_current?() and
          node_modules_intact?(old_lockfile) do
       Mix.shell().info("Already up to date.")
       :ok
     else
       resolve_and_install(deps, old_lockfile)
     end
+  end
+
+  defp validate_direct_exotic_deps!(deps) do
+    Enum.each(deps, fn {name, spec} -> NPM.Security.ExoticDeps.validate_direct!(name, spec) end)
   end
 
   defp node_modules_intact?(lockfile) do
@@ -332,6 +345,7 @@ defmodule NPM do
       for {name, version_str} <- resolved, into: %{} do
         {:ok, packument} = NPM.Registry.get_packument(name)
         info = Map.fetch!(packument.versions, version_str)
+        warn_age_heuristics(name, version_str, info)
 
         {name,
          %{
@@ -361,6 +375,8 @@ defmodule NPM do
   defp maybe_add_optional_dep({name, range}, acc) do
     case resolve_version(name, range) do
       {:ok, version_str, info} ->
+        warn_age_heuristics(name, version_str, info)
+
         Map.put(acc, name, %{
           version: version_str,
           integrity: info.dist.integrity,
@@ -391,6 +407,14 @@ defmodule NPM do
       _ ->
         :error
     end
+  end
+
+  defp warn_age_heuristics(name, version, info) do
+    info
+    |> NPM.Security.Age.warnings()
+    |> Enum.each(fn warning ->
+      Mix.shell().info("Warning: #{NPM.Security.Age.format(name, version, warning)}")
+    end)
   end
 
   defp warn_unmet_peers(resolved) do

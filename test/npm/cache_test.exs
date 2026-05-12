@@ -40,6 +40,7 @@ defmodule NPM.CacheTest do
       end)
 
       url = "http://127.0.0.1:#{port}/test.tgz"
+      System.put_env("NPM_EX_ALLOWED_REGISTRIES", "http://127.0.0.1:#{port}")
       assert {:ok, path} = NPM.Cache.ensure("test-pkg", "1.0.0", url, "")
       assert File.exists?(Path.join(path, "package.json"))
 
@@ -47,6 +48,7 @@ defmodule NPM.CacheTest do
       assert {:ok, ^path} = NPM.Cache.ensure("test-pkg", "1.0.0", url, "")
 
       System.delete_env("NPM_EX_CACHE_DIR")
+      System.delete_env("NPM_EX_ALLOWED_REGISTRIES")
     end
   end
 

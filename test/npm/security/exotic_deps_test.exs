@@ -4,10 +4,12 @@ defmodule NPM.Security.ExoticDepsTest do
   setup do
     previous_env = System.get_env("NPM_EX_BLOCK_EXOTIC_SUBDEPS")
     previous_config = Application.get_env(:npm, :block_exotic_subdeps)
+    previous_exotic_deps = Application.get_env(:npm, :exotic_deps)
 
     on_exit(fn ->
       restore_env("NPM_EX_BLOCK_EXOTIC_SUBDEPS", previous_env)
       restore_config(:block_exotic_subdeps, previous_config)
+      restore_config(:exotic_deps, previous_exotic_deps)
     end)
 
     :ok
@@ -36,6 +38,16 @@ defmodule NPM.Security.ExoticDepsTest do
                  fn ->
                    NPM.Security.ExoticDeps.validate!("@tanstack/history", "1.161.12", info)
                  end
+  end
+
+  test "blocks direct exotic dependencies unless allowed" do
+    assert_raise NPM.Security.ExoticDeps.Error, ~r/exotic direct dependency/, fn ->
+      NPM.Security.ExoticDeps.validate_direct!("local-pkg", "file:../local-pkg")
+    end
+
+    Application.put_env(:npm, :exotic_deps, ["file:../local-pkg"])
+
+    assert :ok = NPM.Security.ExoticDeps.validate_direct!("local-pkg", "file:../local-pkg")
   end
 
   test "can be disabled through env var" do

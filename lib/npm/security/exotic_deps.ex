@@ -16,12 +16,17 @@ defmodule NPM.Security.ExoticDeps do
 
   defmodule Error do
     @moduledoc """
-    Raised when a transitive dependency points at an exotic source.
+    Raised when a dependency points at an exotic source blocked by policy.
     """
 
-    defexception [:package, :version, :field, :dependency, :spec]
+    defexception [:package, :version, :field, :dependency, :spec, :direct?]
 
     @impl true
+    def message(%__MODULE__{direct?: true} = error) do
+      "#{error.dependency}: #{error.spec} is an exotic direct dependency. " <>
+        "Add the exact spec to config :npm, exotic_deps: [...] or NPM_EX_EXOTIC_DEPS to allow it."
+    end
+
     def message(%__MODULE__{} = error) do
       "#{error.package}@#{error.version} declares exotic #{error.field} entry " <>
         "#{error.dependency}: #{error.spec}. Transitive git, file, and URL dependencies are blocked by default."
@@ -32,6 +37,16 @@ defmodule NPM.Security.ExoticDeps do
     {:dependencies, "dependencies"},
     {:optional_dependencies, "optionalDependencies"}
   ]
+
+  @doc "Validate a direct project dependency against the exotic dependency allowlist."
+  @spec validate_direct!(String.t(), term()) :: :ok
+  def validate_direct!(dependency, spec) do
+    if exotic?(spec) and spec not in NPM.Config.exotic_deps() do
+      raise Error, dependency: dependency, spec: spec, direct?: true
+    end
+
+    :ok
+  end
 
   @spec validate!(String.t(), String.t(), map()) :: :ok
   def validate!(package, version, info) do

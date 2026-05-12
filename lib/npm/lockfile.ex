@@ -39,8 +39,51 @@ defmodule NPM.Lockfile do
   @doc "Write the lockfile."
   @spec write(t(), String.t()) :: :ok | {:error, term()}
   def write(lockfile, path \\ @default_path) do
-    data = %{"lockfileVersion" => 1, "packages" => serialize(lockfile)}
+    data = %{
+      "lockfileVersion" => 1,
+      "policy" => current_policy(),
+      "packages" => serialize(lockfile)
+    }
+
     File.write(path, NPM.JSON.encode_pretty(data))
+  end
+
+  @doc "Read the security policy recorded in the lockfile."
+  @spec read_policy(String.t()) :: {:ok, map() | nil} | {:error, term()}
+  def read_policy(path \\ @default_path) do
+    case File.read(path) do
+      {:ok, content} -> {:ok, content |> NPM.JSON.decode!() |> Map.get("policy")}
+      {:error, :enoent} -> {:ok, nil}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc "Return the effective lockfile security policy for new locks."
+  @spec current_policy :: map()
+  def current_policy do
+    %{
+      "block_exotic_subdeps" => NPM.Config.block_exotic_subdeps?(),
+      "exotic_deps" => NPM.Config.exotic_deps(),
+      "allowed_registries" => NPM.Security.RegistryPolicy.allowed_origins(),
+      "allow_registry_redirects" => NPM.Config.allow_registry_redirects?()
+    }
+  end
+
+  @doc "Whether a recorded lockfile policy is compatible with current settings."
+  @spec policy_matches?(map() | nil) :: boolean()
+  def policy_matches?(nil), do: false
+
+  def policy_matches?(policy) when is_map(policy) do
+    policy["block_exotic_subdeps"] == NPM.Config.block_exotic_subdeps?() and
+      MapSet.subset?(
+        MapSet.new(policy["exotic_deps"] || []),
+        MapSet.new(NPM.Config.exotic_deps())
+      ) and
+      MapSet.subset?(
+        MapSet.new(policy["allowed_registries"] || []),
+        MapSet.new(NPM.Security.RegistryPolicy.allowed_origins())
+      ) and
+      policy["allow_registry_redirects"] == NPM.Config.allow_registry_redirects?()
   end
 
   @doc "Parse a raw packages map into lockfile entries."

@@ -138,6 +138,11 @@ Set environment variables to customize behavior:
 - `NPM_INSTALL_DIR` — custom `NPM.install/2` runtime install directory
 - `NPM_EX_CACHE_DIR` — custom cache directory (default: `~/.npm_ex/`)
 - `NPM_EX_BLOCK_EXOTIC_SUBDEPS` — block transitive git, file, and URL dependencies (default: `true`)
+- `NPM_EX_EXOTIC_DEPS` — comma-separated allowlist for direct exotic dependency specs (default: empty)
+- `NPM_EX_ALLOWED_REGISTRIES` — comma-separated registry origins allowed for packuments and tarballs (default: registry + mirror)
+- `NPM_EX_ALLOW_REGISTRY_REDIRECTS` — allow registry HTTP redirects (default: `false`)
+- `NPM_EX_PACKAGE_AGE_WARNING_DAYS` — warn for packages created more recently than this many days (default: `7`)
+- `NPM_EX_VERSION_AGE_WARNING_DAYS` — warn for versions published more recently than this many days (default: `3`)
 
 Elixir application config is also supported:
 
@@ -148,7 +153,12 @@ config :npm,
   mirror: "https://registry.npmmirror.com",
   cache_dir: "/path/to/.npm_ex",
   install_dir: "/path/to/npm-installs",
-  block_exotic_subdeps: true
+  block_exotic_subdeps: true,
+  exotic_deps: [],
+  allowed_registries: ["https://registry.npmjs.org"],
+  allow_registry_redirects: false,
+  package_age_warning_days: 7,
+  version_age_warning_days: 3
 ```
 
 ## License

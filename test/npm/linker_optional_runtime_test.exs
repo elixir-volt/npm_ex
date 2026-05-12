@@ -32,7 +32,9 @@ defmodule NPM.LinkerOptionalRuntimeTest do
     })
 
     original = System.get_env("NPM_EX_CACHE_DIR")
+    original_allowed = System.get_env("NPM_EX_ALLOWED_REGISTRIES")
     System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+    System.put_env("NPM_EX_ALLOWED_REGISTRIES", "https://example.com,https://registry.npmjs.org")
 
     try do
       log =
@@ -48,6 +50,12 @@ defmodule NPM.LinkerOptionalRuntimeTest do
         System.put_env("NPM_EX_CACHE_DIR", original)
       else
         System.delete_env("NPM_EX_CACHE_DIR")
+      end
+
+      if original_allowed do
+        System.put_env("NPM_EX_ALLOWED_REGISTRIES", original_allowed)
+      else
+        System.delete_env("NPM_EX_ALLOWED_REGISTRIES")
       end
     end
   end
