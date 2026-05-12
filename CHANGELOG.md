@@ -17,6 +17,7 @@
 - Block direct exotic dependencies unless their exact specs are listed in `exotic_deps`
 - Warn when registry metadata shows newly created packages or freshly published versions
 - Add `NPM.Security.Compromised` and `mix npm.audit --osv/--compromised` for OSV-backed malicious package checks
+- Merge OSV advisory writes into the shared compromised-package cache and fail online audit on OSV query errors
 
 ## 0.6.1
 

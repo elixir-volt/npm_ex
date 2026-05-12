@@ -25,7 +25,6 @@ defmodule Mix.Tasks.Npm.Audit do
   use Mix.Task
 
   alias NPM.Config
-  alias NPM.JSON
   alias NPM.Security.Compromised
   alias NPM.Security.TaskReporter
 
@@ -77,18 +76,23 @@ defmodule Mix.Tasks.Npm.Audit do
   end
 
   defp audit_osv(lockfile, opts, format, policy) do
-    findings = Compromised.check(lockfile, sources: [:osv], online?: true)
-    advisories = findings |> Enum.map(& &1.advisory) |> Enum.uniq_by(& &1["id"])
+    case Compromised.check_osv(lockfile) do
+      {:ok, findings} ->
+        advisories = findings |> Enum.map(& &1.advisory) |> Enum.uniq_by(& &1["id"])
 
-    TaskReporter.report(
-      findings,
-      format,
-      "No malicious OSV advisories found for npm.lock packages.",
-      "Found #{length(findings)} malicious OSV advisory matches:"
-    )
+        TaskReporter.report(
+          findings,
+          format,
+          "No malicious OSV advisories found for npm.lock packages.",
+          "Found #{length(findings)} malicious OSV advisory matches:"
+        )
 
-    maybe_write(write_path(opts), advisories)
-    TaskReporter.enforce(findings, policy)
+        maybe_write(write_path(opts), advisories)
+        TaskReporter.enforce(findings, policy)
+
+      {:error, reason} ->
+        Mix.raise("OSV query failed: #{inspect(reason)}")
+    end
   end
 
   defp audit_compromised(lockfile, opts, format, policy) do
@@ -119,9 +123,15 @@ defmodule Mix.Tasks.Npm.Audit do
   defp maybe_write(nil, _advisories), do: :ok
 
   defp maybe_write(path, advisories) do
-    File.mkdir_p!(Path.dirname(path))
-    File.write!(path, JSON.encode_pretty(advisories))
-    Mix.shell().info("Wrote #{length(advisories)} OSV advisories to #{path}")
+    case Compromised.merge_database(path, advisories) do
+      {:ok, merged} ->
+        Mix.shell().info(
+          "Merged #{length(advisories)} OSV advisories into #{path} (#{length(merged)} total)"
+        )
+
+      {:error, reason} ->
+        Mix.raise("Failed to write OSV advisories to #{path}: #{inspect(reason)}")
+    end
   end
 
   defp audit_registry(lockfile) do

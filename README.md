@@ -124,7 +124,20 @@ mix npm.audit --compromised
 mix npm.audit --compromised --db priv/security/compromised_packages.json
 ```
 
-The optional OSV `--write-cache` flag stores matching malicious-package advisories in the shared global npm_ex security cache (`~/.npm_ex/security/compromised_packages.json` by default) that `mix npm.audit --compromised` and `NPM.Security.Compromised` can use offline. `--write path` can still write a project-local database. Compromised-package audit modes exit non-zero when matches are found unless the compromised-package policy is set to `warn` or `off`.
+The optional OSV `--write-cache` flag merges matching malicious-package advisories into the shared global npm_ex security cache (`~/.npm_ex/security/compromised_packages.json` by default) that `mix npm.audit --compromised` and `NPM.Security.Compromised` can use offline. `--write path` can still write or merge a project-local database. Compromised-package audit modes exit non-zero when matches are found unless the compromised-package policy is set to `warn` or `off`. Online OSV audit mode fails closed when OSV cannot be queried; the library-level `NPM.Security.Compromised.check/2` remains tolerant for callers that prefer best-effort checks.
+
+Recommended CI patterns:
+
+```sh
+# Deterministic offline gate using the shared cache or configured DB.
+mix npm.audit --compromised
+
+# Scheduled or developer-run intelligence refresh for the current lockfile.
+mix npm.audit --osv --write-cache --policy warn
+
+# Strict online gate for the current lockfile.
+mix npm.audit --osv
+```
 
 OpenSSF/OSV is the default-compatible open data source because OpenSSF malicious-package reports are published in OSV format and available through OSV.dev. Socket, Snyk, and Phylum provide valuable proprietary intelligence or install-time firewall workflows; they fit best as external scanners/proxies or future optional integrations rather than default `npm_ex` install dependencies.
 

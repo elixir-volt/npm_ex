@@ -11,6 +11,8 @@ defmodule Mix.Tasks.Npm.Config do
 
   use Mix.Task
 
+  alias NPM.Config
+
   @impl true
   def run([]) do
     Application.ensure_all_started(:req)
@@ -19,6 +21,9 @@ defmodule Mix.Tasks.Npm.Config do
     Mix.shell().info("cache: #{NPM.Cache.dir()}")
     Mix.shell().info("auth: #{auth_status()}")
     Mix.shell().info("link strategy: #{link_strategy()}")
+    Mix.shell().info("compromised db: #{Config.compromised_db_path()}")
+    Mix.shell().info("compromised policy: #{Config.compromised_policy()}")
+    Mix.shell().info("compromised sources: #{Enum.join(Config.compromised_sources(), ",")}")
   end
 
   def run(_) do

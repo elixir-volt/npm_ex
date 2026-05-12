@@ -27,18 +27,36 @@ defmodule NPM.Security.Compromised do
 
     sources
     |> Enum.flat_map(&check_source(lockfile, &1, opts))
-    |> Enum.uniq_by(fn finding ->
-      {finding.source, finding.advisory["id"], finding.package, finding.version}
-    end)
-    |> Enum.sort_by(fn finding ->
-      {finding.package, finding.version, finding.advisory["id"] || ""}
-    end)
+    |> sort_findings()
   end
 
   @doc "Check one package version against configured compromised-package sources."
   @spec check_package(String.t(), String.t(), keyword()) :: [finding()]
   def check_package(name, version, opts \\ []) do
     check(%{name => %{version: version}}, opts)
+  end
+
+  @doc "Check a lockfile against OSV.dev and return query errors to the caller."
+  @spec check_osv(NPM.Lockfile.t(), keyword()) :: {:ok, [finding()]} | {:error, term()}
+  def check_osv(lockfile, opts \\ []) when is_map(lockfile) do
+    packages = Enum.map(lockfile, fn {package, entry} -> {package, entry_version(entry)} end)
+
+    case OSV.query_packages(packages, opts) do
+      {:ok, advisories_by_package} ->
+        findings =
+          Enum.flat_map(lockfile, fn {package, entry} ->
+            match_advisories(
+              %{package => entry},
+              Map.get(advisories_by_package, package, []),
+              :osv
+            )
+          end)
+
+        {:ok, sort_findings(findings)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc "Return the shared global cache path for OSV-format compromised-package reports."
@@ -53,6 +71,32 @@ defmodule NPM.Security.Compromised do
       {:error, :enoent} -> read_bundled_database(path)
       error -> error
     end
+  end
+
+  @doc "Write OSV advisory reports to a local JSON database."
+  @spec write_database(String.t(), [map()]) :: :ok | {:error, term()}
+  def write_database(path, advisories) do
+    File.mkdir_p!(Path.dirname(path))
+    File.write(path, JSON.encode_pretty(sort_advisories(advisories)))
+  end
+
+  @doc "Merge new OSV advisories into an existing local database."
+  @spec merge_database(String.t(), [map()]) :: {:ok, [map()]} | {:error, term()}
+  def merge_database(path, advisories) do
+    with {:ok, existing} <- read_database(path),
+         merged = merge_advisories(existing, advisories),
+         :ok <- write_database(path, merged) do
+      {:ok, merged}
+    end
+  end
+
+  @doc "Merge advisory lists by OSV id and return stable sorted advisories."
+  @spec merge_advisories([map()], [map()]) :: [map()]
+  def merge_advisories(existing, new) do
+    existing
+    |> Kernel.++(new)
+    |> Enum.uniq_by(&advisory_key/1)
+    |> sort_advisories()
   end
 
   @doc "Return whether an OSV advisory affects an npm package version."
@@ -95,24 +139,13 @@ defmodule NPM.Security.Compromised do
   end
 
   defp check_source(lockfile, :osv, opts) do
-    if Keyword.get(opts, :online?, false), do: query_osv(lockfile, opts), else: []
+    case Keyword.get(opts, :online?, false) and check_osv(lockfile, opts) do
+      {:ok, findings} -> findings
+      _ -> []
+    end
   end
 
   defp check_source(_lockfile, _source, _opts), do: []
-
-  defp query_osv(lockfile, opts) do
-    packages = Enum.map(lockfile, fn {package, entry} -> {package, entry_version(entry)} end)
-
-    case OSV.query_packages(packages, opts) do
-      {:ok, advisories_by_package} ->
-        Enum.flat_map(lockfile, fn {package, entry} ->
-          match_advisories(%{package => entry}, Map.get(advisories_by_package, package, []), :osv)
-        end)
-
-      {:error, _reason} ->
-        []
-    end
-  end
 
   defp read_bundled_database(path) do
     bundled_path = Config.bundled_compromised_db_path()
@@ -132,6 +165,23 @@ defmodule NPM.Security.Compromised do
 
   defp normalize_database(advisories) when is_list(advisories), do: {:ok, advisories}
   defp normalize_database(_), do: {:error, :invalid_compromised_database}
+
+  defp sort_findings(findings) do
+    findings
+    |> Enum.uniq_by(fn finding ->
+      {finding.source, finding.advisory["id"], finding.package, finding.version}
+    end)
+    |> Enum.sort_by(fn finding ->
+      {finding.package, finding.version, finding.advisory["id"] || ""}
+    end)
+  end
+
+  defp sort_advisories(advisories) do
+    Enum.sort_by(advisories, fn advisory -> advisory["id"] || "" end)
+  end
+
+  defp advisory_key(%{"id" => id}) when is_binary(id), do: {:id, id}
+  defp advisory_key(advisory), do: {:content, :erlang.phash2(advisory)}
 
   defp match_advisories(lockfile, advisories, source) do
     for {package, entry} <- lockfile,

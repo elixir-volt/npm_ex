@@ -84,6 +84,26 @@ defmodule NPM.Security.CompromisedTest do
            }
   end
 
+  test "merges advisory databases by OSV id" do
+    updated = %{@osv_advisory | "summary" => "updated summary"}
+    other = %{@osv_advisory | "id" => "MAL-2025-2"}
+
+    assert [first, second] = Compromised.merge_advisories([@osv_advisory], [updated, other])
+    assert first["id"] == "MAL-2025-1"
+    assert first["summary"] == "malicious npm package"
+    assert second["id"] == "MAL-2025-2"
+  end
+
+  test "merges advisories into local database" do
+    path = write_database!([@osv_advisory])
+    other = %{@osv_advisory | "id" => "MAL-2025-2"}
+
+    assert {:ok, merged} = Compromised.merge_database(path, [other])
+    assert Enum.map(merged, & &1["id"]) == ["MAL-2025-1", "MAL-2025-2"]
+    assert {:ok, persisted} = Compromised.read_database(path)
+    assert Enum.map(persisted, & &1["id"]) == ["MAL-2025-1", "MAL-2025-2"]
+  end
+
   test "converts findings to JSON maps" do
     finding = %{
       package: "evil",
