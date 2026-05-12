@@ -1,4 +1,4 @@
-defmodule NPM.CVE do
+defmodule NPM.Security.CVE do
   @moduledoc """
   CVE (Common Vulnerabilities and Exposures) cross-referencing.
 

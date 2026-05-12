@@ -1,4 +1,4 @@
-defmodule NPM.ExoticDeps do
+defmodule NPM.Security.ExoticDeps do
   @moduledoc """
   Detects and blocks exotic dependency specs in published package metadata.
 

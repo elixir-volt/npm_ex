@@ -47,7 +47,12 @@ defmodule NPM.EdgeCases6Test do
       stats = NPM.LockfileStats.content_stats(lockfile)
       assert stats.with_integrity == 1
 
-      chain = NPM.SupplyChain.assess(%{"dependencies" => %{"a" => "^1", "b" => "^2"}}, lockfile)
+      chain =
+        NPM.Security.SupplyChain.assess(
+          %{"dependencies" => %{"a" => "^1", "b" => "^2"}},
+          lockfile
+        )
+
       assert chain.integrity_coverage == 50.0
     end
   end

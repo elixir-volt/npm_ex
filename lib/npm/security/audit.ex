@@ -1,4 +1,4 @@
-defmodule NPM.Audit do
+defmodule NPM.Security.Audit do
   @moduledoc """
   Security audit for npm packages.
 

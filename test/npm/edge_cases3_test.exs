@@ -128,7 +128,7 @@ defmodule NPM.EdgeCases3Test do
         "b" => %{version: "2.0", attestations: []}
       }
 
-      result = NPM.Provenance.scan(lockfile)
+      result = NPM.Security.Provenance.scan(lockfile)
       assert length(result.with_provenance) == 2
       assert result.without == []
     end

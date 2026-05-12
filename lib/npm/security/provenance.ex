@@ -1,4 +1,4 @@
-defmodule NPM.Provenance do
+defmodule NPM.Security.Provenance do
   @moduledoc """
   Supply chain provenance checking for npm packages.
 

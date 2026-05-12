@@ -37,7 +37,7 @@ defmodule NPM.Resolver do
       if overrides != %{}, do: store_overrides(overrides)
       resolve_with_nesting(root_deps, MapSet.new(), %{}, 0)
     rescue
-      error in NPM.ExoticDeps.Error -> {:error, Exception.message(error)}
+      error in NPM.Security.ExoticDeps.Error -> {:error, Exception.message(error)}
     end
   end
 
@@ -274,7 +274,7 @@ defmodule NPM.Resolver do
         :error
 
       info ->
-        NPM.ExoticDeps.validate!(package, version_str, info)
+        NPM.Security.ExoticDeps.validate!(package, version_str, info)
         overrides = get_overrides()
 
         deps =

@@ -1,4 +1,4 @@
-defmodule NPM.ExoticDepsTest do
+defmodule NPM.Security.ExoticDepsTest do
   use ExUnit.Case, async: false
 
   setup do
@@ -14,15 +14,15 @@ defmodule NPM.ExoticDepsTest do
   end
 
   test "detects exotic dependency specs" do
-    assert NPM.ExoticDeps.exotic?("github:tanstack/router#abc")
-    assert NPM.ExoticDeps.exotic?("git+https://github.com/user/repo.git")
-    assert NPM.ExoticDeps.exotic?("https://example.com/pkg.tgz")
-    assert NPM.ExoticDeps.exotic?("file:../local")
-    assert NPM.ExoticDeps.exotic?("user/repo#abc")
+    assert NPM.Security.ExoticDeps.exotic?("github:tanstack/router#abc")
+    assert NPM.Security.ExoticDeps.exotic?("git+https://github.com/user/repo.git")
+    assert NPM.Security.ExoticDeps.exotic?("https://example.com/pkg.tgz")
+    assert NPM.Security.ExoticDeps.exotic?("file:../local")
+    assert NPM.Security.ExoticDeps.exotic?("user/repo#abc")
 
-    refute NPM.ExoticDeps.exotic?("^1.2.3")
-    refute NPM.ExoticDeps.exotic?("latest")
-    refute NPM.ExoticDeps.exotic?("npm:react@^18")
+    refute NPM.Security.ExoticDeps.exotic?("^1.2.3")
+    refute NPM.Security.ExoticDeps.exotic?("latest")
+    refute NPM.Security.ExoticDeps.exotic?("npm:react@^18")
   end
 
   test "raises for transitive exotic optional dependencies by default" do
@@ -31,9 +31,11 @@ defmodule NPM.ExoticDepsTest do
       optional_dependencies: %{"@tanstack/setup" => "github:tanstack/router#79ac49"}
     }
 
-    assert_raise NPM.ExoticDeps.Error, ~r/@tanstack\/setup: github:tanstack\/router/, fn ->
-      NPM.ExoticDeps.validate!("@tanstack/history", "1.161.12", info)
-    end
+    assert_raise NPM.Security.ExoticDeps.Error,
+                 ~r/@tanstack\/setup: github:tanstack\/router/,
+                 fn ->
+                   NPM.Security.ExoticDeps.validate!("@tanstack/history", "1.161.12", info)
+                 end
   end
 
   test "can be disabled through env var" do
@@ -44,7 +46,7 @@ defmodule NPM.ExoticDepsTest do
       optional_dependencies: %{}
     }
 
-    assert :ok = NPM.ExoticDeps.validate!("pkg", "1.0.0", info)
+    assert :ok = NPM.Security.ExoticDeps.validate!("pkg", "1.0.0", info)
   end
 
   defp restore_env(name, nil), do: System.delete_env(name)

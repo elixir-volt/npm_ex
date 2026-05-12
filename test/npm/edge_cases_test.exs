@@ -147,11 +147,11 @@ defmodule NPM.EdgeCasesTest do
 
   describe "Provenance edge cases" do
     test "has_provenance with string key attestations" do
-      assert NPM.Provenance.has_provenance?(%{"attestations" => []})
+      assert NPM.Security.Provenance.has_provenance?(%{"attestations" => []})
     end
 
     test "has_integrity with string key" do
-      assert NPM.Provenance.has_integrity?(%{"integrity" => "sha512-abc"})
+      assert NPM.Security.Provenance.has_integrity?(%{"integrity" => "sha512-abc"})
     end
   end
 

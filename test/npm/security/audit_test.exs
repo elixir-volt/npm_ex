@@ -1,4 +1,4 @@
-defmodule NPM.AuditTest do
+defmodule NPM.Security.AuditTest do
   use ExUnit.Case, async: true
 
   @sample_advisory %{
@@ -34,7 +34,7 @@ defmodule NPM.AuditTest do
         "lodash" => %{version: "4.17.19", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      findings = NPM.Audit.check(lockfile, [@sample_advisory])
+      findings = NPM.Security.Audit.check(lockfile, [@sample_advisory])
       assert length(findings) == 1
       assert hd(findings).package == "lodash"
       assert hd(findings).installed_version == "4.17.19"
@@ -45,12 +45,12 @@ defmodule NPM.AuditTest do
         "lodash" => %{version: "4.17.21", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      findings = NPM.Audit.check(lockfile, [@sample_advisory])
+      findings = NPM.Security.Audit.check(lockfile, [@sample_advisory])
       assert findings == []
     end
 
     test "empty lockfile returns no findings" do
-      assert [] = NPM.Audit.check(%{}, [@sample_advisory])
+      assert [] = NPM.Security.Audit.check(%{}, [@sample_advisory])
     end
 
     test "empty advisories returns no findings" do
@@ -58,7 +58,7 @@ defmodule NPM.AuditTest do
         "lodash" => %{version: "3.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      assert [] = NPM.Audit.check(lockfile, [])
+      assert [] = NPM.Security.Audit.check(lockfile, [])
     end
   end
 
@@ -69,7 +69,7 @@ defmodule NPM.AuditTest do
         "high-pkg" => %{version: "1.0.0", integrity: "", tarball: "", dependencies: %{}}
       }
 
-      findings = NPM.Audit.check(lockfile, [@sample_advisory, @critical_advisory])
+      findings = NPM.Security.Audit.check(lockfile, [@sample_advisory, @critical_advisory])
       severities = Enum.map(findings, & &1.advisory.severity)
       crit_idx = Enum.find_index(severities, &(&1 == :critical))
       high_idx = Enum.find_index(severities, &(&1 == :high))
@@ -83,18 +83,18 @@ defmodule NPM.AuditTest do
   describe "fixable?" do
     test "true when patched_versions is set" do
       finding = %{package: "a", installed_version: "1.0.0", advisory: @sample_advisory}
-      assert NPM.Audit.fixable?(finding)
+      assert NPM.Security.Audit.fixable?(finding)
     end
 
     test "false when patched_versions is nil" do
       finding = %{package: "a", installed_version: "1.0.0", advisory: @no_patch_advisory}
-      refute NPM.Audit.fixable?(finding)
+      refute NPM.Security.Audit.fixable?(finding)
     end
 
     test "false when patched_versions is empty string" do
       advisory = %{@sample_advisory | patched_versions: ""}
       finding = %{package: "a", installed_version: "1.0.0", advisory: advisory}
-      refute NPM.Audit.fixable?(finding)
+      refute NPM.Security.Audit.fixable?(finding)
     end
   end
 
@@ -123,7 +123,7 @@ defmodule NPM.AuditTest do
         }
       ]
 
-      high_plus = NPM.Audit.filter_by_severity(findings, :high)
+      high_plus = NPM.Security.Audit.filter_by_severity(findings, :high)
       assert length(high_plus) == 2
       severities = Enum.map(high_plus, & &1.advisory.severity)
       assert :critical in severities
@@ -144,7 +144,7 @@ defmodule NPM.AuditTest do
         }
       ]
 
-      critical = NPM.Audit.filter_by_severity(findings, :critical)
+      critical = NPM.Security.Audit.filter_by_severity(findings, :critical)
       assert length(critical) == 1
     end
   end
@@ -157,7 +157,7 @@ defmodule NPM.AuditTest do
         %{package: "c", installed_version: "1.0.0", advisory: @no_patch_advisory}
       ]
 
-      s = NPM.Audit.summary(findings)
+      s = NPM.Security.Audit.summary(findings)
       assert s.total == 3
       assert s.critical == 1
       assert s.high == 1
@@ -166,7 +166,7 @@ defmodule NPM.AuditTest do
     end
 
     test "empty findings" do
-      s = NPM.Audit.summary([])
+      s = NPM.Security.Audit.summary([])
       assert s.total == 0
       assert s.critical == 0
     end
@@ -175,7 +175,7 @@ defmodule NPM.AuditTest do
   describe "format_finding" do
     test "includes severity and package info" do
       finding = %{package: "lodash", installed_version: "4.17.19", advisory: @sample_advisory}
-      formatted = NPM.Audit.format_finding(finding)
+      formatted = NPM.Security.Audit.format_finding(finding)
       assert formatted =~ "HIGH"
       assert formatted =~ "Prototype Pollution"
       assert formatted =~ "lodash@4.17.19"
@@ -184,15 +184,15 @@ defmodule NPM.AuditTest do
 
   describe "compare_severity" do
     test "critical is higher than high" do
-      assert :gt = NPM.Audit.compare_severity(:critical, :high)
+      assert :gt = NPM.Security.Audit.compare_severity(:critical, :high)
     end
 
     test "low is lower than moderate" do
-      assert :lt = NPM.Audit.compare_severity(:low, :moderate)
+      assert :lt = NPM.Security.Audit.compare_severity(:low, :moderate)
     end
 
     test "same severity is equal" do
-      assert :eq = NPM.Audit.compare_severity(:high, :high)
+      assert :eq = NPM.Security.Audit.compare_severity(:high, :high)
     end
   end
 
@@ -221,7 +221,7 @@ defmodule NPM.AuditTest do
         }
       ]
 
-      findings = NPM.Audit.check(lockfile, advisories)
+      findings = NPM.Security.Audit.check(lockfile, advisories)
       assert length(findings) == 2
     end
   end
@@ -243,7 +243,7 @@ defmodule NPM.AuditTest do
         }
       ]
 
-      s = NPM.Audit.summary(findings)
+      s = NPM.Security.Audit.summary(findings)
       assert s.moderate == 1
     end
   end

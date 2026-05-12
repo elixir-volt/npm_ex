@@ -78,7 +78,7 @@ defmodule NPM.Milestone2000Test do
         "b" => %{version: "2.0", integrity: "sha512-y"}
       }
 
-      risk = NPM.Provenance.risk_summary(lockfile)
+      risk = NPM.Security.Provenance.risk_summary(lockfile)
       health_checks = %{integrity_pct: risk.integrity_pct, vulnerability_count: 0}
       result = NPM.Health.score(health_checks)
       assert result.details[:integrity_coverage] == 15
@@ -159,7 +159,7 @@ defmodule NPM.Milestone2000Test do
         })
 
       assert NPM.Dist.has_integrity?(dist)
-      assert NPM.Provenance.has_integrity?(dist)
+      assert NPM.Security.Provenance.has_integrity?(dist)
     end
   end
 

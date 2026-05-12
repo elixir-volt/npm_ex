@@ -1,4 +1,4 @@
-defmodule NPM.SupplyChain do
+defmodule NPM.Security.SupplyChain do
   @moduledoc """
   Evaluates supply chain security posture of a project's dependencies.
 
