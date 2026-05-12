@@ -123,7 +123,22 @@ Set environment variables to customize behavior:
 
 - `NPM_REGISTRY` — custom registry URL (default: `https://registry.npmjs.org`)
 - `NPM_TOKEN` — authentication token for private registries
+- `NPM_MIRROR` — registry mirror URL
+- `NPM_INSTALL_DIR` — custom `NPM.install/2` runtime install directory
 - `NPM_EX_CACHE_DIR` — custom cache directory (default: `~/.npm_ex/`)
+- `NPM_EX_BLOCK_EXOTIC_SUBDEPS` — block transitive git, file, and URL dependencies (default: `true`)
+
+Elixir application config is also supported:
+
+```elixir
+config :npm,
+  registry: "https://registry.npmjs.org",
+  token: System.get_env("NPM_TOKEN"),
+  mirror: "https://registry.npmmirror.com",
+  cache_dir: "/path/to/.npm_ex",
+  install_dir: "/path/to/npm-installs",
+  block_exotic_subdeps: true
+```
 
 ## License
 

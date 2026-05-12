@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Block transitive git, file, and URL dependency specs from published package metadata by default
+- Add `config :npm` support for registry, token, mirror, cache dir, install dir, and exotic subdependency policy
+
 ## 0.6.1
 
 - Harden tarball extraction against path traversal and absolute-path entries

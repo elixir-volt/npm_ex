@@ -7,12 +7,10 @@ defmodule NPM.Cache do
   and checked before downloading from the registry.
   """
 
-  @cache_dir_name ".npm_ex"
-
   @doc "Root directory of the global cache."
   @spec dir :: String.t()
   def dir do
-    System.get_env("NPM_EX_CACHE_DIR") || Path.join(System.user_home!(), @cache_dir_name)
+    NPM.Config.cache_dir()
   end
 
   @doc "Path to a specific package version in the cache."

@@ -31,10 +31,14 @@ defmodule NPM.Resolver do
   def resolve(root_deps, _opts) when map_size(root_deps) == 0, do: {:ok, %{}}
 
   def resolve(root_deps, opts) do
-    ensure_cache()
-    overrides = Keyword.get(opts, :overrides, %{})
-    if overrides != %{}, do: store_overrides(overrides)
-    resolve_with_nesting(root_deps, MapSet.new(), %{}, 0)
+    try do
+      ensure_cache()
+      overrides = Keyword.get(opts, :overrides, %{})
+      if overrides != %{}, do: store_overrides(overrides)
+      resolve_with_nesting(root_deps, MapSet.new(), %{}, 0)
+    rescue
+      error in NPM.ExoticDeps.Error -> {:error, Exception.message(error)}
+    end
   end
 
   defp store_overrides(overrides) do
@@ -270,6 +274,7 @@ defmodule NPM.Resolver do
         :error
 
       info ->
+        NPM.ExoticDeps.validate!(package, version_str, info)
         overrides = get_overrides()
 
         deps =

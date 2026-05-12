@@ -6,7 +6,6 @@ defmodule NPM.Registry do
   using the npm registry API.
   """
 
-  @default_registry "https://registry.npmjs.org"
   @max_retries 3
 
   @type packument :: %{
@@ -36,7 +35,7 @@ defmodule NPM.Registry do
   @doc "Get the configured registry URL."
   @spec registry_url :: String.t()
   def registry_url do
-    System.get_env("NPM_REGISTRY") || @default_registry
+    NPM.Config.registry()
   end
 
   @doc "Fetch the abbreviated packument for a package."
@@ -88,7 +87,7 @@ defmodule NPM.Registry do
   end
 
   defp auth_headers do
-    case System.get_env("NPM_TOKEN") do
+    case NPM.Config.auth_token() do
       nil -> []
       token -> [authorization: "Bearer #{token}"]
     end

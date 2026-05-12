@@ -1,5 +1,5 @@
 defmodule NPM.ConfigTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   describe "Config.parse_npmrc" do
     test "parses key=value pairs" do
@@ -59,6 +59,41 @@ defmodule NPM.ConfigTest do
       assert result =~ "registry.npmjs.org" or result =~ "npm"
 
       if original, do: System.put_env("NPM_REGISTRY", original)
+    end
+
+    test "falls back to application registry config" do
+      original_env = System.get_env("NPM_REGISTRY")
+      original_config = Application.get_env(:npm, :registry)
+
+      System.delete_env("NPM_REGISTRY")
+      Application.put_env(:npm, :registry, "https://configured.registry")
+
+      assert NPM.Config.registry() == "https://configured.registry"
+
+      restore_env("NPM_REGISTRY", original_env)
+      restore_app_config(:registry, original_config)
+    end
+
+    test "reads application config for npm_ex specific directories and policies" do
+      original_cache = Application.get_env(:npm, :cache_dir)
+      original_install = Application.get_env(:npm, :install_dir)
+      original_mirror = Application.get_env(:npm, :mirror)
+      original_block = Application.get_env(:npm, :block_exotic_subdeps)
+
+      Application.put_env(:npm, :cache_dir, "/tmp/npm-cache")
+      Application.put_env(:npm, :install_dir, "/tmp/npm-installs")
+      Application.put_env(:npm, :mirror, "https://mirror.example")
+      Application.put_env(:npm, :block_exotic_subdeps, false)
+
+      assert NPM.Config.cache_dir() == "/tmp/npm-cache"
+      assert NPM.Config.install_dir("abc") == "/tmp/npm-installs/abc"
+      assert NPM.Config.mirror_url() == "https://mirror.example"
+      refute NPM.Config.block_exotic_subdeps?()
+
+      restore_app_config(:cache_dir, original_cache)
+      restore_app_config(:install_dir, original_install)
+      restore_app_config(:mirror, original_mirror)
+      restore_app_config(:block_exotic_subdeps, original_block)
     end
   end
 
@@ -271,4 +306,10 @@ defmodule NPM.ConfigTest do
       assert "https://registry.npmjs.org" = NPM.Config.scoped_registry(%{}, "@scope")
     end
   end
+
+  defp restore_env(name, nil), do: System.delete_env(name)
+  defp restore_env(name, value), do: System.put_env(name, value)
+
+  defp restore_app_config(key, nil), do: Application.delete_env(:npm, key)
+  defp restore_app_config(key, value), do: Application.put_env(:npm, key, value)
 end

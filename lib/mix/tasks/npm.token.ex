@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Npm.Token do
   end
 
   defp resolve_token do
-    System.get_env("NPM_TOKEN") || read_npmrc_token()
+    NPM.Config.auth_token() || read_npmrc_token()
   end
 
   defp read_npmrc_token do
@@ -50,9 +50,11 @@ defmodule Mix.Tasks.Npm.Token do
   end
 
   defp token_source do
-    if System.get_env("NPM_TOKEN"),
-      do: "NPM_TOKEN environment variable",
-      else: ".npmrc file"
+    cond do
+      System.get_env("NPM_TOKEN") -> "NPM_TOKEN environment variable"
+      Application.get_env(:npm, :token) -> "application config"
+      true -> ".npmrc file"
+    end
   end
 
   defp mask_token(token) when byte_size(token) <= 8, do: "****"

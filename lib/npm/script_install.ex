@@ -104,11 +104,7 @@ defmodule NPM.ScriptInstall do
   end
 
   defp install_dir(id) do
-    root =
-      System.get_env("NPM_INSTALL_DIR") ||
-        Path.join(NPM.Cache.dir(), "installs")
-
-    Path.join(root, id)
+    NPM.Config.install_dir(id)
   end
 
   @spec installed? :: boolean()

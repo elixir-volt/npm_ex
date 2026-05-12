@@ -1,0 +1,58 @@
+defmodule NPM.ExoticDeps do
+  @moduledoc false
+
+  defmodule Error do
+    defexception [:package, :version, :field, :dependency, :spec]
+
+    @impl true
+    def message(%__MODULE__{} = error) do
+      "#{error.package}@#{error.version} declares exotic #{error.field} entry " <>
+        "#{error.dependency}: #{error.spec}. Transitive git, file, and URL dependencies are blocked by default."
+    end
+  end
+
+  @fields [
+    {:dependencies, "dependencies"},
+    {:optional_dependencies, "optionalDependencies"}
+  ]
+
+  @spec validate!(String.t(), String.t(), map()) :: :ok
+  def validate!(package, version, info) do
+    if NPM.Config.block_exotic_subdeps?() do
+      Enum.each(@fields, fn {key, field} ->
+        info
+        |> Map.get(key, %{})
+        |> Enum.each(fn {dependency, spec} ->
+          if exotic?(spec) do
+            raise Error,
+              package: package,
+              version: version,
+              field: field,
+              dependency: dependency,
+              spec: spec
+          end
+        end)
+      end)
+    end
+
+    :ok
+  end
+
+  @spec exotic?(term()) :: boolean()
+  def exotic?(spec) when is_binary(spec) do
+    spec = String.trim(spec)
+
+    has_exotic_prefix?(spec) or github_shorthand?(spec)
+  end
+
+  def exotic?(_), do: false
+
+  defp has_exotic_prefix?(spec) do
+    prefixes = ~w(file: git+ git:// github: ssh:// http:// https://)
+    Enum.any?(prefixes, &String.starts_with?(spec, &1))
+  end
+
+  defp github_shorthand?(spec) do
+    Regex.match?(~r/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:#.+)?$/, spec)
+  end
+end

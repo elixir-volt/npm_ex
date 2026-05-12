@@ -73,10 +73,13 @@ defmodule Mix.Tasks.Npm.Publish do
   end
 
   defp publish(name, version, tag, access) do
-    token = System.get_env("NPM_TOKEN")
+    token = NPM.Config.auth_token()
 
     if is_nil(token) do
-      Mix.shell().error("NPM_TOKEN not set. Set it or add auth to .npmrc")
+      Mix.shell().error(
+        "NPM_TOKEN not set. Set it, configure :npm, :token, or add auth to .npmrc"
+      )
+
       {:error, :no_token}
     else
       registry = NPM.Registry.registry_url()

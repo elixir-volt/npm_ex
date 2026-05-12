@@ -17,7 +17,7 @@ defmodule NPM.RegistryMirror do
   """
   @spec mirror_url :: String.t()
   def mirror_url do
-    System.get_env("NPM_MIRROR") || NPM.Registry.registry_url()
+    NPM.Config.mirror_url()
   end
 
   @doc """

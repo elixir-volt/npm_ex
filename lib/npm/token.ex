@@ -11,7 +11,7 @@ defmodule NPM.Token do
   """
   @spec read :: String.t() | nil
   def read do
-    System.get_env("NPM_TOKEN") || read_from_npmrc()
+    NPM.Config.auth_token() || read_from_npmrc()
   end
 
   @doc """

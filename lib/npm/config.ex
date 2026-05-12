@@ -9,23 +9,63 @@ defmodule NPM.Config do
   @doc """
   Read the effective registry URL.
 
-  Priority: `NPM_REGISTRY` env var > project `.npmrc` > home `.npmrc` > default.
+  Priority: `NPM_REGISTRY` env var > `config :npm, :registry` > project `.npmrc` > home `.npmrc` > default.
   """
   @spec registry :: String.t()
   def registry do
-    System.get_env("NPM_REGISTRY") ||
-      read_npmrc_value("registry") ||
-      "https://registry.npmjs.org"
+    (System.get_env("NPM_REGISTRY") ||
+       Application.get_env(:npm, :registry) ||
+       read_npmrc_value("registry") ||
+       "https://registry.npmjs.org")
+    |> normalize_registry_url()
   end
 
   @doc """
   Read the auth token.
 
-  Priority: `NPM_TOKEN` env var > project `.npmrc` > home `.npmrc`.
+  Priority: `NPM_TOKEN` env var > `config :npm, :token` > project `.npmrc` > home `.npmrc`.
   """
   @spec auth_token :: String.t() | nil
   def auth_token do
-    System.get_env("NPM_TOKEN") || read_npmrc_value("//registry.npmjs.org/:_authToken")
+    System.get_env("NPM_TOKEN") ||
+      Application.get_env(:npm, :token) ||
+      read_npmrc_value("//registry.npmjs.org/:_authToken")
+  end
+
+  @doc "Read the global package cache directory."
+  @spec cache_dir :: String.t()
+  def cache_dir do
+    System.get_env("NPM_EX_CACHE_DIR") ||
+      Application.get_env(:npm, :cache_dir) ||
+      Path.join(System.user_home!(), ".npm_ex")
+  end
+
+  @doc "Read the runtime install directory for `NPM.install/2`."
+  @spec install_dir(String.t()) :: String.t()
+  def install_dir(id) do
+    root =
+      System.get_env("NPM_INSTALL_DIR") ||
+        Application.get_env(:npm, :install_dir) ||
+        Path.join(cache_dir(), "installs")
+
+    Path.join(root, id)
+  end
+
+  @doc "Read the configured registry mirror URL."
+  @spec mirror_url :: String.t()
+  def mirror_url do
+    System.get_env("NPM_MIRROR") ||
+      Application.get_env(:npm, :mirror) ||
+      NPM.Registry.registry_url()
+  end
+
+  @doc "Whether transitive git, file, and URL dependencies are blocked."
+  @spec block_exotic_subdeps? :: boolean()
+  def block_exotic_subdeps? do
+    case System.get_env("NPM_EX_BLOCK_EXOTIC_SUBDEPS") do
+      nil -> Application.get_env(:npm, :block_exotic_subdeps, true)
+      value -> truthy?(value)
+    end
   end
 
   @doc """
@@ -104,5 +144,11 @@ defmodule NPM.Config do
       [key, value] -> [{String.trim(key), String.trim(value)}]
       _ -> []
     end
+  end
+
+  defp normalize_registry_url(url), do: String.trim_trailing(url, "/")
+
+  defp truthy?(value) when is_binary(value) do
+    (value |> String.trim() |> String.downcase()) in ~w(1 true yes on)
   end
 end
