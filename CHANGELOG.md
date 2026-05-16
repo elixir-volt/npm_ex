@@ -1,10 +1,15 @@
 # Changelog
 
-## 0.7.1
+## 0.7.2
 
 ### Fixed
 
 - Extract tarballs with a non-`package/` root directory, such as DefinitelyTyped `@types/*` packages, into the package root.
+
+## 0.7.1
+
+### Fixed
+
 - Skip package versions with blocked transitive exotic dependencies during dependency solving instead of aborting resolution before a safe version can be selected.
 
 ## 0.7.0
