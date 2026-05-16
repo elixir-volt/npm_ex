@@ -56,6 +56,47 @@ defmodule NPM.TarballTest do
     end
 
     @tag :tmp_dir
+    test "strips non-package single root directory", %{tmp_dir: dir} do
+      tgz =
+        create_test_tgz(%{
+          "react/package.json" => ~s({"name":"@types/react"}),
+          "react/index.d.ts" => "export {};"
+        })
+
+      assert {:ok, 2} = NPM.Tarball.extract(tgz, dir)
+      assert File.read!(Path.join(dir, "package.json")) == ~s({"name":"@types/react"})
+      assert File.read!(Path.join(dir, "index.d.ts")) == "export {};"
+      refute File.exists?(Path.join(dir, "react/package.json"))
+    end
+
+    @tag :tmp_dir
+    test "preserves roots when tarball has multiple top-level directories", %{tmp_dir: dir} do
+      tgz =
+        create_test_tgz(%{
+          "react/package.json" => ~s({"name":"react"}),
+          "scheduler/package.json" => ~s({"name":"scheduler"})
+        })
+
+      assert {:ok, 2} = NPM.Tarball.extract(tgz, dir)
+      assert File.exists?(Path.join(dir, "react/package.json"))
+      assert File.exists?(Path.join(dir, "scheduler/package.json"))
+      refute File.exists?(Path.join(dir, "package.json"))
+    end
+
+    @tag :tmp_dir
+    test "preserves root files when tarball is not wrapped in a directory", %{tmp_dir: dir} do
+      tgz =
+        create_test_tgz(%{
+          "package.json" => ~s({"name":"rooted"}),
+          "lib/index.js" => "module.exports = {};"
+        })
+
+      assert {:ok, 2} = NPM.Tarball.extract(tgz, dir)
+      assert File.exists?(Path.join(dir, "package.json"))
+      assert File.exists?(Path.join(dir, "lib/index.js"))
+    end
+
+    @tag :tmp_dir
     test "handles multiple files", %{tmp_dir: dir} do
       tgz =
         create_test_tgz(%{
@@ -311,14 +352,12 @@ defmodule NPM.TarballTest do
     end
   end
 
-  describe "Tarball: strip_prefix behavior" do
+  describe "Tarball: root directory behavior" do
     @tag :tmp_dir
-    test "strips package/ prefix from tar entries", %{tmp_dir: dir} do
-      # npm tarballs have files under package/ prefix
-      tgz = create_test_tgz(%{"package.json" => ~s({"name":"test"})})
+    test "strips package root from tar entries", %{tmp_dir: dir} do
+      tgz = create_test_tgz(%{"package/package.json" => ~s({"name":"test"})})
       {:ok, _count} = NPM.Tarball.extract(tgz, dir)
 
-      # Should be extracted without the package/ prefix
       assert File.exists?(Path.join(dir, "package.json"))
       refute File.exists?(Path.join(dir, "package/package.json"))
     end
@@ -388,8 +427,8 @@ defmodule NPM.TarballTest do
       File.mkdir_p!(dest)
       NPM.Tarball.extract(tgz_data, dest)
 
-      assert File.exists?(Path.join(dest, "index.js")) or
-               File.exists?(Path.join(dest, "package/index.js"))
+      assert File.exists?(Path.join(dest, "index.js"))
+      refute File.exists?(Path.join(dest, "package/index.js"))
     end
   end
 end

@@ -50,6 +50,45 @@ defmodule NPM.CacheTest do
       System.delete_env("NPM_EX_CACHE_DIR")
       System.delete_env("NPM_EX_ALLOWED_REGISTRIES")
     end
+
+    @tag :tmp_dir
+    test "ensure caches scoped package tarballs with non-package root", %{tmp_dir: dir} do
+      cache_dir = Path.join(dir, "cache")
+      System.put_env("NPM_EX_CACHE_DIR", cache_dir)
+
+      pkg_tgz =
+        create_test_tgz(%{
+          "react/package.json" => ~s({"name":"@types/react","version":"19.2.14"}),
+          "react/index.d.ts" => "export {};"
+        })
+
+      {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+      {:ok, port} = :inet.port(listen)
+
+      spawn(fn ->
+        {:ok, conn} = :gen_tcp.accept(listen)
+        {:ok, _data} = :gen_tcp.recv(conn, 0, 5000)
+
+        response =
+          "HTTP/1.1 200 OK\r\nContent-Length: #{byte_size(pkg_tgz)}\r\n\r\n" <> pkg_tgz
+
+        :gen_tcp.send(conn, response)
+        :gen_tcp.close(conn)
+      end)
+
+      url = "http://127.0.0.1:#{port}/types-react.tgz"
+      System.put_env("NPM_EX_ALLOWED_REGISTRIES", "http://127.0.0.1:#{port}")
+
+      assert {:ok, path} = NPM.Cache.ensure("@types/react", "19.2.14", url, "")
+      assert NPM.Cache.cached?("@types/react", "19.2.14")
+      assert File.exists?(Path.join(path, "package.json"))
+      assert File.exists?(Path.join(path, "index.d.ts"))
+      refute File.exists?(Path.join(path, "react/package.json"))
+
+      :gen_tcp.close(listen)
+      System.delete_env("NPM_EX_CACHE_DIR")
+      System.delete_env("NPM_EX_ALLOWED_REGISTRIES")
+    end
   end
 
   describe "Cache edge cases" do

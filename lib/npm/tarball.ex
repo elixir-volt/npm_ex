@@ -51,7 +51,7 @@ defmodule NPM.Tarball do
   @doc """
   Extract a `.tgz` tarball into a destination directory.
 
-  Strips the `package/` prefix that npm tarballs use.
+  Strips the single top-level directory used by npm package tarballs.
   Returns `{:ok, file_count}`.
   """
   @spec extract(binary(), String.t()) :: {:ok, non_neg_integer()} | {:error, term()}
@@ -71,9 +71,12 @@ defmodule NPM.Tarball do
   end
 
   defp safe_entries(entries, dest_dir) do
+    paths = Enum.map(entries, fn {path, _content} -> to_string(path) end)
+    prefix = common_root_prefix(paths)
+
     Enum.reduce_while(entries, {:ok, []}, fn {path, content}, {:ok, acc} ->
       original_path = to_string(path)
-      rel_path = strip_prefix(original_path)
+      rel_path = strip_prefix(original_path, prefix)
 
       case safe_path(dest_dir, rel_path) do
         {:ok, full_path} -> {:cont, {:ok, [{full_path, content} | acc]}}
@@ -114,6 +117,23 @@ defmodule NPM.Tarball do
     File.write!(full_path, content)
   end
 
-  defp strip_prefix("package/" <> rest), do: rest
-  defp strip_prefix(path), do: path
+  defp common_root_prefix([]), do: nil
+
+  defp common_root_prefix(paths) do
+    roots =
+      Enum.map(paths, fn path ->
+        case String.split(path, "/", parts: 2) do
+          [root, rest] when root not in ["", ".", ".."] and rest != "" -> root
+          _ -> nil
+        end
+      end)
+
+    case Enum.uniq(roots) do
+      [root] when is_binary(root) -> root <> "/"
+      _ -> nil
+    end
+  end
+
+  defp strip_prefix(path, nil), do: path
+  defp strip_prefix(path, prefix), do: String.replace_prefix(path, prefix, "")
 end
