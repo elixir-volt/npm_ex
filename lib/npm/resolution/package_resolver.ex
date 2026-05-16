@@ -309,10 +309,21 @@ defmodule NPM.Resolution.PackageResolver do
   end
 
   defp resolve_from_pkg(pkg, package_dir, subpath, conditions, extensions) do
-    with :error <- resolve_via_exports(pkg, package_dir, subpath, conditions),
-         :error <- resolve_via_fields(pkg, package_dir, subpath, conditions, extensions) do
+    with :error <- resolve_via_exports(pkg, package_dir, subpath, conditions) do
+      resolve_without_exports(pkg, package_dir, subpath, conditions, extensions)
+    end
+  end
+
+  defp resolve_without_exports(pkg, package_dir, ".", conditions, extensions) do
+    with :error <- resolve_via_fields(pkg, package_dir, conditions, extensions) do
       try_resolve(Path.join(package_dir, "index"), extensions: extensions)
     end
+  end
+
+  defp resolve_without_exports(_pkg, package_dir, subpath, _conditions, extensions) do
+    package_dir
+    |> expand_target(subpath)
+    |> try_resolve(extensions: extensions)
   end
 
   defp resolve_via_exports(pkg, package_dir, subpath, conditions) do
@@ -328,20 +339,10 @@ defmodule NPM.Resolution.PackageResolver do
     end
   end
 
-  defp resolve_via_fields(_pkg, _package_dir, subpath, _conditions, _extensions)
-       when subpath != "." do
-    :error
-  end
-
-  defp resolve_via_fields(pkg, package_dir, ".", conditions, extensions) do
-    fields =
-      if "browser" in conditions do
-        ["browser", "module", "main"]
-      else
-        ["module", "main"]
-      end
-
-    Enum.find_value(fields, :error, fn field ->
+  defp resolve_via_fields(pkg, package_dir, conditions, extensions) do
+    conditions
+    |> fields_for_conditions()
+    |> Enum.find_value(:error, fn field ->
       case Map.get(pkg, field) do
         nil -> nil
         target when is_binary(target) -> resolve_field_target(package_dir, target, extensions)
@@ -350,13 +351,34 @@ defmodule NPM.Resolution.PackageResolver do
     end)
   end
 
-  defp resolve_field_target(package_dir, target, extensions) do
-    full = expand_target(package_dir, target)
+  defp fields_for_conditions(conditions) do
+    browser_fields = if "browser" in conditions, do: ["browser"], else: []
 
-    case try_resolve(full, extensions: extensions) do
-      {:ok, _} = ok -> ok
-      :error -> nil
+    (browser_fields ++ Enum.flat_map(conditions, &fields_for_condition/1) ++ ["module", "main"])
+    |> Enum.uniq()
+  end
+
+  defp fields_for_condition("import"), do: ["module"]
+  defp fields_for_condition("require"), do: ["main"]
+  defp fields_for_condition("default"), do: ["main"]
+  defp fields_for_condition(_), do: []
+
+  defp resolve_field_target(package_dir, target, extensions) do
+    if unsupported_field_extension?(target, extensions) do
+      nil
+    else
+      full = expand_target(package_dir, target)
+
+      case try_resolve(full, extensions: extensions) do
+        {:ok, _} = ok -> ok
+        :error -> nil
+      end
     end
+  end
+
+  defp unsupported_field_extension?(target, extensions) do
+    ext = Path.extname(target)
+    ext != "" and ext not in extensions
   end
 
   defp ensure_file(package_dir, target) do

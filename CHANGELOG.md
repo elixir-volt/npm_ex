@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.3
+
+- Skip `browser` field during resolution when its target extension is not in the resolvable set (fixes daisyUI resolving to `.css` when bundling JS)
+- Resolve package subpaths directly when no `exports` map is present, instead of falling back to root entry
+
 ## 0.7.2
 
 ### Fixed

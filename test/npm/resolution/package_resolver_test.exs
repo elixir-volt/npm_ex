@@ -300,6 +300,57 @@ defmodule NPM.Resolution.PackageResolverTest do
     end
 
     @tag :tmp_dir
+    test "skips browser field when target extension is not resolvable", %{tmp_dir: dir} do
+      main = Path.join(dir, "index.js")
+      File.write!(main, "")
+      File.write!(Path.join(dir, "daisyui.css"), "")
+
+      write_pkg_json(dir, %{
+        "name" => "daisyui",
+        "main" => "./index.js",
+        "browser" => "./daisyui.css"
+      })
+
+      assert {:ok, ^main} =
+               PackageResolver.resolve_entry(dir,
+                 conditions: ["require", "default", "browser", "import"]
+               )
+    end
+
+    @tag :tmp_dir
+    test "resolves browser field when target extension is resolvable", %{tmp_dir: dir} do
+      browser = Path.join(dir, "browser.css")
+      main = Path.join(dir, "main.js")
+      File.write!(browser, "")
+      File.write!(main, "")
+
+      write_pkg_json(dir, %{
+        "name" => "css-pkg",
+        "main" => "./main.js",
+        "browser" => "./browser.css"
+      })
+
+      assert {:ok, ^browser} =
+               PackageResolver.resolve_entry(dir,
+                 conditions: ["browser", "default"],
+                 extensions: ["", ".css"]
+               )
+    end
+
+    @tag :tmp_dir
+    test "resolves package subpaths without exports directly", %{tmp_dir: dir} do
+      root_index = Path.join(dir, "index.js")
+      theme_index = Path.join([dir, "theme", "index.js"])
+      File.mkdir_p!(Path.dirname(theme_index))
+      File.write!(root_index, "")
+      File.write!(theme_index, "")
+
+      write_pkg_json(dir, %{"name" => "daisyui", "main" => "./index.js"})
+
+      assert {:ok, ^theme_index} = PackageResolver.resolve_entry(dir, subpath: "./theme")
+    end
+
+    @tag :tmp_dir
     test "browser field ignored without condition", %{tmp_dir: dir} do
       main = Path.join(dir, "main.js")
       File.write!(main, "")
