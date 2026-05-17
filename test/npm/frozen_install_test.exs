@@ -151,5 +151,51 @@ defmodule NPM.FrozenInstallTest do
       assert map_size(loaded["express"].dependencies) == 2
       assert loaded["express"].dependencies["accepts"] == "~1.3.8"
     end
+
+    @tag :tmp_dir
+    test "lockfile with optional dependencies is consistent", %{tmp_dir: dir} do
+      lock_path = Path.join(dir, "npm.lock")
+
+      lockfile = %{
+        "@typescript/native-preview" => %{
+          version: "7.0.0",
+          integrity: "sha512-a",
+          tarball: "url",
+          dependencies: %{},
+          optional_dependencies: %{
+            "@typescript/native-preview-darwin-arm64" => "7.0.0",
+            "@typescript/native-preview-linux-x64" => "7.0.0"
+          }
+        },
+        "@typescript/native-preview-darwin-arm64" => %{
+          version: "7.0.0",
+          integrity: "sha512-b",
+          tarball: "url2",
+          dependencies: %{}
+        },
+        "@typescript/native-preview-linux-x64" => %{
+          version: "7.0.0",
+          integrity: "sha512-c",
+          tarball: "url3",
+          dependencies: %{}
+        }
+      }
+
+      NPM.Lockfile.write(lockfile, lock_path)
+      {:ok, loaded} = NPM.Lockfile.read(lock_path)
+
+      deps = %{"@typescript/native-preview" => "^7.0.0"}
+
+      all_accounted_for =
+        Enum.all?(loaded, fn {name, _entry} ->
+          Map.has_key?(deps, name) or
+            Enum.any?(loaded, fn {_, e} ->
+              Map.has_key?(e.dependencies, name) or
+                Map.has_key?(Map.get(e, :optional_dependencies, %{}), name)
+            end)
+        end)
+
+      assert all_accounted_for
+    end
   end
 end

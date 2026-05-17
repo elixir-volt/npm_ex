@@ -431,4 +431,32 @@ defmodule NPM.TarballTest do
       refute File.exists?(Path.join(dest, "package/index.js"))
     end
   end
+
+  describe "Tarball: file permissions" do
+    @tag :tmp_dir
+    test "preserves executable mode from tarball", %{tmp_dir: dir} do
+      tgz =
+        create_test_tgz([
+          {"package/bin/cli", "#!/bin/sh\necho hi", 0o755},
+          {"package/lib/index.js", "module.exports = {}"}
+        ])
+
+      assert {:ok, 2} = NPM.Tarball.extract(tgz, dir)
+
+      cli_path = Path.join(dir, "bin/cli")
+      {:ok, stat} = File.stat(cli_path)
+      assert Bitwise.band(stat.mode, 0o111) != 0
+    end
+
+    @tag :tmp_dir
+    test "non-executable files stay non-executable", %{tmp_dir: dir} do
+      tgz = create_test_tgz([{"package/lib/index.js", "module.exports = {}"}])
+
+      assert {:ok, 1} = NPM.Tarball.extract(tgz, dir)
+
+      js_path = Path.join(dir, "lib/index.js")
+      {:ok, stat} = File.stat(js_path)
+      assert Bitwise.band(stat.mode, 0o111) == 0
+    end
+  end
 end

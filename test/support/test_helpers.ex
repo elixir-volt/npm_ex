@@ -14,18 +14,30 @@ defmodule NPM.TestHelpers do
     tgz_path = Path.join(tmp, "npm_test_#{System.unique_integer([:positive])}.tgz")
 
     file_entries =
-      Enum.map(files, fn {name, content} ->
-        path = Path.join(tmp, name)
-        File.mkdir_p!(Path.dirname(path))
-        File.write!(path, content)
-        {~c"#{name}", ~c"#{path}"}
+      Enum.map(files, fn
+        {name, content, mode} ->
+          path = Path.join(tmp, name)
+          File.mkdir_p!(Path.dirname(path))
+          File.write!(path, content)
+          File.chmod!(path, mode)
+          {~c"#{name}", ~c"#{path}"}
+
+        {name, content} ->
+          path = Path.join(tmp, name)
+          File.mkdir_p!(Path.dirname(path))
+          File.write!(path, content)
+          {~c"#{name}", ~c"#{path}"}
       end)
 
     :ok = :erl_tar.create(~c"#{tgz_path}", file_entries, [:compressed])
     data = File.read!(tgz_path)
 
     File.rm!(tgz_path)
-    Enum.each(files, fn {name, _} -> File.rm(Path.join(tmp, name)) end)
+
+    Enum.each(files, fn
+      {name, _, _} -> File.rm(Path.join(tmp, name))
+      {name, _} -> File.rm(Path.join(tmp, name))
+    end)
 
     data
   end
