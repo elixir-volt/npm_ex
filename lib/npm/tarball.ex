@@ -60,8 +60,10 @@ defmodule NPM.Tarball do
 
     case :erl_tar.extract({:binary, tgz_data}, [:compressed, :memory]) do
       {:ok, entries} ->
+        modes = extract_modes(tgz_data)
+
         with {:ok, files} <- safe_entries(entries, dest_dir) do
-          Enum.each(files, &write_entry/1)
+          write_and_chmod(files, modes)
           {:ok, length(files)}
         end
 
@@ -79,7 +81,7 @@ defmodule NPM.Tarball do
       rel_path = strip_prefix(original_path, prefix)
 
       case safe_path(dest_dir, rel_path) do
-        {:ok, full_path} -> {:cont, {:ok, [{full_path, content} | acc]}}
+        {:ok, full_path} -> {:cont, {:ok, [{full_path, content, original_path} | acc]}}
         {:error, reason} -> {:halt, {:error, {reason, original_path}}}
       end
     end)
@@ -112,9 +114,44 @@ defmodule NPM.Tarball do
 
   defp inside_dir?(path, dir), do: path == dir or String.starts_with?(path, dir <> "/")
 
-  defp write_entry({full_path, content}) do
+  defp write_and_chmod(files, modes) do
+    Enum.each(files, fn {full_path, content, original_path} ->
+      write_entry(full_path, content)
+      maybe_apply_mode(full_path, original_path, modes)
+    end)
+  end
+
+  defp extract_modes(tgz_data) do
+    case :erl_tar.table({:binary, tgz_data}, [:compressed, :verbose]) do
+      {:ok, table_entries} -> Map.new(table_entries, &parse_table_entry/1)
+      _ -> %{}
+    end
+  end
+
+  defp parse_table_entry({path, _type, _size, _mtime, mode, _uid, _gid}),
+    do: {to_string(path), mode}
+
+  defp parse_table_entry({path, info}) when is_tuple(info),
+    do: {to_string(path), :erlang.element(8, info)}
+
+  defp parse_table_entry({path, _}),
+    do: {to_string(path), nil}
+
+  defp write_entry(full_path, content) do
     full_path |> Path.dirname() |> File.mkdir_p!()
     File.write!(full_path, content)
+  end
+
+  defp maybe_apply_mode(_full_path, _original_path, modes) when modes == %{}, do: :ok
+
+  defp maybe_apply_mode(full_path, original_path, modes) do
+    case Map.get(modes, original_path) do
+      mode when is_integer(mode) and :erlang.band(mode, 0o111) != 0 ->
+        File.chmod(full_path, :erlang.band(mode, 0o7777))
+
+      _ ->
+        :ok
+    end
   end
 
   defp common_root_prefix([]), do: nil

@@ -61,7 +61,7 @@ defmodule Mix.Tasks.Npm.Exec do
 
       code ->
         Mix.shell().error("Exited with code #{code}")
-        {:error, {:exit, code}}
+        exit({:shutdown, code})
     end
   end
 end

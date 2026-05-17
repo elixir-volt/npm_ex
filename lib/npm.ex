@@ -247,6 +247,7 @@ defmodule NPM do
 
   defp lockfile_policy_current? do
     case NPM.Lockfile.read_policy() do
+      {:ok, nil} -> true
       {:ok, policy} -> NPM.Lockfile.policy_matches?(policy)
       _ -> false
     end
@@ -258,7 +259,10 @@ defmodule NPM do
     end) and
       Enum.all?(lockfile, fn {name, _entry} ->
         Map.has_key?(deps, name) or
-          Enum.any?(lockfile, fn {_, e} -> Map.has_key?(e.dependencies, name) end)
+          Enum.any?(lockfile, fn {_, e} ->
+            Map.has_key?(e.dependencies, name) or
+              Map.has_key?(Map.get(e, :optional_dependencies, %{}), name)
+          end)
       end)
   end
 

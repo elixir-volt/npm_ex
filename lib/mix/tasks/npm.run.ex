@@ -93,7 +93,7 @@ defmodule Mix.Tasks.Npm.Run do
 
       {^port, {:exit_status, code}} ->
         Mix.shell().error("Script exited with code #{code}")
-        {:error, {:exit, code}}
+        exit({:shutdown, code})
     end
   end
 end
