@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.4
+
+### Fixed
+
+- Preserve file permissions from tarballs during extraction, fixing EACCES for native executables like `tsgo`
+- Run package scripts directly with `node` so package `#imports` resolve correctly
+- Detect native binaries and execute them directly instead of wrapping in a Node.js loader
+- Propagate non-zero exit codes from `mix npm.run` and `mix npm.exec` to the shell
+- Accept lockfiles without a policy section in `--frozen` install
+- Include `optionalDependencies` in lockfile consistency check for `--frozen` install
+
 ## 0.7.3
 
 - Skip `browser` field during resolution when its target extension is not in the resolvable set (fixes daisyUI resolving to `.css` when bundling JS)
