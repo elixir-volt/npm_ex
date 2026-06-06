@@ -2,37 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        otp: ['27', '29']
-        elixir: ['1.19', '1.20']
-    env:
-      MIX_ENV: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{ matrix.otp }}
-          elixir-version: ${{ matrix.elixir }}
-
-      - name: Cache deps
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
-
-      - run: mix deps.get
-      - run: mix compile --warnings-as-errors
-      - run: mix test
-      - run: mix test --include integration
+  ci:
+    uses: elixir-vibe/actions/.github/workflows/elixir-ci.yml@v1
