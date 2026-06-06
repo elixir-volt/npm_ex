@@ -12,7 +12,7 @@ defmodule NPM.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: [plt_add_apps: [:mix]],
+      dialyzer: [plt_add_apps: [:mix], flags: [:no_opaque]],
       name: "NPM",
       description:
         "npm package manager for Elixir — resolve, fetch, and manage npm dependencies with Mix tasks.",
@@ -35,7 +35,7 @@ defmodule NPM.MixProject do
         "ex_dna",
         "dialyzer"
       ],
-      ci: ["lint", "cmd MIX_ENV=test mix test"]
+      ci: ["lint", "cmd env MIX_ENV=test mix test"]
     ]
   end
 
