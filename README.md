@@ -161,6 +161,17 @@ Full guides and API documentation are available on [HexDocs](https://hexdocs.pm/
 - Configuration
 - CLI and configuration cheatsheets
 
+## Part of Elixir Volt
+
+npm resolves, fetches, and links npm packages from Mix — no Node.js required for installation.
+
+It is part of a frontend stack that runs inside the BEAM — builds, JS
+runtimes, icons, and Vue-to-LiveView compilation as supervised parts of the
+application instead of external toolchain processes. See the
+[Elixir Volt](https://github.com/elixir-volt) organization for the rest, and
+[Building Blocks for the Future Web](https://github.com/elixir-vibe/building-blocks)
+for the thesis, architecture, and roadmap that tie them together.
+
 ## License
 
 MIT © 2026 Danila Poyarkov
